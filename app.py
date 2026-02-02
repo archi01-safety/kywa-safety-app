@@ -147,12 +147,19 @@ def create_docx(data):
     doc.save(bio)
     return bio.getvalue()
 
-# 5. 사이드바 및 모델 설정
-with st.sidebar:
-    api_key = st.text_input("Gemini API Key", type="password")
-if api_key:
-    genai.configure(api_key=api_key, transport='rest')
-    model = genai.GenerativeModel('gemini-flash-latest')
+# 5. 모델 설정 (Secrets에서 키를 안전하게 가져옴)
+try:
+    # Streamlit Secrets에 저장된 키를 자동으로 호출합니다.
+    if "GEMINI_API_KEY" in st.secrets:
+        api_key = st.secrets["GEMINI_API_KEY"]
+        genai.configure(api_key=api_key, transport='rest')
+        model = genai.GenerativeModel('gemini-1.5-flash') # 또는 사용 중인 모델명
+    else:
+        st.error("Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
+        st.stop()
+except Exception as e:
+    st.error(f"API 설정 오류가 발생했습니다: {e}")
+    st.stop()
 
 # 6. 입력 섹션
 col1, col2 = st.columns(2)
@@ -311,4 +318,5 @@ if "final_processed_data" in st.session_state and st.session_state.final_process
     with dl_col1:
         st.download_button("Word 저장", data=create_docx(st.session_state.final_processed_data), file_name=f"KYWA_Report_{user_name}_{selected_facility}.docx", use_container_width=True)
     with dl_col2:
+
         st.download_button("Excel 저장", data=create_excel(st.session_state.final_processed_data), file_name=f"KYWA_Data_{user_name}_{selected_facility}.xlsx", use_container_width=True)
