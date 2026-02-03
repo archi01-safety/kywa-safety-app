@@ -62,11 +62,18 @@ if os.path.exists(logo_path):
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
     if logo_img:
-        # [수정 포인트] link 파라미터를 추가하여 클릭 시 해당 URL로 이동(새로고침)하게 합니다.
-        st.image(logo_img, width=300, link="https://kywa-safety-check.streamlit.app/") 
+        # 이미지를 base64로 변환하거나 직접 경로를 넣는 대신, 
+        # Streamlit 공식 문서에서 권장하는 하이퍼링크 이미지 구현 방식입니다.
+        st.markdown(
+            f"""
+            <a href="https://kywa-safety-check.streamlit.app/" target="_self">
+                <img src="https://raw.githubusercontent.com/사용자계정/저장소명/main/kywa_logo.png" width="300">
+            </a>
+            """,
+            unsafe_allow_html=True
+        )
     else:
-        # 이미지가 없을 경우 텍스트 클릭 시 링크 연결
-        st.markdown("<a href='https://kywa-safety-check.streamlit.app/' style='text-decoration:none;'><h2 style='color: #E60012; margin-top: 0;'>KYWA</h2></a>", unsafe_allow_html=True)
+        st.markdown("<a href='https://kywa-safety-check.streamlit.app/' target='_self' style='text-decoration:none;'><h2 style='color: #E60012; margin-top: 0;'>KYWA</h2></a>", unsafe_allow_html=True)
 
 with header_col2:
     st.title("🚨 KYWA AI 위험성평가 시스템")
