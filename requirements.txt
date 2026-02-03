@@ -3,3 +3,5 @@ pandas
 plotly
 google-generativeai
 python-docx
+xlsxwriter
+openpyxl
