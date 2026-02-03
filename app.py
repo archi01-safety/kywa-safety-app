@@ -62,11 +62,11 @@ if os.path.exists(logo_path):
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
     if logo_img:
-        # 로고 이미지 표시 (너비는 적절히 조절하세요)
-        st.image(logo_img, width=300) 
+        # [수정 포인트] link 파라미터를 추가하여 클릭 시 해당 URL로 이동(새로고침)하게 합니다.
+        st.image(logo_img, width=300, link="https://kywa-safety-check.streamlit.app/") 
     else:
-        # 이미지가 없을 경우 기존 텍스트 표시
-        st.markdown("<h2 style='color: #E60012; margin-top: 0;'>KYWA</h2>", unsafe_allow_html=True)
+        # 이미지가 없을 경우 텍스트 클릭 시 링크 연결
+        st.markdown("<a href='https://kywa-safety-check.streamlit.app/' style='text-decoration:none;'><h2 style='color: #E60012; margin-top: 0;'>KYWA</h2></a>", unsafe_allow_html=True)
 
 with header_col2:
     st.title("🚨 KYWA AI 위험성평가 시스템")
@@ -320,7 +320,3 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
-
-
-
-
