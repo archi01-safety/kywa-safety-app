@@ -153,7 +153,7 @@ try:
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key, transport='rest')
-        model = genai.GenerativeModel('gemini-1.5-flash') # 또는 사용 중인 모델명
+        model = genai.GenerativeModel('gemini-flash-latest') # 또는 사용 중인 모델명
     else:
         st.error("Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
         st.stop()
@@ -320,3 +320,4 @@ if "final_processed_data" in st.session_state and st.session_state.final_process
     with dl_col2:
 
         st.download_button("Excel 저장", data=create_excel(st.session_state.final_processed_data), file_name=f"KYWA_Data_{user_name}_{selected_facility}.xlsx", use_container_width=True)
+
