@@ -264,6 +264,17 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
             except Exception as e:
                 st.error(f"전송 오류: {e}")
 
+
+# 10. 하단 저장 섹션
+st.write("---")
+if "final_processed_data" in st.session_state and st.session_state.final_processed_data:
+    dl_col1, dl_col2 = st.columns(2)
+    with dl_col1:
+        st.download_button("Word 저장", data=create_docx(st.session_state.final_processed_data), file_name=f"KYWA_Report_{user_name}_{selected_facility}.docx", use_container_width=True)
+    with dl_col2:
+
+        st.download_button("Excel 저장", data=create_excel(st.session_state.final_processed_data), file_name=f"KYWA_Data_{user_name}_{selected_facility}.xlsx", use_container_width=True)
+
 # --- [수정] 대시보드 섹션 ---
 st.write("---")
 dashboard_data = load_dashboard_data()
@@ -311,13 +322,5 @@ if dashboard_data is not None:
                 st.plotly_chart(fig_bar, use_container_width=True)
 
 
-# 10. 하단 저장 섹션
-st.write("---")
-if "final_processed_data" in st.session_state and st.session_state.final_processed_data:
-    dl_col1, dl_col2 = st.columns(2)
-    with dl_col1:
-        st.download_button("Word 저장", data=create_docx(st.session_state.final_processed_data), file_name=f"KYWA_Report_{user_name}_{selected_facility}.docx", use_container_width=True)
-    with dl_col2:
 
-        st.download_button("Excel 저장", data=create_excel(st.session_state.final_processed_data), file_name=f"KYWA_Data_{user_name}_{selected_facility}.xlsx", use_container_width=True)
 
