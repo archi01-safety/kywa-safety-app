@@ -61,19 +61,18 @@ if os.path.exists(logo_path):
 # 3. 헤더 디자인 (수정본)
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
-    if logo_img:
-        # 이미지를 base64로 변환하거나 직접 경로를 넣는 대신, 
-        # Streamlit 공식 문서에서 권장하는 하이퍼링크 이미지 구현 방식입니다.
-        st.markdown(
-            f"""
-            <a href="https://kywa-safety-check.streamlit.app/" target="_self">
-                <img src="https://raw.githubusercontent.com/사용자계정/저장소명/main/kywa_logo.png" width="300">
-            </a>
-            """,
-            unsafe_allow_html=True
-        )
-    else:
-        st.markdown("<a href='https://kywa-safety-check.streamlit.app/' target='_self' style='text-decoration:none;'><h2 style='color: #E60012; margin-top: 0;'>KYWA</h2></a>", unsafe_allow_html=True)
+    # GitHub의 Raw 이미지 경로입니다.
+    raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
+    
+    # 이미지를 클릭하면 앱 주소로 이동하여 새로고침 효과를 줍니다.
+    st.markdown(
+        f"""
+        <a href="https://kywa-safety-check.streamlit.app/" target="_self">
+            <img src="{raw_logo_url}" width="300">
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
 
 with header_col2:
     st.title("🚨 KYWA AI 위험성평가 시스템")
@@ -327,3 +326,4 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
