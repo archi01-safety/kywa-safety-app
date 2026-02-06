@@ -193,6 +193,11 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
             시설명: [{selected_facility}], 상황: {user_description}. 
             반드시 다음 JSON 형식을 엄수하세요. (데이터 리스트 형태 [])
 
+            [필수 지시사항]
+            1. category(분류): 시설명이 '생태', '해양' 등이라 하더라도 이를 category에 적지 마십시오. 
+               반드시 [보행 안전, 시설 안전, 화재 안전, 작업 안전, 활동 안전, 보건 및 위생관리, 화학물질 관리, 작업특성 요인, 작업환경 요인, 작업 환경, 기계(설비)적 요인, 전기적 요인, 재난 안전] 중 상황에 가장 적합한 표준 분류를 선택하십시오.
+            2. 등급 판정의 객관성: 단순 노후화나 경미한 파손(예: 보도블럭 일부 들뜸/파손)은 강도(s)를 2 이하로 설정하여 전체 score가 6점 이하가 되도록 하십시오.
+
             [빈도 등급 판정 가이드라인] ※1~5번 기준과 예를 근거로 하되 안전수칙 및 작업표준은 있음을 전제로 등급 판정.
             1. 빈도 5점(기준: 피해가 발생할 가능성이 매우 높음. 예: 해당 안전대책이 되어 있지 않고, 표시․표지가 대부분 없으며, 안전수칙·작업표준 등도 없음)
             2. 빈도 4점(기준: 피해가 발생할 가능성이 높음. 예: 가드․방호덮개, 기타 안전장치가 대부분 없으며, 안전 수칙․작업표준 등은 있지만 지키기 어렵고 많은 주의를 해야 함)
@@ -236,6 +241,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                 st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
                 st.rerun()
             except Exception as e: st.error(f"오류: {e}")
+
 
 # 8. 결과 표시
 if st.session_state.analysis_results:
@@ -354,6 +360,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
