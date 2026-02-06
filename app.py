@@ -159,7 +159,7 @@ try:
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
         genai.configure(api_key=api_key, transport='rest')
-        model = genai.GenerativeModel(model_name='models/gemini-flash-1.5') # 또는 사용 중인 모델명
+        model = genai.GenerativeModel(model_name='models/gemini-flash-latest') # 또는 사용 중인 모델명
     else:
         st.error("Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
         st.stop()
@@ -354,6 +354,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
