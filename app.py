@@ -223,7 +223,7 @@ if st.session_state.analysis_results:
         st.download_button("📊 Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{selected_facility}.xlsx", use_container_width=True)
 
 # --- [수정] 대시보드 데이터 로드 함수 ---
-def load_dashboard_data():
+def load_dashboard_data(): https://docs.google.com/spreadsheets/d/1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q/edit?resourcekey=&gid=413707311#gid=413707311
     # ⚠️ 중요: 구글 폼과 연결된 구글 시트의 '웹 게시' 후 CSV 링크를 여기에 넣으세요.
     # 예시: https://docs.google.com/spreadsheets/d/시트ID/export?format=csv
     sheet_url = "https://docs.google.com/spreadsheets/d/1XyXfH9_K0yVzG4L4y2rYt_D0I8XyVzG4L4y2rYt_D0I/export?format=csv" # 실제 주소로 교체 필요
