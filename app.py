@@ -433,9 +433,15 @@ if "final_processed_data" in st.session_state and st.session_state.final_process
             key="xls_download"
         )
 
-# --- [수정] 대시보드 섹션 ---
+# --- 대시보드 섹션 ---
 st.write("---")
-dashboard_data = load_dashboard_data()
+
+# 함수 호출 전 정의 확인
+try:
+    dashboard_data = load_dashboard_data()
+except NameError:
+    st.error("⚠️ load_dashboard_data() 함수가 정의되지 않았습니다. 코드 상단을 확인해 주세요.")
+    dashboard_data = None
 
 if dashboard_data is not None:
     # 2. 날짜 필터링 (2026년 데이터만)
@@ -450,34 +456,36 @@ if dashboard_data is not None:
         total_count = len(yearly_data)
         m1, m2 = st.columns(2)
         m1.metric("올해 누적 점검 건수", f"{total_count} 건")
-        # '작성자 성명' 컬럼명이 시트와 정확히 일치해야 합니다.
-        author_col = "작성자 성명"
-        if author_col in yearly_data.columns:
-            m2.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
+        
+        # '부서명' 또는 '시설명' 기준으로 참여 현황 파악 (user_name 대체)
+        count_col = "시설명" 
+        if count_col in yearly_data.columns:
+            m2.metric("점검 참여 시설 수", f"{yearly_data[count_col].nunique()} 개소")
 
         # 4. 그래프 시각화
         g_col1, g_col2 = st.columns(2)
         
         with g_col1:
-            # 시트의 실제 컬럼명에 맞춰 수정 (예: '유해위험요인)')
-            target_col_cat = "유해위험요인" 
+            # 시트의 실제 컬럼명: '유해위험요인 (분류)' 등 저장 정보 참조
+            target_col_cat = "유해위험요인 (분류)" 
             if target_col_cat in yearly_data.columns:
-                st.write(f"**{target_col_cat} 현황**")
+                st.write(f"**📂 {target_col_cat} 현황**")
                 fig_pie = px.pie(yearly_data, names=target_col_cat, hole=0.3)
                 fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
                 st.plotly_chart(fig_pie, use_container_width=True)
             else:
-                st.info(f"'{target_col_cat}' 컬럼을 찾을 수 없습니다.")
+                st.info(f"'{target_col_cat}' 데이터 분석 중...")
 
         with g_col2:
             target_col_fac = "시설명" 
             if target_col_fac in yearly_data.columns:
-                st.write(f"**{target_col_fac}별 점검 건수**")
+                st.write(f"**🏢 {target_col_fac}별 점검 건수**")
                 fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
                 fac_counts.columns = [target_col_fac, '건수']
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
