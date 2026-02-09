@@ -222,19 +222,24 @@ if st.session_state.analysis_results:
     with dl_col2:
         st.download_button("📊 Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{selected_facility}.xlsx", use_container_width=True)
 
-# --- [수정] 대시보드 데이터 로드 함수 ---
+# --- [수정] 날짜 형식 오류를 해결한 데이터 로드 함수 ---
 def load_dashboard_data():
-    # 구글 시트의 CSV 내보내기 링크 (에러 메시지의 ID 반영)
-    # 주소 끝에 &gid=413707311 를 붙여 특정 시트를 지정했습니다.
+    # 구글 시트 CSV 내보내기 링크
     sheet_url = "https://docs.google.com/spreadsheets/d/1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q/export?format=csv&gid=413707311"
     
     try:
-        # CSV 데이터 읽기
         df = pd.read_csv(sheet_url)
         
-        # '타임스탬프' 컬럼이 있으면 날짜 형식으로 변환
         if '타임스탬프' in df.columns:
-            df['타임스탬프'] = pd.to_datetime(df['타임스탬프'])
+            # 1. 한국어 '오전/오후'를 Pandas가 인식 가능한 'AM/PM'으로 변경
+            df['타임스탬프'] = df['타임스탬프'].str.replace('오전', 'AM').str.replace('오후', 'PM')
+            
+            # 2. 날짜 형식으로 변환 (format을 지정하지 않아도 치환 후에는 잘 작동합니다)
+            df['타임스탬프'] = pd.to_datetime(df['타임스탬프'], errors='coerce')
+            
+            # 3. 변환 실패한 데이터(NaT) 제거 (선택 사항)
+            df = df.dropna(subset=['타임스탬프'])
+            
         return df
     except Exception as e:
         st.error(f"데이터를 불러오는 중 오류가 발생했습니다: {e}")
@@ -291,4 +296,3 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
-
