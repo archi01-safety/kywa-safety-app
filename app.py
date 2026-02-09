@@ -135,59 +135,72 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 if st.session_state.analysis_results:
     st.markdown("### 📊 분석 결과")
     
-    processed_data = []
-    
-    # 1. 테이블 스타일 및 헤더 초기화
+    processed_data = [] # 데이터 저장용 리스트 초기화
+
+    # 1. 스타일과 테이블 헤더 정의 (하나의 문자열로 시작)
     table_html = """
     <style>
-        .report-table { width:100%; border-collapse: collapse; margin-top: 20px; }
-        .report-table th, .report-table td { border: 1px solid #ddd; padding: 12px 8px; text-align: center; }
-        .report-table th { background-color: #f8f9fa; color: #333; }
-        .grade-high { color: white !important; background-color: #E60012 !important; font-weight: bold; }
-        .grade-medium { color: black !important; background-color: #FFD700 !important; font-weight: bold; }
-        .grade-low { color: white !important; background-color: #2E8B57 !important; font-weight: bold; }
+        .report-table { width:100%; border-collapse: collapse; margin-top: 10px; }
+        .report-table th { background-color: #f0f2f6; color: #31333F; padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold; }
+        .report-table td { padding: 10px; border: 1px solid #ddd; text-align: center; color: #31333F; }
+        .grade-high { background-color: #ff4b4b; color: white !important; font-weight: bold; }
+        .grade-medium { background-color: #ffa421; color: white !important; font-weight: bold; }
+        .grade-low { background-color: #00cc96; color: white !important; font-weight: bold; }
+        .text-left { text-align: left !important; }
     </style>
     <table class="report-table">
         <thead>
             <tr>
-                <th>분류</th><th>위험상황</th><th>빈도</th><th>강도</th><th>점수</th><th>등급</th><th>관련근거</th><th>감소대책</th>
+                <th width="10%">분류</th>
+                <th width="30%">위험상황</th>
+                <th width="5%">빈도</th>
+                <th width="5%">강도</th>
+                <th width="5%">점수</th>
+                <th width="10%">등급</th>
+                <th width="15%">관련근거</th>
+                <th width="20%">감소대책</th>
             </tr>
         </thead>
         <tbody>
     """
 
-    # 2. 데이터 루프 돌며 행(row) 생성
+    # 2. 데이터 반복문 (행 추가)
     for item in st.session_state.analysis_results:
-        # 빈도(p), 강도(s) 안전하게 숫자로 변환
+        # 빈도/강도 숫자 변환 (에러 방지)
         try:
             p = int(item.get('p', 0))
             s = int(item.get('s', 0))
-        except (ValueError, TypeError):
+        except:
             p, s = 0, 0
             
         score = p * s
         
-        # 위험 등급 재산정 로직
+        # 등급 계산
         if score <= 3: grade = "매우 낮음"
         elif score <= 6: grade = "낮음"
         elif score <= 12: grade = "보통"
         else: grade = "높음"
         
-        # 등급별 CSS 클래스 지정
-        grade_class = "grade-high" if grade == "높음" else "grade-medium" if grade == "보통" else "grade-low"
-        
+        # 스타일 클래스 지정
+        if grade == "높음": grade_class = "grade-high"
+        elif grade == "보통": grade_class = "grade-medium"
+        else: grade_class = "grade-low"
+
+        # HTML 행 추가 (줄바꿈 없이 이어붙이기)
         table_html += f"""
             <tr>
                 <td>{item.get('category', '-')}</td>
-                <td style='text-align:left;'>{item.get('scenario', '-')}</td>
-                <td>{p}</td><td>{s}</td><td>{score}</td>
-                <td class='{grade_class}'>{grade}</td>
+                <td class="text-left">{item.get('scenario', '-')}</td>
+                <td>{p}</td>
+                <td>{s}</td>
+                <td>{score}</td>
+                <td class="{grade_class}">{grade}</td>
                 <td>{item.get('law', '-')}</td>
-                <td style='text-align:left;'>{item.get('solution', '-')}</td>
+                <td class="text-left">{item.get('solution', '-')}</td>
             </tr>
         """
         
-        # 세션 상태 업데이트를 위한 데이터 저장
+        # 최종 데이터 저장용 (엑셀/워드 다운로드 및 전송용)
         item['score'] = score
         item['grade'] = grade
         processed_data.append(item)
@@ -195,11 +208,13 @@ if st.session_state.analysis_results:
     # 3. 테이블 닫기
     table_html += "</tbody></table>"
 
-    # 4. 🔥 핵심: HTML 렌더링 (이 줄이 반드시 있어야 표로 보입니다)
+    # 4. 화면 출력 (이 부분이 핵심입니다!)
     st.markdown(table_html, unsafe_allow_html=True)
     
-    # 최종 데이터 세션 저장
+    # 5. 세션 상태 업데이트
     st.session_state.final_data = processed_data
+
+
     # --- 8. 최종 데이터 전송 및 저장 ---
     st.write("")
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
@@ -319,4 +334,3 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
-
