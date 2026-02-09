@@ -370,21 +370,23 @@ if st.session_state.analysis_results:
     # 중요: 전송 및 저장을 위해 세션 스테이트에 최종 데이터 저장
     st.session_state.final_data = current_processed_data
 
-# --- 9. 최종 데이터 전송 ---
+# --- 9. 최종 데이터 전송 (URL 파라미터 방식) ---
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-    # 세션 메모리에서 현재 선택된 값을 즉시 가져옴
-    final_facility = st.session_state.get('facility_val', '미선택')
-    final_dept = st.session_state.get('dept_val', '미선택')
+    # 세션에서 즉시 값 추출 (없으면 경고)
+    target_facility = st.session_state.get('facility_val', '').strip()
+    target_dept = st.session_state.get('dept_val', '').strip()
 
-    if "final_data" in st.session_state and st.session_state.final_data:
-        with st.spinner("데이터 전송 중..."):
-            form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
+    if not target_dept or target_dept == "미선택":
+        st.error("⚠️ 담당 부서가 선택되지 않았습니다.")
+    elif "final_data" in st.session_state and st.session_state.final_data:
+        with st.spinner(f"[{target_dept}] 데이터를 안전하게 전송 중입니다..."):
             success_count = 0
             
             for row in st.session_state.final_data:
-                payload = {
-                    "entry.1651948586": str(final_facility), # 시설명 (AAA)
-                    "entry.1328786382": str(final_dept),     # 담당 부서 (BBB) -> 단답형 확인 완료
+                # 데이터를 URL 파라미터 형태로 변환 (가장 확실한 전송법)
+                params = {
+                    "entry.1651948586": target_facility,
+                    "entry.1328786382": target_dept,       # 담당 부서 (BBB)
                     "entry.1297326802": str(row.get("category", "")),
                     "entry.1421719401": str(row.get("scenario", "")),
                     "entry.1752607260": str(row.get("grade", "")),
@@ -393,17 +395,22 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                     "entry.1058871339": "사진 별도 첨부"
                 }
                 
+                # 구글 폼 응답 제출 주소
+                base_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
+                
                 try:
-                    # headers 없이 가장 기본적인 방식으로 전송 시도
-                    response = requests.post(form_url, data=payload)
+                    # data 대신 params를 사용하여 URL 끝에 붙여서 전송
+                    response = requests.get(base_url, params=params)
                     if response.status_code == 200:
                         success_count += 1
                 except Exception as e:
-                    st.error(f"전송 오류: {e}")
+                    st.error(f"전송 중 네트워크 오류: {e}")
             
             if success_count > 0:
-                st.success(f"[{final_dept}] 부서 데이터 {success_count}건 전송 성공!")
+                st.success(f"✅ 전송 성공! 구글 시트에서 '{target_dept}' 부서를 확인하세요.")
                 st.balloons()
+    else:
+        st.warning("분석 결과가 없습니다. 분석하기 버튼을 먼저 눌러주세요.")
         
 # --- 10. 하단 저장 섹션 (NameError 방지 위해 st.session_state.final_data 사용) ---
 if "final_data" in st.session_state and st.session_state.final_data:
@@ -425,6 +432,7 @@ if "final_data" in st.session_state and st.session_state.final_data:
             file_name=f"KYWA_Data_{selected_facility}.xlsx", 
             use_container_width=True
         )
+
 
 
 
