@@ -32,11 +32,25 @@ with header_col1:
     # GitHub의 Raw 이미지 경로
     raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
     
-    # 1. 로고 클릭 시: KYWA 공식 홈페이지로 이동
+    # 로고 전용 스타일: 링크 밑줄 및 이미지 테두리 제거
     st.markdown(
         f"""
-        <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
-            <img src="{raw_logo_url}" width="300" style="cursor: pointer;">
+        <style>
+            .logo-link {{
+                text-decoration: none !important;
+                border: none !important;
+                outline: none !important;
+            }}
+            .logo-img {{
+                cursor: pointer;
+                border: none !important;
+                outline: none !important;
+                display: block; /* 이미지 하단 미세한 공백 제거 */
+            }}
+        </style>
+        
+        <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank" class="logo-link">
+            <img src="{raw_logo_url}" width="300" class="logo-img">
         </a>
         """,
         unsafe_allow_html=True
@@ -418,6 +432,7 @@ if "final_processed_data" in st.session_state and st.session_state.final_process
             use_container_width=True,
             key="xls_download"
         )
+
 
 
 
