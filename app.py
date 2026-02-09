@@ -284,11 +284,33 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
             except Exception as e: st.error(f"오류: {e}")
 
 
-# 8. 결과 표시 (기존 로직 유지)
+# 8. 결과 표시
 if st.session_state.analysis_results:
-    st.markdown("### 📊 분석 결과")
-    # ... (중간 테이블 생성 HTML 로직은 기존과 동일하므로 유지됨) ...
-    # [생략된 부분: 기존 테이블 생성 및 processed_data 구성 코드]
+    st.markdown(f"### 📊 {user_name} 님의 분석 결과")
+    table_html = '<table class="report-table"><thead><tr><th>분류</th><th>위험상황</th><th>빈도</th><th>강도</th><th>점수</th><th>등급</th><th>관련근거</th><th>감소대책</th></tr></thead><tbody>'
+    st.session_state.final_processed_data = []
+    
+    for item in st.session_state.analysis_results:
+        p_val = int(item.get('p', 3))
+        s_val = int(item.get('s', 3))
+        score = p_val * s_val
+        if score <= 3: refined_grade = "매우 낮음"
+        elif score <= 6: refined_grade = "낮음"
+        elif score <= 12: refined_grade = "보통"
+        else: refined_grade = "높음"
+        
+        item['grade'] = refined_grade
+        item['score'] = score
+        grade_class = "grade-high" if "높음" in refined_grade else "grade-medium" if refined_grade == '보통' else "grade-low"
+        
+        table_html += f'<tr><td style="text-align:center">{item.get("category")}</td><td>{item.get("scenario")}</td>'
+        table_html += f'<td style="text-align:center">{p_val}</td><td style="text-align:center">{s_val}</td>'
+        table_html += f'<td style="text-align:center">{score}</td><td class="{grade_class}">{refined_grade}</td>'
+        table_html += f'<td>{item.get("law")}</td><td>{str(item.get("solution")).replace(chr(10), "<br>")}</td></tr>'
+        st.session_state.final_processed_data.append(item)
+    
+    table_html += '</tbody></table>'
+    st.markdown(table_html, unsafe_allow_html=True)
 
 # 9. 최종 데이터 전송 (부서명 반영)
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
@@ -390,6 +412,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
