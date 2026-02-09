@@ -44,16 +44,28 @@ with header_col1:
 
 with header_col2:
     # 2. 타이틀 클릭 시: 현재 앱 주소로 이동 (새로고침 효과)
-    # HTML 스타일을 사용하여 기본 타이틀과 유사한 크기와 굵기로 꾸몄습니다.
+    # color를 inherit(상속)으로 설정하여 시스템 테마(검정/하양)에 맞게 자동 조절되게 합니다.
     st.markdown(
         f"""
-        <a href="https://kywa-safety-check.streamlit.app/" target="_self" style="text-decoration: none;">
-            <h1 style="color: white; margin-bottom: 0px; cursor: pointer;">🚨 KYWA AI 위험성평가 시스템</h1>
+        <style>
+            .main-title {{
+                text-decoration: none;
+                color: inherit !important; /* 테마에 따라 글자색 자동 변경 */
+            }}
+            .main-title:hover {{
+                opacity: 0.8; /* 마우스 올렸을 때 살짝 흐려지는 효과 */
+            }}
+        </style>
+        <a href="https://kywa-safety-check.streamlit.app/" target="_self" class="main-title">
+            <h1 style="margin-bottom: 0px; cursor: pointer; font-size: 2.2rem; font-weight: 700;">
+                🚨 KYWA AI 위험성평가 시스템
+            </h1>
         </a>
         """,
         unsafe_allow_html=True
     )
     st.caption("Korea Youth Work Agency - 스마트 안전관리 플랫폼")
+    
 # 4. 커스텀 CSS (표 너비 최적화 반영)
 st.markdown("""
     <style>
@@ -397,6 +409,7 @@ if "final_processed_data" in st.session_state and st.session_state.final_process
             use_container_width=True,
             key="xls_download"
         )
+
 
 
 
