@@ -373,42 +373,46 @@ if st.session_state.analysis_results:
     # 중요: 전송 및 저장을 위해 세션 스테이트에 최종 데이터 저장
     st.session_state.final_data = current_processed_data
 
-# --- 9. 최종 데이터 전송 ---
+# --- 9. 최종 데이터 전송 섹션 ---
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-    # 세션 키에서 직접 값을 가져와 변수에 고정 (매우 중요)
-    target_facility = st.session_state.get('facility_val')
-    target_dept = st.session_state.get('dept_val')
+    # [핵심] 세션에서 직접 값을 가져와 변수에 할당 (이래야 NameError가 안 납니다)
+    send_facility = st.session_state.get('facility_val', '미선택')
+    send_dept = st.session_state.get('dept_val', '미선택')
     
+    # 디버깅용: 화면에 현재 잡힌 값을 출력 (확인용)
+    st.info(f"전송 시작 - 시설: {send_facility} / 부서: {send_dept}")
+
     if "final_data" in st.session_state and st.session_state.final_data:
-        with st.spinner(f"[{final_dept}] 데이터를 전송 중..."):
+        # 에러가 났던 지점: 변수명을 send_dept로 일치시킴
+        with st.spinner(f"[{send_dept}] 데이터를 전송 중..."):
             success_count = 0
             
             for row in st.session_state.final_data:
-                # 구글 폼 필드 ID 매핑 (제공해주신 A,B,C... 순서 기반)
                 payload = {
-                    "entry.1651948586": final_facility, # A (시설명)
-                    "entry.1328786382": final_dept,     # B (담당 부서) -> 여기가 핵심!
-                    "entry.1297326802": row.get("category", ""), # C
-                    "entry.1421719401": row.get("scenario", ""), # D
-                    "entry.1752607260": row.get("grade", ""),    # E
-                    "entry.271461796": row.get("solution", ""),  # F
-                    "entry.956205828": row.get("law", ""),       # G
-                    "entry.1058871339": "사진 별도 첨부"           # H
+                    "entry.1651948586": send_facility, # 시설명
+                    "entry.1328786382": send_dept,     # 담당 부서 (이제 공란 해결)
+                    "entry.1297326802": row.get("category", ""),
+                    "entry.1421719401": row.get("scenario", ""),
+                    "entry.1752607260": row.get("grade", ""),
+                    "entry.271461796": row.get("solution", ""),
+                    "entry.956205828": row.get("law", ""),
+                    "entry.1058871339": "사진 별도 첨부"
                 }
                 
                 form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
                 
                 try:
-                    # POST 방식으로 데이터 전송
-                    response = requests.post(form_url, data=payload)
+                    response = requests.post(form_url, data=payload, timeout=5)
                     if response.status_code == 200:
                         success_count += 1
                 except Exception as e:
-                    st.error(f"전송 오류: {e}")
+                    st.error(f"전송 실패: {e}")
             
             if success_count > 0:
-                st.success(f"✅ [{final_dept}] 부서 데이터 {success_count}건이 구글 시트에 기록되었습니다.")
+                st.success(f"✅ [{send_dept}] 부서 데이터 {success_count}건 전송 완료!")
                 st.balloons()
+    else:
+        st.warning("전송할 데이터가 없습니다. 먼저 리스트에 추가해 주세요.")
         
 # --- 10. 하단 저장 섹션 ---
 if "final_data" in st.session_state and st.session_state.final_data:
@@ -421,6 +425,7 @@ if "final_data" in st.session_state and st.session_state.final_data:
         st.download_button("Word 저장", data=create_docx(st.session_state.final_data), file_name=f"KYWA_{f_name}.docx", use_container_width=True)
     with dl_col2:
         st.download_button("Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{f_name}.xlsx", use_container_width=True)
+
 
 
 
