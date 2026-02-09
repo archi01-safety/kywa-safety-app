@@ -188,7 +188,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
     elif not user_description.strip() and not img_file:
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
-        with st.spinner(f"KYWA AI가 {user_name} 님의 데이터를 분석 중입니다...🤖🔍"):
+        with st.spinner(f"✨KYWA AI가 {user_name} 님의 데이터를 분석 중입니다...🔍"):
             prompt = f"""
             시설명: [{selected_facility}], 상황: {user_description}. 
             반드시 다음 JSON 형식을 엄수하세요. (데이터 리스트 형태 [])
@@ -359,6 +359,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
