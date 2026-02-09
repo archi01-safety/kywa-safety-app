@@ -423,6 +423,9 @@ if "final_data" in st.session_state and st.session_state.final_data:
         st.download_button("Word 저장", data=create_docx(st.session_state.final_data), file_name=f"KYWA_{f_name}.docx", use_container_width=True)
     with dl_col2:
         st.download_button("Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{f_name}.xlsx", use_container_width=True)
+if st.button("✅ 데이터 전송"):
+    st.write(f"현재 세션에 저장된 부서: {st.session_state.get('dept_val')}") # 이 줄 추가
+    # ... 이후 전송 로직
 
 
 
