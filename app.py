@@ -8,6 +8,7 @@ import google.generativeai as genai
 from PIL import Image
 import pandas as pd
 from docx import Document
+import plotly.express as px
 
 # 1. 환경 설정 및 보안 우회 (필요한 경우)
 os.environ['PYTHONHTTPSVERIFY'] = '0'
@@ -221,13 +222,31 @@ if st.session_state.analysis_results:
     with dl_col2:
         st.download_button("📊 Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{selected_facility}.xlsx", use_container_width=True)
 
-# --- [수정] 대시보드 섹션 ---
+# --- [수정] 대시보드 데이터 로드 함수 ---
+def load_dashboard_data():
+    # ⚠️ 중요: 구글 폼과 연결된 구글 시트의 '웹 게시' 후 CSV 링크를 여기에 넣으세요.
+    # 예시: https://docs.google.com/spreadsheets/d/시트ID/export?format=csv
+    sheet_url = "https://docs.google.com/spreadsheets/d/1XyXfH9_K0yVzG4L4y2rYt_D0I8XyVzG4L4y2rYt_D0I/export?format=csv" # 실제 주소로 교체 필요
+    try:
+        df = pd.read_csv(sheet_url)
+        # '타임스탬프' 컬럼을 datetime 형식으로 변환
+        if '타임스탬프' in df.columns:
+            df['타임스탬프'] = pd.to_datetime(df['타임스탬프'])
+        return df
+    except Exception as e:
+        st.error(f"데이터를 불러오는 중 오류가 발생했습니다: {e}")
+        return None
+
+# --- 대시보드 섹션 ---
 st.write("---")
 dashboard_data = load_dashboard_data()
 
 if dashboard_data is not None:
     # 2. 날짜 필터링 (2026년 데이터만)
-    yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026] if '타임스탬프' in dashboard_data.columns else dashboard_data
+    if '타임스탬프' in dashboard_data.columns:
+        yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026]
+    else:
+        yearly_data = dashboard_data
 
     if yearly_data.empty:
         st.warning("📅 2026년도로 기록된 데이터가 시트에 아직 없습니다. 첫 번째 데이터를 전송해 보세요!")
@@ -238,24 +257,27 @@ if dashboard_data is not None:
         total_count = len(yearly_data)
         m1, m2 = st.columns(2)
         m1.metric("올해 누적 점검 건수", f"{total_count} 건")
-        # '작성자 성명' 컬럼명이 시트와 정확히 일치해야 합니다.
-        author_col = "작성자 성명"
+        
+        # '작성자 성명' 대신 '시설명' 기준으로 참여 분포 확인 (또는 실제 컬럼명으로 수정)
+        author_col = "작성자 성명" 
         if author_col in yearly_data.columns:
             m2.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
+        else:
+            m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
 
         # 4. 그래프 시각화
         g_col1, g_col2 = st.columns(2)
         
         with g_col1:
-            # 시트의 실제 컬럼명에 맞춰 수정 (예: '유해위험요인)')
-            target_col_cat = "유해위험요인" 
+            # 매칭되는 컬럼명 확인: '유해위험요인 (분류)' 등 실제 시트 헤더와 맞춰야 함
+            target_col_cat = "유해위험요인 (분류)" 
             if target_col_cat in yearly_data.columns:
                 st.write(f"**{target_col_cat} 현황**")
                 fig_pie = px.pie(yearly_data, names=target_col_cat, hole=0.3)
                 fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
                 st.plotly_chart(fig_pie, use_container_width=True)
             else:
-                st.info(f"'{target_col_cat}' 컬럼을 찾을 수 없습니다.")
+                st.info("💡 시트에서 '유해위험요인 (분류)' 컬럼을 찾는 중입니다...")
 
         with g_col2:
             target_col_fac = "시설명" 
