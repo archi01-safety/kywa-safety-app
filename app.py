@@ -370,39 +370,39 @@ if st.session_state.analysis_results:
     # 중요: 전송 및 저장을 위해 세션 스테이트에 최종 데이터 저장
     st.session_state.final_data = current_processed_data
 
-# --- 9. 최종 데이터 전송 (강력한 버전) ---
+# --- 9. 최종 데이터 전송 ---
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-    # 세션에서 부서명과 시설명을 가져옴 (없을 경우 대비)
-    dept_to_send = st.session_state.get('selected_dept', '부서미선택')
-    facility_to_send = str(selected_facility) # 이미 상단에 정의된 변수
+    # 세션 메모리에서 현재 선택된 값을 즉시 가져옴
+    final_facility = st.session_state.get('facility_val', '미선택')
+    final_dept = st.session_state.get('dept_val', '미선택')
 
     if "final_data" in st.session_state and st.session_state.final_data:
-        with st.spinner(f"[{dept_to_send}] 데이터를 전송 중입니다..."):
+        with st.spinner("데이터 전송 중..."):
             form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
             success_count = 0
             
             for row in st.session_state.final_data:
                 payload = {
-                    "entry.1651948586": facility_to_send,   # 시설명
-                    "entry.1328786382": dept_to_send,       # 담당 부서 (BBB) - 이 ID가 맞는지 재확인됨
+                    "entry.1651948586": str(final_facility), # 시설명 (AAA)
+                    "entry.1328786382": str(final_dept),     # 담당 부서 (BBB) -> 단답형 확인 완료
                     "entry.1297326802": str(row.get("category", "")),
                     "entry.1421719401": str(row.get("scenario", "")),
                     "entry.1752607260": str(row.get("grade", "")),
                     "entry.271461796": str(row.get("solution", "")),
                     "entry.956205828": str(row.get("law", "")),
-                    "entry.1058871339": "사진은 별도 첨부 필요"
+                    "entry.1058871339": "사진 별도 첨부"
                 }
                 
-                # 디버깅을 위해 첫 번째 데이터의 전송 직전 상태를 화면에 출력 (확인용)
-                if success_count == 0:
-                    st.write(f"📢 전송 테스트 - 부서명: {dept_to_send}")
-                
-                response = requests.post(form_url, data=payload)
-                if response.status_code == 200:
-                    success_count += 1
+                try:
+                    # headers 없이 가장 기본적인 방식으로 전송 시도
+                    response = requests.post(form_url, data=payload)
+                    if response.status_code == 200:
+                        success_count += 1
+                except Exception as e:
+                    st.error(f"전송 오류: {e}")
             
             if success_count > 0:
-                st.success(f"{dept_to_send} 부서 데이터 {success_count}건 전송 성공!")
+                st.success(f"[{final_dept}] 부서 데이터 {success_count}건 전송 성공!")
                 st.balloons()
         
 # --- 10. 하단 저장 섹션 (NameError 방지 위해 st.session_state.final_data 사용) ---
@@ -425,6 +425,7 @@ if "final_data" in st.session_state and st.session_state.final_data:
             file_name=f"KYWA_Data_{selected_facility}.xlsx", 
             use_container_width=True
         )
+
 
 
 
