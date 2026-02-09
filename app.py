@@ -223,13 +223,16 @@ if st.session_state.analysis_results:
         st.download_button("📊 Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{selected_facility}.xlsx", use_container_width=True)
 
 # --- [수정] 대시보드 데이터 로드 함수 ---
-def load_dashboard_data(): https://docs.google.com/spreadsheets/d/1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q/edit?resourcekey=&gid=413707311#gid=413707311
-    # ⚠️ 중요: 구글 폼과 연결된 구글 시트의 '웹 게시' 후 CSV 링크를 여기에 넣으세요.
-    # 예시: https://docs.google.com/spreadsheets/d/시트ID/export?format=csv
-    sheet_url = "https://docs.google.com/spreadsheets/d/1XyXfH9_K0yVzG4L4y2rYt_D0I8XyVzG4L4y2rYt_D0I/export?format=csv" # 실제 주소로 교체 필요
+def load_dashboard_data():
+    # 구글 시트의 CSV 내보내기 링크 (에러 메시지의 ID 반영)
+    # 주소 끝에 &gid=413707311 를 붙여 특정 시트를 지정했습니다.
+    sheet_url = "https://docs.google.com/spreadsheets/d/1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q/export?format=csv&gid=413707311"
+    
     try:
+        # CSV 데이터 읽기
         df = pd.read_csv(sheet_url)
-        # '타임스탬프' 컬럼을 datetime 형식으로 변환
+        
+        # '타임스탬프' 컬럼이 있으면 날짜 형식으로 변환
         if '타임스탬프' in df.columns:
             df['타임스탬프'] = pd.to_datetime(df['타임스탬프'])
         return df
@@ -288,3 +291,4 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
