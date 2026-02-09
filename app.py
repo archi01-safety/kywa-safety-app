@@ -218,8 +218,8 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### **🏢 점검 대상 시설**")
-    # key를 지정하면 st.session_state['facility_val']에 자동 저장됩니다.
-    st.radio(
+    # 변수 할당(selected_facility)을 명시적으로 수행
+    selected_facility = st.radio(
         "시설명 선택", 
         ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], 
         horizontal=True,
@@ -232,15 +232,17 @@ with col1:
     st.markdown("### **📂 담당 부서 선택**")
     dept_list = ["활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "미래활동부", "정책사업부", "활동안전부", "활동인증부", "청소년성장지원부", "지도인력양성부", "지도인력개발부", "자회사"]
     
-    # key를 지정하면 st.session_state['dept_val']에 자동 저장됩니다.
-    st.selectbox(
+    # 변수 할당(selected_dept)을 명시적으로 수행
+    selected_dept = st.selectbox(
         "부서명 선택", 
         dept_list,
         label_visibility="collapsed",
         key="dept_val"
     )
     
-    st.write("") # 간격 조절
+    st.write("") 
+    st.markdown("### **📝 현장 상황 설명**")
+    user_description = st.text_area("상황 설명 입력", height=150, label_visibility="collapsed", key="user_desc")
 
     # 3. 현장 상황 설명
     st.markdown("### **📝 현장 상황 설명**")
@@ -370,23 +372,20 @@ if st.session_state.analysis_results:
     # 중요: 전송 및 저장을 위해 세션 스테이트에 최종 데이터 저장
     st.session_state.final_data = current_processed_data
 
-# --- 9. 최종 데이터 전송 (URL 파라미터 방식) ---
+# --- 9. 최종 데이터 전송 ---
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-    # 세션에서 즉시 값 추출 (없으면 경고)
-    target_facility = st.session_state.get('facility_val', '').strip()
-    target_dept = st.session_state.get('dept_val', '').strip()
+    # 위젯에서 직접 값을 가져오거나 세션에서 가져옴
+    t_facility = st.session_state.facility_val
+    t_dept = st.session_state.dept_val
 
-    if not target_dept or target_dept == "미선택":
-        st.error("⚠️ 담당 부서가 선택되지 않았습니다.")
-    elif "final_data" in st.session_state and st.session_state.final_data:
-        with st.spinner(f"[{target_dept}] 데이터를 안전하게 전송 중입니다..."):
+    if "final_data" in st.session_state and st.session_state.final_data:
+        with st.spinner(f"[{t_dept}] 데이터를 전송 중..."):
             success_count = 0
-            
             for row in st.session_state.final_data:
-                # 데이터를 URL 파라미터 형태로 변환 (가장 확실한 전송법)
+                # 쿼리 파라미터 구성
                 params = {
-                    "entry.1651948586": target_facility,
-                    "entry.1328786382": target_dept,       # 담당 부서 (BBB)
+                    "entry.1651948586": t_facility,
+                    "entry.1328786382": t_dept, # 담당 부서
                     "entry.1297326802": str(row.get("category", "")),
                     "entry.1421719401": str(row.get("scenario", "")),
                     "entry.1752607260": str(row.get("grade", "")),
@@ -395,54 +394,30 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                     "entry.1058871339": "사진 별도 첨부"
                 }
                 
-                # 구글 폼 응답 제출 주소
                 base_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
                 
                 try:
-                    # data 대신 params를 사용하여 URL 끝에 붙여서 전송
-                    response = requests.get(base_url, params=params)
-                    if response.status_code == 200:
+                    # 전송 방식의 신뢰성을 위해 requests.get 사용 (파라미터 포함)
+                    resp = requests.get(base_url, params=params)
+                    if resp.status_code == 200:
                         success_count += 1
-                except Exception as e:
-                    st.error(f"전송 중 네트워크 오류: {e}")
+                except:
+                    pass
             
             if success_count > 0:
-                st.success(f"✅ 전송 성공! 구글 시트에서 '{target_dept}' 부서를 확인하세요.")
+                st.success(f"[{t_dept}] 부서로 {success_count}건 전송 완료!")
                 st.balloons()
-    else:
-        st.warning("분석 결과가 없습니다. 분석하기 버튼을 먼저 눌러주세요.")
         
-# --- 10. 하단 저장 섹션 (NameError 방지 위해 st.session_state.final_data 사용) ---
+# --- 10. 하단 저장 섹션 ---
 if "final_data" in st.session_state and st.session_state.final_data:
     st.write("---")
-    st.caption("📂 결과 보고서 저장 (Word, Excel)")
-    dl_col1, dl_col2 = st.columns(2)
+    # 파일명에 사용할 시설명 안전하게 가져오기
+    f_name = st.session_state.get('facility_val', 'Result')
     
+    dl_col1, dl_col2 = st.columns(2)
     with dl_col1:
-        st.download_button(
-            "Word 저장", 
-            data=create_docx(st.session_state.final_data), 
-            file_name=f"KYWA_Report_{selected_facility}.docx", 
-            use_container_width=True
-        )
+        st.download_button("Word 저장", data=create_docx(st.session_state.final_data), file_name=f"KYWA_{f_name}.docx", use_container_width=True)
     with dl_col2:
-        st.download_button(
-            "Excel 저장", 
-            data=create_excel(st.session_state.final_data), 
-            file_name=f"KYWA_Data_{selected_facility}.xlsx", 
-            use_container_width=True
-        )
-
-
-
-
-
-
-
-
-
-
-
-
+        st.download_button("Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{f_name}.xlsx", use_container_width=True)
 
 
