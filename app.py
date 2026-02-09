@@ -375,18 +375,20 @@ if st.session_state.analysis_results:
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
     if "final_data" in st.session_state and st.session_state.final_data:
         with st.spinner("구글 시트로 데이터를 전송 중입니다..."):
+            # 폼 응답 전송 URL
             form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
             success_count = 0
             
             for row in st.session_state.final_data:
+                # 추출한 신규 ID로 페이로드 구성
                 payload = {
-                    "entry.1902283977": str(selected_facility).strip(),
-                    "entry.1741164966": str(selected_dept).strip(),
-                    "entry.1485620273": str(row.get("category", "")).strip(),
-                    "entry.2072170485": str(row.get("scenario", "")).strip(),
-                    "entry.1212734944": str(row.get("grade", "")).strip(),
-                    "entry.2124342735": str(row.get("solution", "")).strip(),
-                    "entry.543223131": str(row.get("law", "")).strip()
+                    "entry.1651948586": str(selected_facility).strip(), # 시설명
+                    "entry.1297326802": str(row.get("category", "")).strip(), # 유해위험요인(분류)
+                    "entry.1421719401": str(row.get("scenario", "")).strip(), # 위험상황
+                    "entry.1752607260": str(row.get("grade", "")).strip(),    # 위험등급
+                    "entry.271461796": str(row.get("solution", "")).strip(),  # 감소대책
+                    "entry.956205828": str(row.get("law", "")).strip(),       # 관련근거
+                    "entry.1058871339": "사진은 별도 첨부 필요" # 사진 기록 (텍스트 우선 입력)
                 }
                 
                 try:
@@ -395,14 +397,15 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                     if response.status_code == 200:
                         success_count += 1
                 except Exception as e:
-                    st.error(f"전송 중 오류: {e}")
+                    st.error(f"전송 중 오류 발생: {e}")
             
             if success_count > 0:
-                st.success(f"총 {success_count}건 전송 완료!")
+                st.success(f"총 {success_count}건의 데이터가 구글 시트로 안전하게 전송되었습니다!")
                 st.balloons()
+            else:
+                st.error("데이터 전송에 실패했습니다. ID 설정을 다시 확인해주세요.")
     else:
-        st.warning("분석 결과가 없습니다. 먼저 분석을 시작해 주세요.")
-
+        st.warning("분석 결과가 없습니다. 먼저 위험성 평가 분석을 진행해 주세요.")
 # --- 10. 하단 저장 섹션 (NameError 방지 위해 st.session_state.final_data 사용) ---
 if "final_data" in st.session_state and st.session_state.final_data:
     st.write("---")
@@ -423,6 +426,7 @@ if "final_data" in st.session_state and st.session_state.final_data:
             file_name=f"KYWA_Data_{selected_facility}.xlsx", 
             use_container_width=True
         )
+
 
 
 
