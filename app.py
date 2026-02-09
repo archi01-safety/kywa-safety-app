@@ -25,26 +25,35 @@ logo_img = None
 if os.path.exists(logo_path):
     logo_img = Image.open(logo_path)
 
-# 3. 헤더 디자인 (수정본)
+# 3. 헤더 디자인 (이미지-홈페이지 / 타이틀-새로고침 연결)
 header_col1, header_col2 = st.columns([1, 4])
+
 with header_col1:
-    # GitHub의 Raw 이미지 경로입니다.
+    # GitHub의 Raw 이미지 경로
     raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
     
-    # 이미지를 클릭하면 앱 주소로 이동하여 새로고침 효과를 줍니다.
+    # 1. 로고 클릭 시: KYWA 공식 홈페이지로 이동
     st.markdown(
         f"""
-        <a href="https://kywa-safety-check.streamlit.app/" target="_self">
-            <img src="{raw_logo_url}" width="300">
+        <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
+            <img src="{raw_logo_url}" width="300" style="cursor: pointer;">
         </a>
         """,
         unsafe_allow_html=True
     )
 
 with header_col2:
-    st.title("🚨 KYWA AI 위험성평가 시스템")
+    # 2. 타이틀 클릭 시: 현재 앱 주소로 이동 (새로고침 효과)
+    # HTML 스타일을 사용하여 기본 타이틀과 유사한 크기와 굵기로 꾸몄습니다.
+    st.markdown(
+        f"""
+        <a href="https://kywa-safety-check.streamlit.app/" target="_self" style="text-decoration: none;">
+            <h1 style="color: white; margin-bottom: 0px; cursor: pointer;">🚨 KYWA AI 위험성평가 시스템</h1>
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
     st.caption("Korea Youth Work Agency - 스마트 안전관리 플랫폼")
-
 # 4. 커스텀 CSS (표 너비 최적화 반영)
 st.markdown("""
     <style>
@@ -388,6 +397,7 @@ if "final_processed_data" in st.session_state and st.session_state.final_process
             use_container_width=True,
             key="xls_download"
         )
+
 
 
 
