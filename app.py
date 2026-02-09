@@ -7,50 +7,17 @@ import streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import pandas as pd
-import plotly.express as px  # 시각화를 위해 추가
 from docx import Document
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.enum.table import WD_ALIGN_VERTICAL
 
 # 1. 환경 설정 및 보안 우회
 os.environ['PYTHONHTTPSVERIFY'] = '0'
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # 2. 페이지 설정 및 세션 초기화
-st.set_page_config(page_title="KYWA AI 위험성평가 시스템 (V2)", layout="wide", page_icon="🚨")
+st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
 if "analysis_results" not in st.session_state:
     st.session_state.analysis_results = None
-
-# --- [추가] 구글 시트 데이터 로드 및 대시보드 함수 ---
-# 실제 구글 시트의 ID를 입력하세요 (URL의 /d/ 와 /edit 사이의 문자열)
-SHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q" # 실제 시트 ID로 반영
-SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv&gid=413707311"
-
-def load_dashboard_data():
-    try:
-        import time
-        # 캐시 방지를 위해 타임스탬프 쿼리 추가
-        updated_url = f"{SHEET_URL}&t={int(time.time())}"
-        df = pd.read_csv(updated_url)
-        
-        # 컬럼명 앞뒤 공백 제거
-        df.columns = [c.strip() for c in df.columns]
-        
-        if '타임스탬프' in df.columns:
-            # 한국어 '오전/오후'를 판다스가 인식 가능한 'AM/PM'으로 교체
-            df['타임스탬프'] = df['타임스탬프'].str.replace('오전', 'AM').str.replace('오후', 'PM')
-            
-            # 날짜 형식 변환 (알려주신 2026. 2. 2 포맷 대응)
-            df['타임스탬프'] = pd.to_datetime(df['타임스탬프'], errors='coerce')
-            
-            # 변환 실패 데이터 제거
-            df = df.dropna(subset=['타임스탬프'])
-            
-        return df
-    except Exception as e:
-        st.error(f"데이터를 불러오는 중 오류 발생: {e}")
-        return None
 
 # 2.5 로고 이미지 로드
 logo_path = "kywa_logo.png"
@@ -61,24 +28,18 @@ if os.path.exists(logo_path):
 # 3. 헤더 디자인 (수정본)
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
-    # GitHub의 Raw 이미지 경로입니다.
-    raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
-    
-    # 이미지를 클릭하면 앱 주소로 이동하여 새로고침 효과를 줍니다.
-    st.markdown(
-        f"""
-        <a href="https://kywa-safety-check.streamlit.app/" target="_self">
-            <img src="{raw_logo_url}" width="300">
-        </a>
-        """,
-        unsafe_allow_html=True
-    )
+    if logo_img:
+        # 로고 이미지 표시 (너비는 적절히 조절하세요)
+        st.image(logo_img, width=300) 
+    else:
+        # 이미지가 없을 경우 기존 텍스트 표시
+        st.markdown("<h2 style='color: #E60012; margin-top: 0;'>KYWA</h2>", unsafe_allow_html=True)
 
 with header_col2:
     st.title("🚨 KYWA AI 위험성평가 시스템")
     st.caption("Korea Youth Work Agency - 스마트 안전관리 플랫폼")
 
-# 4. 커스텀 CSS (기존 유지)
+# 4. 커스텀 CSS (표 너비 최적화 반영)
 st.markdown("""
     <style>
     .stButton>button { 
@@ -92,14 +53,15 @@ st.markdown("""
     .report-table th, .report-table td { padding: 12px; border: 1px solid #dee2e6; vertical-align: top; word-break: keep-all; line-height: 1.6; }
     .report-table th { background-color: #f1f3f5; text-align: center; font-weight: bold; }
     
-    .report-table th:nth-child(1) { width: 8%; }  
-    .report-table th:nth-child(2) { width: 18%; } 
-    .report-table th:nth-child(3) { width: 6%; }  
-    .report-table th:nth-child(4) { width: 6%; }  
-    .report-table th:nth-child(5) { width: 6%; }  
-    .report-table th:nth-child(6) { width: 8%; }  
-    .report-table th:nth-child(7) { width: 20%; } 
-    .report-table th:nth-child(8) { width: 28%; } 
+    /* 화면 표시용 열 너비 설정 */
+    .report-table th:nth-child(1) { width: 8%; }  /* 분류 */
+    .report-table th:nth-child(2) { width: 18%; } /* 위험상황 */
+    .report-table th:nth-child(3) { width: 6%; }  /* 빈도 */
+    .report-table th:nth-child(4) { width: 6%; }  /* 강도 */
+    .report-table th:nth-child(5) { width: 6%; }  /* 점수 */
+    .report-table th:nth-child(6) { width: 8%; }  /* 등급 */
+    .report-table th:nth-child(7) { width: 20%; } /* 관련근거 */
+    .report-table th:nth-child(8) { width: 28%; } /* 감소대책 */
     
     .grade-high { background-color: #ffe3e3 !important; color: #b91c1c !important; font-weight: bold; text-align: center; }
     .grade-medium { background-color: #fff5dc !important; color: #92400e !important; font-weight: bold; text-align: center; }
@@ -107,60 +69,99 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 엑셀 및 워드 생성 함수 (생략 - 기존과 동일) ---
+GRADE_MAP = {'high': '높음', 'medium': '보통', 'low': '낮음', 'High': '높음', 'Medium': '보통', 'Low': '낮음', '매우 높음': '높음', '약간 높음': '보통'}
+
+# --- 엑셀 파일 생성 함수 (열 너비 최적화 포함) ---
 def create_excel(data):
     if not data: return None
     df = pd.DataFrame(data)
-    column_mapping = {'category': '분류', 'scenario': '위험상황', 'p': '빈도', 's': '강도', 'score': '점수', 'grade': '등급', 'law': '관련근거', 'solution': '감소대책'}
+    column_mapping = {
+        'category': '분류', 'scenario': '위험상황', 'p': '빈도', 's': '강도', 
+        'score': '점수', 'grade': '등급', 'law': '관련근거', 'solution': '감소대책'
+    }
     df = df.rename(columns=column_mapping)
     final_cols = ['분류', '위험상황', '빈도', '강도', '점수', '등급', '관련근거', '감소대책']
     df = df[[c for c in final_cols if c in df.columns]]
+    
     bio = io.BytesIO()
     with pd.ExcelWriter(bio, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='위험성평가_결과')
-        workbook = writer.book
+        
+        workbook  = writer.book
         worksheet = writer.sheets['위험성평가_결과']
-        wrap_format = workbook.add_format({'text_wrap': True, 'valign': 'top'})
-        center_top_format = workbook.add_format({'align': 'center', 'valign': 'top'})
-        worksheet.set_column(0, 0, 12, center_top_format)
-        worksheet.set_column(1, 1, 25, wrap_format)
-        worksheet.set_column(2, 4, 6, center_top_format)
-        worksheet.set_column(5, 5, 10, center_top_format)
-        worksheet.set_column(6, 6, 30, wrap_format)
-        worksheet.set_column(7, 7, 40, wrap_format)
+        
+        # 1. 포맷 정의
+        # 텍스트가 많은 컬럼용 (양쪽 정렬 + 상단 정렬)
+        wrap_format = workbook.add_format()
+        wrap_format.set_text_wrap()
+        wrap_format.set_align('top')
+
+        # 짧은 텍스트 컬럼용 (가운데 정렬 + 상단 정렬)
+        center_top_format = workbook.add_format()
+        center_top_format.set_align('center') # 가로 가운데
+        center_top_format.set_align('top')    # 세로 상단
+
+        # 2. 열 너비 및 포맷 적용
+        worksheet.set_column(0, 0, 12, center_top_format)    # 분류 (가운데/상단)
+        worksheet.set_column(1, 1, 25, wrap_format)          # 위험상황 (양쪽/상단)
+        worksheet.set_column(2, 4, 6, center_top_format)     # 빈도, 강도, 점수 (가운데/상단)
+        worksheet.set_column(5, 5, 10, center_top_format)    # 등급 (가운데/상단)
+        worksheet.set_column(6, 6, 30, wrap_format)          # 관련근거 (양쪽/상단)
+        worksheet.set_column(7, 7, 40, wrap_format)          # 감소대책 (양쪽/상단)
+        
     return bio.getvalue()
+
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.enum.table import WD_ALIGN_VERTICAL # 이름을 이걸로 변경
 
 def create_docx(data):
     if not data: return None
     doc = Document()
     doc.add_heading('KYWA AI 위험성평가 결과 보고서', 0)
+    
     table = doc.add_table(rows=1, cols=8)
     table.style = 'Table Grid'
+    
     headers = ['분류', '위험상황', '빈도', '강도', '점수', '등급', '근거', '대책']
     hdr_cells = table.rows[0].cells
     for i, txt in enumerate(headers):
         hdr_cells[i].text = txt
         hdr_cells[i].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+
     for item in data:
         row_cells = table.add_row().cells
         keys = ['category', 'scenario', 'p', 's', 'score', 'grade', 'law', 'solution']
+        center_cols = [0, 2, 3, 4, 5]
+
         for idx, key in enumerate(keys):
             cell = row_cells[idx]
             cell.text = str(item.get(key, ''))
+            
+            # 수직 정렬 코드를 아래와 같이 수정 (WD_ALIGN_VERTICAL 사용)
             cell.vertical_alignment = WD_ALIGN_VERTICAL.TOP 
-            cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER if idx in [0, 2, 3, 4, 5] else WD_ALIGN_PARAGRAPH.LEFT
+            
+            if idx in center_cols:
+                cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+            else:
+                cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.LEFT
+                
     bio = io.BytesIO()
     doc.save(bio)
     return bio.getvalue()
 
-# 5. 사이드바 및 모델 설정
-with st.sidebar:
-    api_key = st.text_input("Gemini API Key", type="password")
-if api_key:
-    genai.configure(api_key=api_key, transport='rest')
-    model = genai.GenerativeModel('gemini-flash-latest')
-
-st.divider()
+# 5. 모델 설정 (Secrets에서 키를 안전하게 가져옴)
+try:
+    # Streamlit Secrets에 저장된 키를 자동으로 호출합니다.
+    if "GEMINI_API_KEY" in st.secrets:
+        api_key = st.secrets["GEMINI_API_KEY"]
+        genai.configure(api_key=api_key, transport='rest')
+        model = genai.GenerativeModel('gemini-flash-latest') # 또는 사용 중인 모델명
+    else:
+        st.error("Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
+        st.stop()
+except Exception as e:
+    st.error(f"API 설정 오류가 발생했습니다: {e}")
+    st.stop()
 
 # 6. 입력 섹션 (라디오박스/드롭다운 라벨 크기 및 볼드 강조)
 col1, col2 = st.columns(2)
@@ -219,7 +220,6 @@ with col2:
         img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
     else:
         img_file = None
-
 # 7. AI 분석 버튼
 if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
     if not api_key: 
@@ -282,7 +282,6 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                 st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
                 st.rerun()
             except Exception as e: st.error(f"오류: {e}")
-
 
 # 8. 결과 표시
 if st.session_state.analysis_results:
@@ -366,58 +365,3 @@ if st.session_state.analysis_results: # 분석 결과가 있을 때만 표시
             file_name=f"{file_prefix}.xlsx", 
             use_container_width=True
         )
-
-# --- [수정] 대시보드 섹션 ---
-st.write("---")
-dashboard_data = load_dashboard_data()
-
-if dashboard_data is not None:
-    # 2. 날짜 필터링 (2026년 데이터만)
-    yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026] if '타임스탬프' in dashboard_data.columns else dashboard_data
-
-    if yearly_data.empty:
-        st.warning("📅 2026년도로 기록된 데이터가 시트에 아직 없습니다. 첫 번째 데이터를 전송해 보세요!")
-    else:
-        st.subheader("📊 실시간 점검 데이터 현황 (2026년)")
-        
-        # 3. 상단 지표
-        total_count = len(yearly_data)
-        m1, m2 = st.columns(2)
-        m1.metric("올해 누적 점검 건수", f"{total_count} 건")
-        # '작성자 성명' 컬럼명이 시트와 정확히 일치해야 합니다.
-        author_col = "작성자 성명"
-        if author_col in yearly_data.columns:
-            m2.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
-
-        # 4. 그래프 시각화
-        g_col1, g_col2 = st.columns(2)
-        
-        with g_col1:
-            # 시트의 실제 컬럼명에 맞춰 수정 (예: '유해위험요인)')
-            target_col_cat = "유해위험요인" 
-            if target_col_cat in yearly_data.columns:
-                st.write(f"**{target_col_cat} 현황**")
-                fig_pie = px.pie(yearly_data, names=target_col_cat, hole=0.3)
-                fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
-                st.plotly_chart(fig_pie, use_container_width=True)
-            else:
-                st.info(f"'{target_col_cat}' 컬럼을 찾을 수 없습니다.")
-
-        with g_col2:
-            target_col_fac = "시설명" 
-            if target_col_fac in yearly_data.columns:
-                st.write(f"**{target_col_fac}별 점검 건수**")
-                fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
-                fac_counts.columns = [target_col_fac, '건수']
-                fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
-                fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
-                st.plotly_chart(fig_bar, use_container_width=True)
-
-
-
-
-
-
-
-
-
