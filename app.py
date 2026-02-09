@@ -218,14 +218,17 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### **🏢 점검 대상 시설**")
-    # 변수 할당(selected_facility)을 명시적으로 수행
+    # key를 부여하고 즉시 변수에 담습니다.
     selected_facility = st.radio(
         "시설명 선택", 
         ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], 
-        horizontal=True,
-        label_visibility="collapsed",
-        key="facility_val" 
+        horizontal=True, key="facility_key"
     )
+
+    st.markdown("### **📂 담당 부서 선택**")
+    dept_list = ["활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "미래활동부", "정책사업부", "활동안전부", "활동인증부", "청소년성장지원부", "지도인력양성부", "지도인력개발부", "자회사"]
+    
+    selected_dept = st.selectbox("부서명 선택", dept_list, key="dept_key")
     
     st.write("") 
 
@@ -374,38 +377,39 @@ if st.session_state.analysis_results:
 
 # --- 9. 최종 데이터 전송 ---
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-    # 위젯에서 직접 값을 가져오거나 세션에서 가져옴
-    t_facility = st.session_state.facility_val
-    t_dept = st.session_state.dept_val
-
+    # 세션 키에서 직접 값을 가져와 변수에 고정 (매우 중요)
+    final_facility = st.session_state.get('facility_key')
+    final_dept = st.session_state.get('dept_key')
+    
     if "final_data" in st.session_state and st.session_state.final_data:
-        with st.spinner(f"[{t_dept}] 데이터를 전송 중..."):
+        with st.spinner(f"[{final_dept}] 데이터를 전송 중..."):
             success_count = 0
+            
             for row in st.session_state.final_data:
-                # 쿼리 파라미터 구성
-                params = {
-                    "entry.1651948586": t_facility,
-                    "entry.1328786382": t_dept, # 담당 부서
-                    "entry.1297326802": str(row.get("category", "")),
-                    "entry.1421719401": str(row.get("scenario", "")),
-                    "entry.1752607260": str(row.get("grade", "")),
-                    "entry.271461796": str(row.get("solution", "")),
-                    "entry.956205828": str(row.get("law", "")),
-                    "entry.1058871339": "사진 별도 첨부"
+                # 구글 폼 필드 ID 매핑 (제공해주신 A,B,C... 순서 기반)
+                payload = {
+                    "entry.1651948586": final_facility, # A (시설명)
+                    "entry.1328786382": final_dept,     # B (담당 부서) -> 여기가 핵심!
+                    "entry.1297326802": row.get("category", ""), # C
+                    "entry.1421719401": row.get("scenario", ""), # D
+                    "entry.1752607260": row.get("grade", ""),    # E
+                    "entry.271461796": row.get("solution", ""),  # F
+                    "entry.956205828": row.get("law", ""),       # G
+                    "entry.1058871339": "사진 별도 첨부"           # H
                 }
                 
-                base_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
+                form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
                 
                 try:
-                    # 전송 방식의 신뢰성을 위해 requests.get 사용 (파라미터 포함)
-                    resp = requests.get(base_url, params=params)
-                    if resp.status_code == 200:
+                    # POST 방식으로 데이터 전송
+                    response = requests.post(form_url, data=payload)
+                    if response.status_code == 200:
                         success_count += 1
-                except:
-                    pass
+                except Exception as e:
+                    st.error(f"전송 오류: {e}")
             
             if success_count > 0:
-                st.success(f"[{t_dept}] 부서로 {success_count}건 전송 완료!")
+                st.success(f"✅ [{final_dept}] 부서 데이터 {success_count}건이 구글 시트에 기록되었습니다.")
                 st.balloons()
         
 # --- 10. 하단 저장 섹션 ---
@@ -419,5 +423,6 @@ if "final_data" in st.session_state and st.session_state.final_data:
         st.download_button("Word 저장", data=create_docx(st.session_state.final_data), file_name=f"KYWA_{f_name}.docx", use_container_width=True)
     with dl_col2:
         st.download_button("Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{f_name}.xlsx", use_container_width=True)
+
 
 
