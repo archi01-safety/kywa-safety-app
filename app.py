@@ -162,28 +162,63 @@ if api_key:
 
 st.divider()
 
-# 6. 입력 섹션 (항목 변경 및 부서명 추가)
+# 6. 입력 섹션 (라디오박스/드롭다운 라벨 크기 및 볼드 강조)
 col1, col2 = st.columns(2)
+
 with col1:
-    # 1. 시설명 선택 (라디오박스)
-    selected_facility = st.radio("🏢 점검 대상 시설", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], horizontal=True)
+    # 1. 시설명 선택
+    st.markdown("### **🏢 점검 대상 시설**")
+    selected_facility = st.radio(
+        "시설명 선택", # 가이드용 (숨겨짐)
+        ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], 
+        horizontal=True,
+        label_visibility="collapsed" # 기본 라벨 숨김
+    )
     
-    # 2. 부서명 선택 (드롭다운)
+    st.write("") # 간격 조절
+
+    # 2. 부서명 선택
+    st.markdown("### **📂 담당 부서 선택**")
     dept_list = [
         "활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", 
         "안전경영부", "재무회계부", "디지털정보부", "미래활동부", "정책사업부", 
         "활동안전부", "활동인증부", "청소년성장지원부", "지도인력양성부", "지도인력개발부", "자회사"
     ]
-    selected_dept = st.selectbox("📂 담당 부서 선택", dept_list)
+    selected_dept = st.selectbox(
+        "부서명 선택", 
+        dept_list,
+        label_visibility="collapsed"
+    )
     
+    st.write("") # 간격 조절
+
     # 3. 현장 상황 설명
+    st.markdown("### **📝 현장 상황 설명**")
     placeholder_text = "<예시>\n1. 본관 2층 테라스 난간 흔들림\n2. 정문 보도블록 파손으로 넘어질 위험\n3. 생활관 사다리 고장으로 추락 위험 등"
-    user_description = st.text_area("📝 현장 상황 설명", placeholder=placeholder_text, height=150)
+    user_description = st.text_area(
+        "상황 설명 입력", 
+        placeholder=placeholder_text, 
+        height=150,
+        label_visibility="collapsed"
+    )
 
 with col2:
     # 4. 사진 방식 및 입력
-    source_option = st.radio("📸 사진 기록 방식", ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), horizontal=True)
-    img_file = st.camera_input("촬영") if "📷" in source_option else st.file_uploader("업로드") if "🖼️" in source_option else None
+    st.markdown("### **📸 사진 기록 방식**")
+    source_option = st.radio(
+        "사진 방식 선택", 
+        ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), 
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    
+    # 사진 입력 위젯 (이 부분은 위젯 자체가 제목 역할을 하므로 스타일 유지)
+    if "📷" in source_option:
+        img_file = st.camera_input("📸 현장 사진 촬영")
+    elif "🖼️" in source_option:
+        img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
+    else:
+        img_file = None
 
 # 7. AI 분석 버튼
 if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
@@ -336,6 +371,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
