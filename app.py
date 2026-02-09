@@ -135,14 +135,15 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 if st.session_state.analysis_results:
     st.markdown("### 📊 분석 결과")
     
-    processed_data = [] # 데이터 저장용 리스트 초기화
-
-    # 1. 스타일과 테이블 헤더 정의 (하나의 문자열로 시작)
-    table_html = """
+    processed_data = [] # 데이터 저장용
+    
+    # [1] 테이블 헤더와 스타일 (고정된 부분)
+    # 변수명을 table_header로 분리하여 섞임을 방지합니다.
+    table_header = """
     <style>
         .report-table { width:100%; border-collapse: collapse; margin-top: 10px; }
         .report-table th { background-color: #f0f2f6; color: #31333F; padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold; }
-        .report-table td { padding: 10px; border: 1px solid #ddd; text-align: center; color: #31333F; }
+        .report-table td { padding: 10px; border: 1px solid #ddd; text-align: center; color: #31333F; vertical-align: middle; }
         .grade-high { background-color: #ff4b4b; color: white !important; font-weight: bold; }
         .grade-medium { background-color: #ffa421; color: white !important; font-weight: bold; }
         .grade-low { background-color: #00cc96; color: white !important; font-weight: bold; }
@@ -164,15 +165,18 @@ if st.session_state.analysis_results:
         <tbody>
     """
 
-    # 2. 데이터 반복문 (행 추가)
+    # [2] 본문 데이터 생성 (반복문)
+    # rows_html 변수에 행 데이터만 차곡차곡 쌓습니다.
+    rows_html = ""
+    
     for item in st.session_state.analysis_results:
-        # 빈도/강도 숫자 변환 (에러 방지)
+        # 빈도/강도 에러 방지 처리
         try:
             p = int(item.get('p', 0))
             s = int(item.get('s', 0))
         except:
             p, s = 0, 0
-            
+        
         score = p * s
         
         # 등급 계산
@@ -186,8 +190,8 @@ if st.session_state.analysis_results:
         elif grade == "보통": grade_class = "grade-medium"
         else: grade_class = "grade-low"
 
-        # HTML 행 추가 (줄바꿈 없이 이어붙이기)
-        table_html += f"""
+        # 행(Row) HTML 추가
+        rows_html += f"""
             <tr>
                 <td>{item.get('category', '-')}</td>
                 <td class="text-left">{item.get('scenario', '-')}</td>
@@ -200,20 +204,19 @@ if st.session_state.analysis_results:
             </tr>
         """
         
-        # 최종 데이터 저장용 (엑셀/워드 다운로드 및 전송용)
+        # 저장용 데이터 리스트 업데이트
         item['score'] = score
         item['grade'] = grade
         processed_data.append(item)
 
-    # 3. 테이블 닫기
-    table_html += "</tbody></table>"
-
-    # 4. 화면 출력 (이 부분이 핵심입니다!)
-    st.markdown(table_html, unsafe_allow_html=True)
+    # [3] 최종 결합 및 출력 (헤더 + 본문 + 닫기태그)
+    # 여기서 모든 문자열을 합쳐서 한 번에 그립니다.
+    final_table_html = table_header + rows_html + "</tbody></table>"
     
-    # 5. 세션 상태 업데이트
+    st.markdown(final_table_html, unsafe_allow_html=True)
+    
+    # 세션 상태 저장
     st.session_state.final_data = processed_data
-
 
     # --- 8. 최종 데이터 전송 및 저장 ---
     st.write("")
