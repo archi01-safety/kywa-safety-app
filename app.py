@@ -374,22 +374,26 @@ if st.session_state.analysis_results:
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
     
-# 9. 최종 데이터 전송 (부서명 반영)
+# 9. 최종 데이터 전송 (추출된 ID 반영)
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-        with st.spinner("🛰️ 데이터를 전송 중입니다..."):
+        with st.spinner("데이터를 전송 중입니다..."):
             try:
+                # 폼 응답 URL
                 form_url = "https://docs.google.com/forms/d/e/1FAIpQLScGuW2xT1BU5BKas0NkmADv1BCEX6R3JtQaJ5Nm30iBwGe1rA/formResponse"
+                
                 success_count = 0
                 for row in processed_data:
+                    # 추출된 ID와 데이터 매핑
                     payload = {
                         "entry.1902283977": selected_facility,      # 시설명
-                        "entry.XXXXXXXXXX": selected_dept,          # ★ 부서명 (구글 폼에서 새로 확인한 ID를 여기에 넣으세요)
-                        "entry.1485620273": row.get("category"),    # 분류
+                        "entry.1485620273": row.get("category"),    # 유해위험요인 (분류)
                         "entry.2072170485": row.get("scenario"),    # 위험상황
                         "entry.1212734944": row.get("grade"),       # 위험등급
                         "entry.2124342735": row.get("solution"),    # 감소대책
                         "entry.543223131": row.get("law")           # 관련근거
                     }
+                    
+                    # 전송
                     response = requests.post(form_url, data=payload)
                     if response.status_code == 200:
                         success_count += 1
@@ -397,8 +401,11 @@ if st.session_state.analysis_results:
                 if success_count > 0:
                     st.success(f"총 {success_count}건의 데이터가 KYWA 안전센터로 전송되었습니다!")
                     st.balloons()
+                else:
+                    st.error("전송에 실패했습니다. 응답 상태를 확인하세요.")
+                    
             except Exception as e:
-                st.error(f"전송 오류: {e}")
+                st.error(f"오류 발생: {e}")
 
 # 10. 하단 저장 섹션
 if "final_processed_data" in st.session_state and st.session_state.final_processed_data:
@@ -485,6 +492,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
