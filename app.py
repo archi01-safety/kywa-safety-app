@@ -371,38 +371,43 @@ if st.session_state.analysis_results:
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
 
-    # --- 9. 최종 데이터 전송 ---
-    st.write("") # 디자인적 여백
+# 9. 최종 데이터 전송 (부서명 반영)
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-        if not processed_data:
-            st.error("전송할 데이터가 없습니다.")
-        else:
-            with st.spinner("데이터를 전송 중입니다..."):
-                # 구글 폼 주소
-                form_url = "https://docs.google.com/forms/d/e/1FAIpQLScGuW2xT1BU5BKas0NkmADv1BCEX6R3JtQaJ5Nm30iBwGe1rA/formResponse"
-                success_count = 0
-                
-                for row in processed_data:
-                    try:
-                        payload = {
-                            "entry.1902283977": selected_facility,      # 시설명
-                            "entry.1485620273": row.get("category"),    # 유해위험요인
-                            "entry.2072170485": row.get("scenario"),    # 위험상황
-                            "entry.1212734944": row.get("grade"),       # 위험등급
-                            "entry.2124342735": row.get("solution"),    # 감소대책
-                            "entry.543223131": row.get("law")           # 관련근거
-                        }
-                        response = requests.post(form_url, data=payload)
-                        if response.status_code == 200:
-                            success_count += 1
-                    except Exception as e:
-                        st.error(f"전송 중 오류 발생: {e}")
-                
-                if success_count > 0:
-                    st.success(f"총 {success_count}건의 데이터가 KYWA 안전센터로 전송되었습니다!")
-                    st.balloons()
-                else:
-                    st.warning("전송된 데이터가 없습니다. 다시 시도해 주세요.")
+with st.spinner("구글 시트로 데이터를 전송 중입니다..."):
+            # 구글 폼 주소 (수정됨)
+            form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
+            success_count = 0
+            
+            for row in processed_data:
+                try:
+                    # 분석 결과(row)와 입력값(facility, dept)을 결합
+                    payload = {
+                        "entry.1902283977": real_facility_name,      # 시설명 (radio에서 선택)
+                        "entry.1741164966": selected_dept,           # 담당 부서 (selectbox에서 선택)
+                        "entry.1485620273": row.get("category"),     # 유해위험요인 (AI 분석 결과)
+                        "entry.2072170485": row.get("scenario"),     # 위험상황 (AI 분석 결과)
+                        "entry.1212734944": row.get("grade"),        # 위험등급 (AI 분석 결과)
+                        "entry.2124342735": row.get("solution"),     # 감소대책 (AI 분석 결과)
+                        "entry.543223131": row.get("law")            # 관련근거 (AI 분석 결과)
+                    }
+                    
+                    # POST 전송
+                    response = requests.post(form_url, data=payload)
+                    
+                    if response.status_code == 200:
+                        success_count += 1
+                    else:
+                        st.error(f"전송 실패: {response.status_code}")
+                        
+                except Exception as e:
+                    st.error(f"오류 발생: {e}")
+            
+            if success_count > 0:
+                st.success(f"총 {success_count}건의 데이터가 KYWA 안전센터로 전송되었습니다!")
+                st.balloons()
+
+            except Exception as e:
+                st.error(f"전송 오류: {e}")
 
     # --- 10. 하단 저장 섹션 ---
     if processed_data:
@@ -424,3 +429,4 @@ if st.session_state.analysis_results:
                 file_name=f"KYWA_Data_{selected_facility}.xlsx", 
                 use_container_width=True
             )
+
