@@ -238,43 +238,43 @@ if st.session_state.analysis_results:
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
 
-# --- 8. 최종 데이터 전송 및 저장 (업데이트된 ID 반영) ---
+# --- 8. 최종 데이터 전송 및 저장 (밀림 현상 수정본) ---
 st.write("")
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
     if not st.session_state.final_data:
-        st.error("⚠️ 전송할 분석 데이터가 없습니다. 먼저 분석을 실행해 주세요.")
+        st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
     else:
-        with st.spinner("🚀 새로운 경로로 데이터를 전송 중입니다..."):
+        with st.spinner("🚀 데이터를 정렬하여 시트로 전송 중입니다..."):
             try:
-                # 폼 응답 주소 (제공해주신 새 주소 반영)
+                # 폼 응답 URL
                 form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
                 
                 success_count = 0
                 for row in st.session_state.final_data:
+                    # 각 열(B~I)에 정확히 대응하도록 ID를 재배정함
                     payload = {
-                        "entry.1651948586": selected_facility,      # 1. 시설명
-                        "entry.1328786382": selected_dept,          # 2. 담당 부서
-                        "entry.1297326802": row.get("category"),     # 3. 유해위험요인
-                        "entry.1297326802": row.get("scenario"),     # 4. 위험상황 (주의: 순서상 이 ID가 맞는지 확인 필요)
-                        "entry.1421719401": row.get("grade"),        # 5. 위험등급
-                        "entry.1752607260": row.get("solution"),     # 6. 감소대책
-                        "entry.271461796": row.get("law"),           # 7. 관련근거
-                        "entry.956205828": "사진 첨부 없음(AI분석)"     # 8. 사진 기록 (텍스트 대체)
+                        "entry.1651948586": selected_facility,      # B열: 시설명
+                        "entry.1328786382": selected_dept,          # C열: 담당 부서
+                        "entry.1297326802": row.get("category"),     # D열: 유해위험요인 (분류)
+                        "entry.1421719401": row.get("scenario"),     # E열: 위험상황
+                        "entry.1752607260": row.get("grade"),        # F열: 위험등급
+                        "entry.271461796": row.get("solution"),      # G열: 감소대책
+                        "entry.956205828": row.get("law"),           # H열: 관련근거
+                        "entry.1058871339": "사진 분석 완료"           # I열: 사진 기록 (텍스트)
                     }
                     
-                    # 폼 전송 실행
                     res = requests.post(form_url, data=payload)
                     if res.status_code == 200:
                         success_count += 1
                 
                 if success_count > 0:
-                    st.success(f"✅ 총 {success_count}건의 데이터가 구글 시트에 성공적으로 집계되었습니다!")
+                    st.success(f"✅ 정정된 데이터 {success_count}건이 시트에 정상적으로 집계되었습니다!")
                     st.balloons()
                 else:
-                    st.error("전송에 실패했습니다. 폼 응답 설정을 확인하세요.")
+                    st.error("전송에 실패했습니다. 응답 코드를 확인하세요.")
                     
             except Exception as e:
-                st.error(f"❌ 네트워크 오류 발생: {e}")
+                st.error(f"❌ 오류 발생: {e}")
                 
     # 저장 버튼
     dl_col1, dl_col2 = st.columns(2)
@@ -368,4 +368,5 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
