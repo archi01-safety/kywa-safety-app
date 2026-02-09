@@ -172,7 +172,7 @@ with col1:
     dept_list = [
         "활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", 
         "안전경영부", "재무회계부", "디지털정보부", "미래활동부", "정책사업부", 
-        "활동안전부", "활동인증부", "청소년성장지원부", "지도인력양성부", "지도인력개발부"
+        "활동안전부", "활동인증부", "청소년성장지원부", "지도인력양성부", "지도인력개발부", "자회사"
     ]
     selected_dept = st.selectbox("📂 담당 부서 선택", dept_list)
     
@@ -336,6 +336,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
