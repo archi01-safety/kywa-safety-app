@@ -244,7 +244,7 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
     if not st.session_state.final_data:
         st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
     else:
-        with st.spinner("🚀 데이터를 정렬하여 시트로 전송 중입니다..."):
+        with st.spinner("🚀 KYWA 안전센터에 데이터를 전송 중입니다..."):
             try:
                 # 폼 응답 URL
                 form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
