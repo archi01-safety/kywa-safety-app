@@ -268,7 +268,7 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                         success_count += 1
                 
                 if success_count > 0:
-                    st.success(f"✅ 정정된 데이터 {success_count}건이 시트에 정상적으로 집계되었습니다!")
+                    st.success(f"✅ 최종 제출한 데이터 {success_count}건이 KYWA 안전센터에 정상적으로 도착했습니다!")
                     st.balloons()
                 else:
                     st.error("전송에 실패했습니다. 응답 코드를 확인하세요.")
