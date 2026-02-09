@@ -331,7 +331,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
         except Exception as e:
             st.error(f"❌ 오류가 발생했습니다: {e}")
 
-# --- 8. 결과 표시 및 데이터 처리 (수정됨) ---
+# --- 8. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
     st.markdown("### 📊 분석 결과")
     
@@ -368,21 +368,17 @@ if st.session_state.analysis_results:
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
     
-    # 중요: 전송을 위해 세션 스테이트에 최종 데이터 저장
+    # 중요: 전송 및 저장을 위해 세션 스테이트에 최종 데이터 저장
     st.session_state.final_data = current_processed_data
 
-# --- 9. 최종 데이터 전송 (로직 강화) ---
+# --- 9. 최종 데이터 전송 ---
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-    # locals() 대신 session_state를 명확히 확인
     if "final_data" in st.session_state and st.session_state.final_data:
         with st.spinner("구글 시트로 데이터를 전송 중입니다..."):
             form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
             success_count = 0
             
             for row in st.session_state.final_data:
-                # 데이터 전송 전 디버깅용 출력 (선택 사항)
-                # st.write(f"전송 데이터: {row.get('scenario')}") 
-
                 payload = {
                     "entry.1902283977": str(selected_facility).strip(),
                     "entry.1741164966": str(selected_dept).strip(),
@@ -395,40 +391,39 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                 
                 try:
                     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-                    # 폼 전송 시 data=payload 형식을 유지하되 확실히 폼 규격임을 명시
                     response = requests.post(form_url, data=payload, headers=headers)
-                    
                     if response.status_code == 200:
                         success_count += 1
                 except Exception as e:
-                    st.error(f"오류 발생: {e}")
+                    st.error(f"전송 중 오류: {e}")
             
             if success_count > 0:
                 st.success(f"총 {success_count}건 전송 완료!")
                 st.balloons()
     else:
-        st.warning("전송할 분석 데이터가 없습니다. 먼저 AI 분석을 완료해 주세요.")
+        st.warning("분석 결과가 없습니다. 먼저 분석을 시작해 주세요.")
 
-    # --- 10. 하단 저장 섹션 ---
-    if processed_data:
-        st.write("---")
-        st.caption("📂 결과 보고서 저장 (Word, Excel)")
-        dl_col1, dl_col2 = st.columns(2)
-        
-        with dl_col1:
-            st.download_button(
-                "Word 저장", 
-                data=create_docx(processed_data), 
-                file_name=f"KYWA_Report_{selected_facility}.docx", 
-                use_container_width=True
-            )
-        with dl_col2:
-            st.download_button(
-                "Excel 저장", 
-                data=create_excel(processed_data), 
-                file_name=f"KYWA_Data_{selected_facility}.xlsx", 
-                use_container_width=True
-            )
+# --- 10. 하단 저장 섹션 (NameError 방지 위해 st.session_state.final_data 사용) ---
+if "final_data" in st.session_state and st.session_state.final_data:
+    st.write("---")
+    st.caption("📂 결과 보고서 저장 (Word, Excel)")
+    dl_col1, dl_col2 = st.columns(2)
+    
+    with dl_col1:
+        st.download_button(
+            "Word 저장", 
+            data=create_docx(st.session_state.final_data), 
+            file_name=f"KYWA_Report_{selected_facility}.docx", 
+            use_container_width=True
+        )
+    with dl_col2:
+        st.download_button(
+            "Excel 저장", 
+            data=create_excel(st.session_state.final_data), 
+            file_name=f"KYWA_Data_{selected_facility}.xlsx", 
+            use_container_width=True
+        )
+
 
 
 
