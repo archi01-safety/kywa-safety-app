@@ -350,36 +350,37 @@ if st.session_state.analysis_results:
             except Exception as e:
                 st.error(f"전송 오류: {e}")
 
-# 10. 하단 저장 섹션 (오류 수정본)
-if st.session_state.analysis_results: # 분석 결과가 있을 때만 표시
+# 10. 하단 저장 섹션
+if "final_processed_data" in st.session_state and st.session_state.final_processed_data:
     st.write("---")
     st.markdown("### **📂 결과 보고서 저장 (Word, Excel)**")
     
-    # 9번 단계에서 생성된 processed_data를 사용하여 파일 생성
-    # 만약 버튼 클릭 시 오류가 난다면, processed_data가 정의된 영역 안에서 실행되어야 합니다.
+    # 세션 상태에 저장된 데이터를 가져옴
+    processed_data = st.session_state.final_processed_data
+    
+    # 파일명 설정 (user_name 제거, 시설명과 부서명 조합)
+    file_prefix = f"KYWA_안전점검_{selected_facility}_{selected_dept}"
     
     dl_col1, dl_col2 = st.columns(2)
     
-    # 파일명에서 user_name을 삭제하고 selected_dept를 넣었습니다.
-    file_prefix = f"KYWA_{selected_facility}_{selected_dept}"
-    
     with dl_col1:
+        # Word 저장
         st.download_button(
             label="📄 Word 보고서 저장", 
             data=create_docx(processed_data), 
             file_name=f"{file_prefix}.docx", 
-            use_container_width=True
+            use_container_width=True,
+            key="doc_download"
         )
         
     with dl_col2:
+        # Excel 저장
         st.download_button(
             label="📊 Excel 데이터 저장", 
             data=create_excel(processed_data), 
             file_name=f"{file_prefix}.xlsx", 
-            use_container_width=True
+            use_container_width=True,
+            key="xls_download"
         )
-
-
-
 
 
