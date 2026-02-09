@@ -324,11 +324,6 @@ if st.session_state.analysis_results:
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
     
-    # 추가: 분석 결과 초기화 버튼 (선택 사항)
-    if st.button("🔄 분석 결과 지우기"):
-        st.session_state.analysis_results = []
-        st.rerun()
-
 # 9. 최종 데이터 전송 (부서명 반영)
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
         with st.spinner("🛰️ 데이터를 전송 중입니다..."):
@@ -383,6 +378,7 @@ if st.session_state.analysis_results: # 분석 결과가 있을 때만 표시
             file_name=f"{file_prefix}.xlsx", 
             use_container_width=True
         )
+
 
 
 
