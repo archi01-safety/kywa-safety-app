@@ -297,7 +297,7 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                         success_count += 1
                 
                 if success_count > 0:
-                    st.success(f"{success_count}건 전송 완료! 대시보드는 새로고침 후 업데이트됩니다.")
+                    st.success(f"🚀{success_count}건 전송 완료!! 실시간 점검 데이터 현황에 반영되었습니다.")
                     st.balloons()
                     # 전송 후 대시보드 갱신을 위해 데이터 재로드 가능
             except Exception as e:
@@ -359,3 +359,4 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
