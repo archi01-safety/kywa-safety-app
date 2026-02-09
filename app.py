@@ -217,32 +217,27 @@ except Exception as e:
 col1, col2 = st.columns(2)
 
 with col1:
-    # 1. 시설명 선택
     st.markdown("### **🏢 점검 대상 시설**")
-    facility_list = ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"]
-    selected_facility = st.radio(
+    # key를 지정하면 st.session_state['facility_val']에 자동 저장됩니다.
+    st.radio(
         "시설명 선택", 
-        facility_list, 
+        ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], 
         horizontal=True,
         label_visibility="collapsed",
-        key="facility_radio" # 세션 스테이트 자동 저장을 위한 키
+        key="facility_val" 
     )
     
-    st.write("") # 간격 조절
+    st.write("") 
 
-    # 2. 부서명 선택
     st.markdown("### **📂 담당 부서 선택**")
-    dept_list = [
-        "활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", 
-        "안전경영부", "재무회계부", "디지털정보부", "미래활동부", "정책사업부", 
-        "활동안전부", "활동인증부", "청소년성장지원부", "지도인력양성부", "지도인력개발부", "자회사"
-    ]
-    # selectbox에 key를 부여하면 st.session_state.selected_dept_key로 값이 유지됩니다.
-    selected_dept = st.selectbox(
+    dept_list = ["활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "미래활동부", "정책사업부", "활동안전부", "활동인증부", "청소년성장지원부", "지도인력양성부", "지도인력개발부", "자회사"]
+    
+    # key를 지정하면 st.session_state['dept_val']에 자동 저장됩니다.
+    st.selectbox(
         "부서명 선택", 
         dept_list,
         label_visibility="collapsed",
-        key="selected_dept_key"
+        key="dept_val"
     )
     
     st.write("") # 간격 조절
@@ -430,6 +425,7 @@ if "final_data" in st.session_state and st.session_state.final_data:
             file_name=f"KYWA_Data_{selected_facility}.xlsx", 
             use_container_width=True
         )
+
 
 
 
