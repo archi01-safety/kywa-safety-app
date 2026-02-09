@@ -316,15 +316,34 @@ if st.session_state.analysis_results:
             except Exception as e:
                 st.error(f"전송 오류: {e}")
 
-# 10. 하단 저장 섹션
-st.write("---")
-if "final_processed_data" in st.session_state and st.session_state.final_processed_data:
+# 10. 하단 저장 섹션 (오류 수정본)
+if st.session_state.analysis_results: # 분석 결과가 있을 때만 표시
+    st.write("---")
+    st.markdown("### **📂 결과 보고서 저장 (Word, Excel)**")
+    
+    # 9번 단계에서 생성된 processed_data를 사용하여 파일 생성
+    # 만약 버튼 클릭 시 오류가 난다면, processed_data가 정의된 영역 안에서 실행되어야 합니다.
+    
     dl_col1, dl_col2 = st.columns(2)
+    
+    # 파일명에서 user_name을 삭제하고 selected_dept를 넣었습니다.
+    file_prefix = f"KYWA_{selected_facility}_{selected_dept}"
+    
     with dl_col1:
-        st.download_button("Word 저장", data=create_docx(st.session_state.final_processed_data), file_name=f"KYWA_Report_{user_name}_{selected_facility}.docx", use_container_width=True)
+        st.download_button(
+            label="📄 Word 보고서 저장", 
+            data=create_docx(processed_data), 
+            file_name=f"{file_prefix}.docx", 
+            use_container_width=True
+        )
+        
     with dl_col2:
-
-        st.download_button("Excel 저장", data=create_excel(st.session_state.final_processed_data), file_name=f"KYWA_Data_{user_name}_{selected_facility}.xlsx", use_container_width=True)
+        st.download_button(
+            label="📊 Excel 데이터 저장", 
+            data=create_excel(processed_data), 
+            file_name=f"{file_prefix}.xlsx", 
+            use_container_width=True
+        )
 
 # --- [수정] 대시보드 섹션 ---
 st.write("---")
@@ -371,6 +390,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
