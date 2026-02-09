@@ -28,12 +28,18 @@ if os.path.exists(logo_path):
 # 3. 헤더 디자인 (수정본)
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
-    if logo_img:
-        # 로고 이미지 표시 (너비는 적절히 조절하세요)
-        st.image(logo_img, width=300) 
-    else:
-        # 이미지가 없을 경우 기존 텍스트 표시
-        st.markdown("<h2 style='color: #E60012; margin-top: 0;'>KYWA</h2>", unsafe_allow_html=True)
+    # GitHub의 Raw 이미지 경로입니다.
+    raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
+    
+    # 이미지를 클릭하면 앱 주소로 이동하여 새로고침 효과를 줍니다.
+    st.markdown(
+        f"""
+        <a href="https://kywa-safety-check.streamlit.app/" target="_self">
+            <img src="{raw_logo_url}" width="300">
+        </a>
+        """,
+        unsafe_allow_html=True
+    )
 
 with header_col2:
     st.title("🚨 KYWA AI 위험성평가 시스템")
@@ -382,5 +388,6 @@ if "final_processed_data" in st.session_state and st.session_state.final_process
             use_container_width=True,
             key="xls_download"
         )
+
 
 
