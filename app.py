@@ -331,18 +331,18 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
         except Exception as e:
             st.error(f"❌ 오류가 발생했습니다: {e}")
 
-# --- 8. 결과 표시 및 데이터 처리 ---
+# --- 8. 결과 표시 및 데이터 처리 (수정됨) ---
 if st.session_state.analysis_results:
     st.markdown("### 📊 분석 결과")
     
-    # 테이블 헤더 생성
     table_html = '<table class="report-table"><thead><tr><th>분류</th><th>위험상황</th><th>빈도</th><th>강도</th><th>점수</th><th>등급</th><th>관련근거</th><th>감소대책</th></tr></thead><tbody>'
     
-    processed_data = [] # 데이터 담을 리스트 초기화
+    # 세션 스테이트에 처리된 데이터를 저장할 리스트 준비
+    current_processed_data = [] 
     
     for item in st.session_state.analysis_results:
         if isinstance(item, dict):
-            # 점수(score) 및 등급 재산정 로직
+            # 점수 및 등급 재산정
             p_val = int(item.get('p', 3))
             s_val = int(item.get('s', 3))
             score = p_val * s_val
@@ -355,51 +355,51 @@ if st.session_state.analysis_results:
             
             item['grade'] = refined_grade
             
-            # 등급별 CSS 클래스 적용
             grade_class = "grade-high" if "높음" in refined_grade else "grade-medium" if refined_grade == '보통' else "grade-low"
             sol_html = str(item.get('solution', '')).replace('\n', '<br>')
             
-            # 테이블 행 추가
             table_html += f'<tr><td style="text-align:center">{item.get("category")}</td><td>{item.get("scenario")}</td>'
             table_html += f'<td style="text-align:center">{p_val}</td><td style="text-align:center">{s_val}</td>'
             table_html += f'<td style="text-align:center">{score}</td><td class="{grade_class}">{refined_grade}</td>'
             table_html += f'<td>{item.get("law")}</td><td>{sol_html}</td></tr>'
             
-            # 전송 및 저장용 리스트에 추가
-            processed_data.append(item)
+            current_processed_data.append(item)
     
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
+    
+    # 중요: 전송을 위해 세션 스테이트에 최종 데이터 저장
+    st.session_state.final_data = current_processed_data
 
-# 9. 최종 데이터 전송 (부서명 반영)
+# --- 9. 최종 데이터 전송 (로직 강화) ---
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-    if 'processed_data' in locals() and processed_data:
+    # locals() 대신 session_state를 명확히 확인
+    if "final_data" in st.session_state and st.session_state.final_data:
         with st.spinner("구글 시트로 데이터를 전송 중입니다..."):
-            # 구글 폼 주소 (뒤에 /formResponse 확인)
             form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
             success_count = 0
             
-            for row in processed_data:
-                # 각 항목의 데이터가 비어있지 않은지 확인
+            for row in st.session_state.final_data:
+                # 데이터 전송 전 디버깅용 출력 (선택 사항)
+                # st.write(f"전송 데이터: {row.get('scenario')}") 
+
                 payload = {
-                    "entry.1902283977": str(selected_facility),
-                    "entry.1741164966": str(selected_dept),
-                    "entry.1485620273": str(row.get("category", "")),
-                    "entry.2072170485": str(row.get("scenario", "")),
-                    "entry.1212734944": str(row.get("grade", "")),
-                    "entry.2124342735": str(row.get("solution", "")),
-                    "entry.543223131": str(row.get("law", ""))
+                    "entry.1902283977": str(selected_facility).strip(),
+                    "entry.1741164966": str(selected_dept).strip(),
+                    "entry.1485620273": str(row.get("category", "")).strip(),
+                    "entry.2072170485": str(row.get("scenario", "")).strip(),
+                    "entry.1212734944": str(row.get("grade", "")).strip(),
+                    "entry.2124342735": str(row.get("solution", "")).strip(),
+                    "entry.543223131": str(row.get("law", "")).strip()
                 }
                 
                 try:
-                    # headers를 추가하여 폼 데이터임을 명시
                     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+                    # 폼 전송 시 data=payload 형식을 유지하되 확실히 폼 규격임을 명시
                     response = requests.post(form_url, data=payload, headers=headers)
                     
                     if response.status_code == 200:
                         success_count += 1
-                    else:
-                        st.error(f"전송 실패: {response.status_code}")
                 except Exception as e:
                     st.error(f"오류 발생: {e}")
             
@@ -407,7 +407,7 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                 st.success(f"총 {success_count}건 전송 완료!")
                 st.balloons()
     else:
-        st.warning("분석 결과가 없습니다.")
+        st.warning("전송할 분석 데이터가 없습니다. 먼저 AI 분석을 완료해 주세요.")
 
     # --- 10. 하단 저장 섹션 ---
     if processed_data:
@@ -429,6 +429,7 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                 file_name=f"KYWA_Data_{selected_facility}.xlsx", 
                 use_container_width=True
             )
+
 
 
 
