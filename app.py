@@ -283,31 +283,51 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 
 # 8. 결과 표시
 if st.session_state.analysis_results:
-    st.markdown(f"### 📊 {user_name} 님의 분석 결과")
+    # [수정] user_name을 삭제하고 시설명/부서명으로 변경하여 NameError 방지
+    st.markdown(f"### 📊 [{selected_facility}] {selected_dept} 위험성 분석 결과")
+    
     table_html = '<table class="report-table"><thead><tr><th>분류</th><th>위험상황</th><th>빈도</th><th>강도</th><th>점수</th><th>등급</th><th>관련근거</th><th>감소대책</th></tr></thead><tbody>'
     st.session_state.final_processed_data = []
     
     for item in st.session_state.analysis_results:
-        p_val = int(item.get('p', 3))
-        s_val = int(item.get('s', 3))
+        # 데이터 안전하게 가져오기 (기본값 설정)
+        p_val = int(item.get('p', 1))
+        s_val = int(item.get('s', 1))
         score = p_val * s_val
+        
+        # 위험 등급 재계산 로직 유지
         if score <= 3: refined_grade = "매우 낮음"
         elif score <= 6: refined_grade = "낮음"
         elif score <= 12: refined_grade = "보통"
-        else: refined_grade = "높음"
+        elif score <= 15: refined_grade = "높음"
+        else: refined_grade = "매우 높음"
         
         item['grade'] = refined_grade
         item['score'] = score
-        grade_class = "grade-high" if "높음" in refined_grade else "grade-medium" if refined_grade == '보통' else "grade-low"
         
-        table_html += f'<tr><td style="text-align:center">{item.get("category")}</td><td>{item.get("scenario")}</td>'
+        # 등급별 CSS 클래스 매칭
+        if "매우 높음" in refined_grade or "높음" in refined_grade:
+            grade_class = "grade-high"
+        elif refined_grade == '보통':
+            grade_class = "grade-medium"
+        else:
+            grade_class = "grade-low"
+        
+        # 테이블 행 생성
+        table_html += f'<tr><td style="text-align:center">{item.get("category", "-")}</td><td>{item.get("scenario", "-")}</td>'
         table_html += f'<td style="text-align:center">{p_val}</td><td style="text-align:center">{s_val}</td>'
-        table_html += f'<td style="text-align:center">{score}</td><td class="{grade_class}">{refined_grade}</td>'
-        table_html += f'<td>{item.get("law")}</td><td>{str(item.get("solution")).replace(chr(10), "<br>")}</td></tr>'
+        table_html += f'<td style="text-align:center">{score}</td><td class="{grade_class}" style="text-align:center">{refined_grade}</td>'
+        table_html += f'<td>{item.get("law", "-")}</td><td>{str(item.get("solution", "-")).replace(chr(10), "<br>")}</td></tr>'
+        
         st.session_state.final_processed_data.append(item)
     
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
+    
+    # 추가: 분석 결과 초기화 버튼 (선택 사항)
+    if st.button("🔄 분석 결과 지우기"):
+        st.session_state.analysis_results = []
+        st.rerun()
 
 # 9. 최종 데이터 전송 (부서명 반영)
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
@@ -363,6 +383,7 @@ if st.session_state.analysis_results: # 분석 결과가 있을 때만 표시
             file_name=f"{file_prefix}.xlsx", 
             use_container_width=True
         )
+
 
 
 
