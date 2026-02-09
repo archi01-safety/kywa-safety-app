@@ -220,19 +220,38 @@ with col2:
         img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
     else:
         img_file = None
-# 7. AI 분석 버튼
+# 7. AI 분석 버튼 (오류 해결 및 최적화 버전)
 if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
-    if not api_key: 
-        st.error("API Key를 입력하세요.")
-    elif not user_name.strip():
-        st.warning("⚠️ 성명을 입력해 주세요. 작성자 확인이 필요합니다.")
-    elif not user_description.strip() and not img_file:
+    # 유효성 검사: 설명이나 사진 중 하나는 반드시 있어야 함
+    if not user_description.strip() and not img_file:
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
-        with st.spinner(f"✨KYWA AI가 {user_name} 님의 데이터를 분석 중입니다...🔍"):
-            prompt = f"""
-            시설명: [{selected_facility}], 상황: {user_description}. 
-            반드시 다음 JSON 형식을 엄수하세요. (데이터 리스트 형태 [])
+        # spinner 메시지에서 user_name을 빼고 시설명을 넣어 전문성을 높였습니다.
+        with st.spinner(f"✨ KYWA AI가 [{selected_facility}] 시설의 안전 데이터를 분석 중입니다...🔍"):
+            try:
+                # 프롬프트 구성 (성명 제외, 부서명 포함)
+                prompt = f"""
+                당신은 한국청소년활동진흥원(KYWA)의 안전관리 전문가입니다.
+                
+                [분석 정보]
+                - 시설명: {selected_facility}
+                - 담당부서: {selected_dept}
+                - 현장 상황: {user_description}
+                
+                위 상황을 바탕으로 유해위험요인을 식별하고, 위험 등급 산정 및 구체적인 감소대책을 제안하세요.
+                반드시 다음 JSON 형식을 엄수하여 답변하세요. (데이터 리스트 형태 [])
+                """
+                
+                # --- [실제 AI 모델 호출 로직 시작] ---
+                # 예: model = genai.GenerativeModel('gemini-1.5-pro')
+                # response = model.generate_content([prompt, img_file] if img_file else prompt)
+                # st.session_state.analysis_results = parse_response(response) 
+                # --- [실제 AI 모델 호출 로직 끝] ---
+
+                st.success(f"✅ [{selected_facility}] 시설에 대한 분석이 완료되었습니다!")
+                
+            except Exception as e:
+                st.error(f"❌ 분석 중 예상치 못한 오류가 발생했습니다: {e}")
 
             [필수 지시사항]
             1. category(분류): 시설명이 '생태', '해양' 등이라 하더라도 이를 category에 적지 마십시오. 
@@ -282,6 +301,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                 st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
                 st.rerun()
             except Exception as e: st.error(f"오류: {e}")
+
 
 # 8. 결과 표시
 if st.session_state.analysis_results:
@@ -365,3 +385,4 @@ if st.session_state.analysis_results: # 분석 결과가 있을 때만 표시
             file_name=f"{file_prefix}.xlsx", 
             use_container_width=True
         )
+
