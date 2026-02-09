@@ -240,9 +240,6 @@ with col1:
         key="dept_val"
     )
     
-    st.write("") 
-    st.markdown("### **📝 현장 상황 설명**")
-    user_description = st.text_area("상황 설명 입력", height=150, label_visibility="collapsed", key="user_desc")
 
     # 3. 현장 상황 설명
     st.markdown("### **📝 현장 상황 설명**")
