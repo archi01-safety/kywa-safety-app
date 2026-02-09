@@ -337,7 +337,7 @@ if st.session_state.analysis_results:
     
     table_html = '<table class="report-table"><thead><tr><th>분류</th><th>위험상황</th><th>빈도</th><th>강도</th><th>점수</th><th>등급</th><th>관련근거</th><th>감소대책</th></tr></thead><tbody>'
     
-    processed_data = []
+processed_data = [] # 여기서 변수가 생성됩니다.
     for item in st.session_state.analysis_results:
         if isinstance(item, dict):
             # 점수(score)를 기반으로 등급을 한 번 더 정밀하게 분류 (Python 로직)
@@ -488,6 +488,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
