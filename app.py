@@ -376,8 +376,8 @@ if st.session_state.analysis_results:
 # --- 9. 최종 데이터 전송 ---
 if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
     # 세션 키에서 직접 값을 가져와 변수에 고정 (매우 중요)
-    final_facility = st.session_state.get('facility_key')
-    final_dept = st.session_state.get('dept_key')
+    target_facility = st.session_state.get('facility_val')
+    target_dept = st.session_state.get('dept_val')
     
     if "final_data" in st.session_state and st.session_state.final_data:
         with st.spinner(f"[{final_dept}] 데이터를 전송 중..."):
@@ -421,6 +421,7 @@ if "final_data" in st.session_state and st.session_state.final_data:
         st.download_button("Word 저장", data=create_docx(st.session_state.final_data), file_name=f"KYWA_{f_name}.docx", use_container_width=True)
     with dl_col2:
         st.download_button("Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{f_name}.xlsx", use_container_width=True)
+
 
 
 
