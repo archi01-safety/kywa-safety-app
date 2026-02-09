@@ -14,9 +14,31 @@ import plotly.express as px
 os.environ['PYTHONHTTPSVERIFY'] = '0'
 ssl._create_default_https_context = ssl._create_unverified_context
 
-# 2. 페이지 설정 및 세션 초기화
+# --- 2. 페이지 설정 및 타이틀 (새로고침 기능 포함) ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
+# 타이틀 클릭 시 새로고침 효과를 위한 HTML 스타일
+st.markdown("""
+    <style>
+    .main-title {
+        text-decoration: none;
+        color: white; /* 텍스트 색상 (다크모드 기준, 필요시 변경) */
+        display: block;
+        text-align: center;
+        cursor: pointer;
+    }
+    .main-title:hover {
+        color: #FF4B4B; /* 마우스 올렸을 때 강조 색상 */
+    }
+    </style>
+    <a href="/" target="_self" class="main-title">
+        <h1>🚨 KYWA AI 위험성평가 시스템</h1>
+    </a>
+    <p style='text-align: center; color: gray;'>국립청소년시설 안전관리의 디지털 전환</p>
+    <hr>
+    """, unsafe_allow_html=True)
+
+# 세션 초기화 로직 (기존 유지)
 if "analysis_results" not in st.session_state:
     st.session_state.analysis_results = None
 if "final_data" not in st.session_state:
