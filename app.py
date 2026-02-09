@@ -331,11 +331,18 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
         except Exception as e:
             st.error(f"❌ 오류가 발생했습니다: {e}")
 
-# --- 8. 결과 표시 및 데이터 처리 (여기서부터 덮어씌우세요) ---
-    processed_data = [] 
+# --- 8. 결과 표시 및 데이터 처리 ---
+if st.session_state.analysis_results:
+    st.markdown("### 📊 분석 결과")
+    
+    # 테이블 헤더 생성
+    table_html = '<table class="report-table"><thead><tr><th>분류</th><th>위험상황</th><th>빈도</th><th>강도</th><th>점수</th><th>등급</th><th>관련근거</th><th>감소대책</th></tr></thead><tbody>'
+    
+    processed_data = [] # 데이터 담을 리스트 초기화
+    
     for item in st.session_state.analysis_results:
         if isinstance(item, dict):
-            # 점수(score)를 기반으로 등급을 한 번 더 정밀하게 분류
+            # 점수(score) 및 등급 재산정 로직
             p_val = int(item.get('p', 3))
             s_val = int(item.get('s', 3))
             score = p_val * s_val
@@ -348,174 +355,72 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
             
             item['grade'] = refined_grade
             
-            # 등급별 색상 클래스 매칭
+            # 등급별 CSS 클래스 적용
             grade_class = "grade-high" if "높음" in refined_grade else "grade-medium" if refined_grade == '보통' else "grade-low"
             sol_html = str(item.get('solution', '')).replace('\n', '<br>')
             
+            # 테이블 행 추가
             table_html += f'<tr><td style="text-align:center">{item.get("category")}</td><td>{item.get("scenario")}</td>'
             table_html += f'<td style="text-align:center">{p_val}</td><td style="text-align:center">{s_val}</td>'
             table_html += f'<td style="text-align:center">{score}</td><td class="{grade_class}">{refined_grade}</td>'
             table_html += f'<td>{item.get("law")}</td><td>{sol_html}</td></tr>'
+            
+            # 전송 및 저장용 리스트에 추가
             processed_data.append(item)
     
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
 
-    # --- 9. 데이터 전송 버튼 (반드시 processed_data와 같은 들여쓰기 수준 유지) ---
-    st.write("") # 간격 조절
+    # --- 9. 최종 데이터 전송 ---
+    st.write("") # 디자인적 여백
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-        with st.spinner("데이터를 전송 중입니다..."):
-            try:
+        if not processed_data:
+            st.error("전송할 데이터가 없습니다.")
+        else:
+            with st.spinner("데이터를 전송 중입니다..."):
+                # 구글 폼 주소
                 form_url = "https://docs.google.com/forms/d/e/1FAIpQLScGuW2xT1BU5BKas0NkmADv1BCEX6R3JtQaJ5Nm30iBwGe1rA/formResponse"
                 success_count = 0
-                for row in processed_data:
-                    payload = {
-                        "entry.1902283977": selected_facility,
-                        "entry.1485620273": row.get("category"),
-                        "entry.2072170485": row.get("scenario"),
-                        "entry.1212734944": row.get("grade"),
-                        "entry.2124342735": row.get("solution"),
-                        "entry.543223131": row.get("law")
-                    }
-                    response = requests.post(form_url, data=payload)
-                    if response.status_code == 200:
-                        success_count += 1
                 
-                if success_count > 0:
-                    st.success(f"총 {success_count}건 전송 완료!")
-                    st.balloons()
-            except Exception as e:
-                st.error(f"전송 중 오류 발생: {e}")
-# --- 9. 최종 데이터 전송 (반드시 이 위치, 즉 if문 안으로 이동) ---
-    st.write(" ") # 여백
-    if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-        with st.spinner("데이터를 전송 중입니다..."):
-            # 이제 processed_data를 안전하게 참조할 수 있습니다.
-            for row in processed_data:
-            try:
-                # 폼 응답 URL
-                form_url = "https://docs.google.com/forms/d/e/1FAIpQLScGuW2xT1BU5BKas0NkmADv1BCEX6R3JtQaJ5Nm30iBwGe1rA/formResponse"
-                
-                success_count = 0
                 for row in processed_data:
-                    # 추출된 ID와 데이터 매핑
-                    payload = {
-                        "entry.1902283977": selected_facility,      # 시설명
-                        "entry.1485620273": row.get("category"),    # 유해위험요인 (분류)
-                        "entry.2072170485": row.get("scenario"),    # 위험상황
-                        "entry.1212734944": row.get("grade"),       # 위험등급
-                        "entry.2124342735": row.get("solution"),    # 감소대책
-                        "entry.543223131": row.get("law")           # 관련근거
-                    }
-                    
-                    # 전송
-                    response = requests.post(form_url, data=payload)
-                    if response.status_code == 200:
-                        success_count += 1
+                    try:
+                        payload = {
+                            "entry.1902283977": selected_facility,      # 시설명
+                            "entry.1485620273": row.get("category"),    # 유해위험요인
+                            "entry.2072170485": row.get("scenario"),    # 위험상황
+                            "entry.1212734944": row.get("grade"),       # 위험등급
+                            "entry.2124342735": row.get("solution"),    # 감소대책
+                            "entry.543223131": row.get("law")           # 관련근거
+                        }
+                        response = requests.post(form_url, data=payload)
+                        if response.status_code == 200:
+                            success_count += 1
+                    except Exception as e:
+                        st.error(f"전송 중 오류 발생: {e}")
                 
                 if success_count > 0:
                     st.success(f"총 {success_count}건의 데이터가 KYWA 안전센터로 전송되었습니다!")
                     st.balloons()
                 else:
-                    st.error("전송에 실패했습니다. 응답 상태를 확인하세요.")
-                    
-            except Exception as e:
-                st.error(f"오류 발생: {e}")
+                    st.warning("전송된 데이터가 없습니다. 다시 시도해 주세요.")
 
-
-# 10. 하단 저장 섹션
-if "final_processed_data" in st.session_state and st.session_state.final_processed_data:
-    st.write("---")
-    st.markdown("### **📂 결과 보고서 저장 (Word, Excel)**")
-    
-    # 세션 상태에 저장된 데이터를 가져옴
-    processed_data = st.session_state.final_processed_data
-    
-    # 파일명 설정 (user_name 제거, 시설명과 부서명 조합)
-    file_prefix = f"KYWA_안전점검_{selected_facility}_{selected_dept}"
-    
-    dl_col1, dl_col2 = st.columns(2)
-    
-    with dl_col1:
-        # Word 저장
-        st.download_button(
-            label="📄 Word 보고서 저장", 
-            data=create_docx(processed_data), 
-            file_name=f"{file_prefix}.docx", 
-            use_container_width=True,
-            key="doc_download"
-        )
+    # --- 10. 하단 저장 섹션 ---
+    if processed_data:
+        st.write("---")
+        st.caption("📂 결과 보고서 저장 (Word, Excel)")
+        dl_col1, dl_col2 = st.columns(2)
         
-    with dl_col2:
-        # Excel 저장
-        st.download_button(
-            label="📊 Excel 데이터 저장", 
-            data=create_excel(processed_data), 
-            file_name=f"{file_prefix}.xlsx", 
-            use_container_width=True,
-            key="xls_download"
-        )
-
-# --- 대시보드 섹션 ---
-st.write("---")
-
-# 함수 호출 전 정의 확인
-try:
-    dashboard_data = load_dashboard_data()
-except NameError:
-    st.error("⚠️ load_dashboard_data() 함수가 정의되지 않았습니다. 코드 상단을 확인해 주세요.")
-    dashboard_data = None
-
-if dashboard_data is not None:
-    # 2. 날짜 필터링 (2026년 데이터만)
-    yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026] if '타임스탬프' in dashboard_data.columns else dashboard_data
-
-    if yearly_data.empty:
-        st.warning("📅 2026년도로 기록된 데이터가 시트에 아직 없습니다. 첫 번째 데이터를 전송해 보세요!")
-    else:
-        st.subheader("📊 실시간 점검 데이터 현황 (2026년)")
-        
-        # 3. 상단 지표
-        total_count = len(yearly_data)
-        m1, m2 = st.columns(2)
-        m1.metric("올해 누적 점검 건수", f"{total_count} 건")
-        
-        # '부서명' 또는 '시설명' 기준으로 참여 현황 파악 (user_name 대체)
-        count_col = "시설명" 
-        if count_col in yearly_data.columns:
-            m2.metric("점검 참여 시설 수", f"{yearly_data[count_col].nunique()} 개소")
-
-        # 4. 그래프 시각화
-        g_col1, g_col2 = st.columns(2)
-        
-        with g_col1:
-            # 시트의 실제 컬럼명: '유해위험요인 (분류)' 등 저장 정보 참조
-            target_col_cat = "유해위험요인 (분류)" 
-            if target_col_cat in yearly_data.columns:
-                st.write(f"**📂 {target_col_cat} 현황**")
-                fig_pie = px.pie(yearly_data, names=target_col_cat, hole=0.3)
-                fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
-                st.plotly_chart(fig_pie, use_container_width=True)
-            else:
-                st.info(f"'{target_col_cat}' 데이터 분석 중...")
-
-        with g_col2:
-            target_col_fac = "시설명" 
-            if target_col_fac in yearly_data.columns:
-                st.write(f"**🏢 {target_col_fac}별 점검 건수**")
-                fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
-                fac_counts.columns = [target_col_fac, '건수']
-                fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
-                fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
-                st.plotly_chart(fig_bar, use_container_width=True)
-
-
-
-
-
-
-
-
-
-
-
+        with dl_col1:
+            st.download_button(
+                "Word 저장", 
+                data=create_docx(processed_data), 
+                file_name=f"KYWA_Report_{selected_facility}.docx", 
+                use_container_width=True
+            )
+        with dl_col2:
+            st.download_button(
+                "Excel 저장", 
+                data=create_excel(processed_data), 
+                file_name=f"KYWA_Data_{selected_facility}.xlsx", 
+                use_container_width=True
+            )
