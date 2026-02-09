@@ -260,7 +260,7 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                         "entry.1752607260": row.get("grade"),        # F열: 위험등급
                         "entry.271461796": row.get("solution"),      # G열: 감소대책
                         "entry.956205828": row.get("law"),           # H열: 관련근거
-                        "entry.1058871339": "사진 분석 완료"           # I열: 사진 기록 (텍스트)
+                        "entry.1058871339": "사진 포함" if img_file else "사진 없음"      # I열: 사진 기록 (텍스트)
                     }
                     
                     res = requests.post(form_url, data=payload)
@@ -368,5 +368,6 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
 
