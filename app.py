@@ -331,20 +331,15 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
         except Exception as e:
             st.error(f"❌ 오류가 발생했습니다: {e}")
 
-# --- 8. 결과 표시 및 데이터 처리 ---
-if st.session_state.analysis_results:
-    st.markdown("### 📊 분석 결과")
-    
-    table_html = '<table class="report-table"><thead><tr><th>분류</th><th>위험상황</th><th>빈도</th><th>강도</th><th>점수</th><th>등급</th><th>관련근거</th><th>감소대책</th></tr></thead><tbody>'
-    
-processed_data = [] # 여기서 변수가 생성됩니다.
+# --- 8. 결과 표시 및 데이터 처리 (여기서부터 덮어씌우세요) ---
+    processed_data = [] 
     for item in st.session_state.analysis_results:
         if isinstance(item, dict):
-            # 점수(score)를 기반으로 등급을 한 번 더 정밀하게 분류 (Python 로직)
+            # 점수(score)를 기반으로 등급을 한 번 더 정밀하게 분류
             p_val = int(item.get('p', 3))
             s_val = int(item.get('s', 3))
             score = p_val * s_val
-            item['score'] = score # 계산 일치 확인
+            item['score'] = score 
             
             if score <= 3: refined_grade = "매우 낮음"
             elif score <= 6: refined_grade = "낮음"
@@ -365,7 +360,32 @@ processed_data = [] # 여기서 변수가 생성됩니다.
     
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
-    
+
+    # --- 9. 데이터 전송 버튼 (반드시 processed_data와 같은 들여쓰기 수준 유지) ---
+    st.write("") # 간격 조절
+    if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
+        with st.spinner("데이터를 전송 중입니다..."):
+            try:
+                form_url = "https://docs.google.com/forms/d/e/1FAIpQLScGuW2xT1BU5BKas0NkmADv1BCEX6R3JtQaJ5Nm30iBwGe1rA/formResponse"
+                success_count = 0
+                for row in processed_data:
+                    payload = {
+                        "entry.1902283977": selected_facility,
+                        "entry.1485620273": row.get("category"),
+                        "entry.2072170485": row.get("scenario"),
+                        "entry.1212734944": row.get("grade"),
+                        "entry.2124342735": row.get("solution"),
+                        "entry.543223131": row.get("law")
+                    }
+                    response = requests.post(form_url, data=payload)
+                    if response.status_code == 200:
+                        success_count += 1
+                
+                if success_count > 0:
+                    st.success(f"총 {success_count}건 전송 완료!")
+                    st.balloons()
+            except Exception as e:
+                st.error(f"전송 중 오류 발생: {e}")
 # --- 9. 최종 데이터 전송 (반드시 이 위치, 즉 if문 안으로 이동) ---
     st.write(" ") # 여백
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
@@ -488,6 +508,7 @@ if dashboard_data is not None:
                 fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
                 fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+
 
 
 
