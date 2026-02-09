@@ -213,49 +213,59 @@ except Exception as e:
     st.error(f"API 설정 오류가 발생했습니다: {e}")
     st.stop()
 
-# --- 6. 입력 섹션 (중복 제거 및 Key 통일 버전) ---
+# --- 6. 입력 섹션 (중복 제거 및 최적화 완료) ---
 col1, col2 = st.columns(2)
 
 with col1:
+    # 1. 시설명 선택
     st.markdown("### **🏢 점검 대상 시설**")
-    # Key를 facility_val로 통일
     selected_facility = st.radio(
         "시설명 선택", 
         ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], 
         horizontal=True, 
-        key="facility_val" 
+        key="facility_val"  # 고유 Key 설정
     )
 
+    # 2. 담당 부서 선택 (중복 제거됨)
     st.markdown("### **📂 담당 부서 선택**")
-    dept_list = ["활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "미래활동부", "정책사업부", "활동안전부", "활동인증부", "청소년성장지원부", "지도인력양성부", "지도인력개발부", "자회사"]
+    dept_list = [
+        "활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", 
+        "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", 
+        "미래활동부", "정책사업부", "활동안전부", "활동인증부", 
+        "청소년성장지원부", "지도인력양성부", "지도인력개발부", "자회사"
+    ]
     
-    # 중복되었던 selectbox를 하나로 합치고 Key를 dept_val로 고정
     selected_dept = st.selectbox(
         "부서명 선택", 
         dept_list, 
-        key="dept_val"
+        key="dept_val"  # 고유 Key 설정
     )
     
     st.write("") 
+
+    # 3. 현장 상황 설명
     st.markdown("### **📝 현장 상황 설명**")
-    # 상황 설명도 key를 부여하여 유실 방지
+    placeholder_text = "<예시>\n1. 본관 2층 테라스 난간 흔들림\n2. 정문 보도블록 파손으로 넘어질 위험\n3. 생활관 사다리 고장으로 추락 위험 등"
     user_description = st.text_area(
         "상황 설명 입력", 
-        placeholder="<예시>\n1. 본관 2층 테라스 난간 흔들림...", 
+        placeholder=placeholder_text, 
         height=150,
-        key="desc_val"
+        key="desc_val", # 고유 Key 설정
+        label_visibility="collapsed"
     )
 
 with col2:
-    # (사진 부분은 기존과 동일하되 Key만 명확히 관리)
+    # 4. 사진 기록 방식
     st.markdown("### **📸 사진 기록 방식**")
     source_option = st.radio(
         "사진 방식 선택", 
         ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), 
         horizontal=True,
-        key="source_val"
+        key="source_val",
+        label_visibility="collapsed"
     )
     
+    # 사진 입력 위젯
     if "📷" in source_option:
         img_file = st.camera_input("📸 현장 사진 촬영", key="cam_val")
     elif "🖼️" in source_option:
@@ -414,6 +424,7 @@ if "final_data" in st.session_state and st.session_state.final_data:
 if st.button("✅ 데이터 전송"):
     st.write(f"현재 세션에 저장된 부서: {st.session_state.get('dept_val')}") # 이 줄 추가
     # ... 이후 전송 로직
+
 
 
 
