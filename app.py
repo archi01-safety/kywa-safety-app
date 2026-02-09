@@ -56,6 +56,32 @@ def create_excel(data):
         df.to_excel(writer, index=False, sheet_name='Sheet1')
     return bio.getvalue()
 
+# --- [추가] 버튼 스타일 설정 ---
+st.markdown("""
+    <style>
+    /* 모든 Streamlit 버튼 스타일 수정 */
+    div.stButton > button {
+        background-color: #ff4b4b !important; /* 기본 붉은색 */
+        color: white !important;
+        border: none !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+
+    /* 마우스 호버(Hover) 시 효과 */
+    div.stButton > button:hover {
+        background-color: #ff3333 !important; /* 마우스 올렸을 때 더 진한 빨강 */
+        color: white !important;
+        border: none !important;
+        transform: scale(1.01); /* 아주 살짝 커지는 효과 */
+    }
+    
+    /* Word/Excel 저장 버튼 등 일반 버튼도 동일 적용을 원치 않으시면 위 범위를 좁힐 수 있습니다 */
+    </style>
+""", unsafe_allow_html=True)
+
 # --- 4. 헤더 디자인 ---
 header_col1, header_col2 = st.columns([1, 4])
 raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
