@@ -373,7 +373,7 @@ if st.session_state.analysis_results:
 
 # 9. 최종 데이터 전송 (부서명 반영)
     if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
-with st.spinner("구글 시트로 데이터를 전송 중입니다..."):
+    with st.spinner("구글 시트로 데이터를 전송 중입니다..."):
             # 구글 폼 주소 (수정됨)
             form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
             success_count = 0
@@ -429,4 +429,5 @@ with st.spinner("구글 시트로 데이터를 전송 중입니다..."):
                 file_name=f"KYWA_Data_{selected_facility}.xlsx", 
                 use_container_width=True
             )
+
 
