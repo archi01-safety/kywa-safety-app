@@ -83,33 +83,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 4. 헤더 디자인 ---
+header_col1, header_col2 = st.columns([1, 4])
+raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
+
 with header_col1:
-    # GitHub의 Raw 이미지 경로
-    raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
-    
-    # 로고 전용 스타일: 링크 밑줄 및 이미지 테두리 제거
-    st.markdown(
-        f"""
-        <style>
-            .logo-link {{
-                text-decoration: none !important;
-                border: none !important;
-                outline: none !important;
-            }}
-            .logo-img {{
-                cursor: pointer;
-                border: none !important;
-                outline: none !important;
-                display: block; /* 이미지 하단 미세한 공백 제거 */
-            }}
-        </style>
-        
-        <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank" class="logo-link">
-            <img src="{raw_logo_url}" width="300" class="logo-img">
-        </a>
-        """,
-        unsafe_allow_html=True
-    )
+    st.markdown(f'<a href="https://www.kywa.or.kr/main/main.jsp" target="_blank"><img src="{raw_logo_url}" width="250"></a>', unsafe_allow_html=True)
+
+with header_col2:
+    st.title("🚨 KYWA AI 위험성평가 시스템")
+    st.caption("Korea Youth Work Agency - 스마트 안전관리 플랫폼")
+
+st.divider()
 
 # --- 5. 입력 섹션 ---
 col1, col2 = st.columns(2)
@@ -384,6 +368,7 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
 
 
