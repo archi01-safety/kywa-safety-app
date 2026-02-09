@@ -273,26 +273,37 @@ if dashboard_data is not None:
         else:
             m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
 
-        # 4. 그래프 시각화
-        g_col1, g_col2 = st.columns(2)
-        
-        with g_col1:
-            # 매칭되는 컬럼명 확인: '유해위험요인 (분류)' 등 실제 시트 헤더와 맞춰야 함
-            target_col_cat = "유해위험요인 (분류)" 
-            if target_col_cat in yearly_data.columns:
-                st.write(f"**{target_col_cat} 현황**")
-                fig_pie = px.pie(yearly_data, names=target_col_cat, hole=0.3)
-                fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
-                st.plotly_chart(fig_pie, use_container_width=True)
-            else:
-                st.info("💡 시트에서 '유해위험요인 (분류)' 컬럼을 찾는 중입니다...")
+# 4. 그래프 시각화
+g_col1, g_col2 = st.columns(2)
 
-        with g_col2:
-            target_col_fac = "시설명" 
-            if target_col_fac in yearly_data.columns:
-                st.write(f"**{target_col_fac}별 점검 건수**")
-                fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
-                fac_counts.columns = [target_col_fac, '건수']
-                fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
-                fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
-                st.plotly_chart(fig_bar, use_container_width=True)
+with g_col1:
+    # D열(인덱스 3)을 직접 지정하거나 이름을 확인합니다.
+    # 만약 컬럼명이 정확하지 않아도 위치로 찾아낼 수 있도록 안전장치를 추가합니다.
+    if len(yearly_data.columns) >= 4:
+        # D열의 실제 이름을 가져옵니다.
+        target_col_cat = yearly_data.columns[3] 
+        
+        st.write(f"**{target_col_cat} 현황**")
+        # 데이터가 비어있지 않은지 확인 후 그래프 생성
+        if not yearly_data[target_col_cat].dropna().empty:
+            fig_pie = px.pie(yearly_data, names=target_col_cat, hole=0.3)
+            fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.info("데이터가 충분하지 않아 그래프를 표시할 수 없습니다.")
+    else:
+        st.error("💡 시트에서 D열(유해위험요인)을 찾을 수 없습니다. 시트 구조를 확인해주세요.")
+
+with g_col2:
+    # '시설명' 컬럼 처리 (일반적으로 B열 또는 C열에 위치)
+    target_col_fac = "시설명" 
+    if target_col_fac in yearly_data.columns:
+        st.write(f"**{target_col_fac}별 점검 건수**")
+        fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
+        fac_counts.columns = [target_col_fac, '건수']
+        fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
+        fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
+        st.plotly_chart(fig_bar, use_container_width=True)
+    else:
+        # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
+        st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
