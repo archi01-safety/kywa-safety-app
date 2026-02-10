@@ -10,6 +10,27 @@ import pandas as pd
 from docx import Document
 import plotly.express as px
 
+# 앱 최상단에 배치하여 글자색 가독성 확보
+st.markdown("""
+    <style>
+    /* 모든 텍스트가 현재 테마의 글자색을 따르도록 설정 */
+    html, body, [data-testid="stWidgetLabel"] p {
+        color: var(--text-color);
+    }
+    
+    /* 모바일 환경에서 표(Table)나 컨테이너의 가독성 향상 */
+    .stDataFrame {
+        width: 100% !important;
+    }
+    
+    /* 이미지나 아이콘이 다크모드에서 너무 눈부시지 않게 살짝 조절 */
+    img {
+        max-width: 100%;
+        filter: brightness(var(--image-brightness, 1));
+    }
+    </style>
+    """, unsafe_index=True)
+
 # 1. 환경 설정 및 보안 우회 (필요한 경우)
 os.environ['PYTHONHTTPSVERIFY'] = '0'
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -378,6 +399,10 @@ FACILITY_COLOR_MAP = {
     "바이오": "#D2B48C", "해양": "#5B84B1", "우주": "#2E4A62",
     "미래": "#92B06A", "생태": "#5F7161"
 }
+
+# 차트 출력 시 theme="streamlit"을 명시 (기본값이지만 확인 필수)
+st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit")
+st.plotly_chart(fig_bar, use_container_width=True, theme="streamlit")
 
 # # 4. 그래프 시각화
 g_col1, g_col2 = st.columns(2)
