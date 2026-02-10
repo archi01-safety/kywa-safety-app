@@ -82,57 +82,46 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. 헤더 디자인 (로고 링크 및 타이틀 새로고침) ---
+# --- 4. 스타일 및 헤더 디자인 (오류 방지 중괄호 처리) ---
+st.markdown("""
+    <style>
+    /* 버튼 스타일 */
+    div.stButton > button {
+        background-color: #ff4b4b !important;
+        color: white !important;
+        font-weight: bold !important;
+        border-radius: 0.5rem !important;
+        transition: all 0.3s ease !important;
+    }
+    div.stButton > button:hover {
+        background-color: #ff3333 !important;
+        transform: scale(1.01);
+    }
+    /* 로고 및 타이틀 스타일 */
+    .logo-img { cursor: pointer; display: block; margin-top: 10px; }
+    .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
+    .refresh-title:hover { color: #FF4B4B !important; }
+    </style>
+""", unsafe_allow_html=True)
+
 header_col1, header_col2 = st.columns([1, 4])
+raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
 
 with header_col1:
-    # GitHub의 Raw 이미지 경로
-    raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
-    
-    # 로고 및 타이틀 공통 스타일
-    st.markdown(
-        f"""
-        <style>
-            .logo-link {{
-                text-decoration: none !important;
-                border: none !important;
-                outline: none !important;
-            }}
-            .logo-img {{
-                cursor: pointer;
-                border: none !important;
-                outline: none !important;
-                display: block;
-                margin-top: 10px; /* 로고 위치 미세 조정 */
-            }}
-            .refresh-title {{
-                text-decoration: none !important;
-                color: inherit !important;
-                cursor: pointer;
-            }}
-            .refresh-title:hover {{
-                color: #FF4B4B !important; /* 마우스 올렸을 때 강조색 */
-            }}
-        </style>
-        
-        <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank" class="logo-link">
+    # f-string을 쓰지 않고 직접 삽입하여 중괄호 오류 원천 차단
+    st.markdown(f'''
+        <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
             <img src="{raw_logo_url}" width="300" class="logo-img">
         </a>
-        """,
-        unsafe_allow_html=True
-    )
+    ''', unsafe_allow_html=True)
 
 with header_col2:
-    # 타이틀에 새로고침 링크 적용
-    st.markdown(
-        """
+    st.markdown("""
         <a href="/" target="_self" class="refresh-title">
             <h1 style='margin-bottom: 0;'>🚨 KYWA AI 위험성평가 시스템</h1>
         </a>
         <p style='color: gray; margin-top: 0;'>Korea Youth Work Agency - 스마트 안전관리 플랫폼</p>
-        """,
-        unsafe_allow_html=True
-    )
+    """, unsafe_allow_html=True)
 
 st.divider()
 
@@ -409,6 +398,7 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
 
 
