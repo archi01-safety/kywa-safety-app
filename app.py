@@ -141,7 +141,7 @@ with col1:
 
 with col2:
     st.markdown("### **📸 사진 기록 방식**")
-    source_option = st.radio("사진 방식 선택  -  ※ 얼굴(정면)을 업로드 하지 않도록 주의🚨", ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), horizontal=True)
+    source_option = st.radio("사진 방식 선택  -  얼굴(정면)을 업로드 하지 않도록 주의🚨", ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), horizontal=True)
     
     img_file = None
     if "📷" in source_option:
@@ -398,6 +398,7 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
 
 
