@@ -400,10 +400,6 @@ FACILITY_COLOR_MAP = {
     "미래": "#92B06A", "생태": "#5F7161"
 }
 
-# 차트 출력 시 theme="streamlit"을 명시 (기본값이지만 확인 필수)
-st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit")
-st.plotly_chart(fig_bar, use_container_width=True, theme="streamlit")
-
 # # 4. 그래프 시각화
 g_col1, g_col2 = st.columns(2)
 
@@ -438,3 +434,4 @@ with g_col2:
             plot_bgcolor='rgba(0,0,0,0)', # 배경을 투명하게 하여 더 깔끔하게
         )
         st.plotly_chart(fig_bar, use_container_width=True)
+
