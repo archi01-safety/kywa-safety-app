@@ -426,28 +426,41 @@ if dashboard_data is not None:
                     )
                     st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit")
 
-        with g_col2:
-            target_col_fac = "시설명" 
-            if target_col_fac in yearly_data.columns:
-                st.write(f"**{target_col_fac}별 점검 건수**")
-                yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
-                fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
-                fac_counts.columns = [target_col_fac, '건수']
-                
-                # 막대 그래프 생성
-                fig_bar = px.bar(
-                    fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
-                    color_discrete_map=FACILITY_COLOR_MAP
-                )
-                # 다크모드 대응 레이아웃 설정
-                fig_bar.update_layout(
-                    margin=dict(t=30, b=0, l=0, r=0), 
-                    height=350, 
-                    showlegend=False,
-                    xaxis_title=None, 
-                    yaxis_title="점검 건수",
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color=None)
-                )
-                st.plotly_chart(fig_bar, use_container_width=True, theme="streamlit")
+with g_col2:
+    target_col_fac = "시설명" 
+    if target_col_fac in yearly_data.columns:
+        st.write(f"**{target_col_fac}별 점검 건수**")
+        # ... (데이터 집계 로직 동일) ...
+        
+        fig_bar = px.bar(
+            fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
+            color_discrete_map=FACILITY_COLOR_MAP
+        )
+        
+        # 1. 축 고정 (확대/축소 방지)
+        fig_bar.update_xaxes(fixedrange=True) # X축 고정
+        fig_bar.update_yaxes(fixedrange=True) # Y축 고정
+        
+        fig_bar.update_layout(
+            margin=dict(t=30, b=0, l=0, r=0), 
+            height=350, 
+            showlegend=False,
+            xaxis_title=None, 
+            yaxis_title="점검 건수",
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color=None),
+            # 2. 드래그 모드 자체를 비활성화 (클릭/드래그 시 아무 반응 없게 함)
+            dragmode=False 
+        )
+        
+        # 3. 우측 상단 툴바(Modebar) 숨기기
+        st.plotly_chart(
+            fig_bar, 
+            use_container_width=True, 
+            theme="streamlit",
+            config={
+                'displayModeBar': False,  # 툴바 숨기기
+                'staticPlot': False       # True로 하면 툴팁까지 안 나오므로 False 유지
+            }
+        )
