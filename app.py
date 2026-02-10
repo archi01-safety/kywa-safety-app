@@ -130,10 +130,10 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### **🏢 점검 대상 정보**")
-    selected_facility = st.radio("시설명 선택(필수)", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], horizontal=True)
+    selected_facility = st.radio("시설명 선택 (필수)", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], horizontal=True)
     
     dept_list = ["활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "자회사"]
-    selected_dept = st.selectbox("담당 부서 선택(필수)", dept_list)
+    selected_dept = st.selectbox("담당 부서 선택 (필수)", dept_list)
     
     st.markdown("### **📝 현장 상황 설명**")
     placeholder_text = "<예시>\n1. 본관 2층 테라스 난간 흔들림\n2. 정문 보도블록 파손으로 넘어질 위험\n(자세히 작성할수록 정확한 결과가 나옵니다.)"
@@ -141,7 +141,7 @@ with col1:
 
 with col2:
     st.markdown("### **📸 사진 기록 방식**")
-    source_option = st.radio("사진 방식 선택(필수) - 얼굴(정면)을 업로드 하지 않도록 주의!", ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), horizontal=True)
+    source_option = st.radio("사진 방식 선택 (필수)  -  얼굴(정면)을 업로드 하지 않도록 주의!", ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), horizontal=True)
     
     img_file = None
     if "📷" in source_option:
@@ -398,6 +398,7 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
 
 
