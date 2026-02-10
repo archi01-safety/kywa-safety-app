@@ -367,9 +367,9 @@ dashboard_data = load_dashboard_data()
 if dashboard_data is not None:
     # 2. 날짜 필터링 (2026년 데이터만)
     if '타임스탬프' in dashboard_data.columns:
-        yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026]
+        yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026].copy()
     else:
-        yearly_data = dashboard_data
+        yearly_data = dashboard_data.copy()
 
     if yearly_data.empty:
         st.warning("📅 2026년도로 기록된 데이터가 시트에 아직 없습니다. 첫 번째 데이터를 전송해 보세요!")
@@ -411,56 +411,55 @@ if dashboard_data is not None:
                 if not yearly_data[target_col_cat].dropna().empty:
                     yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
                     
-                    # 피해 차트 생성
                     fig_pie = px.pie(
                         yearly_data, names=target_col_cat, hole=0.3,
                         color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
                     )
-                    # 다크모드 대응 레이아웃 설정
+                    # 파이 차트도 확대/축소 방지 적용
                     fig_pie.update_layout(
                         margin=dict(t=30, b=0, l=0, r=0), 
                         height=350,
                         paper_bgcolor='rgba(0,0,0,0)',
                         plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color=None) # 시스템 테마 텍스트색 자동 추종
+                        font=dict(color=None),
+                        dragmode=False
                     )
-                    st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit")
+                    st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit", config={'displayModeBar': False})
 
-with g_col2:
-    target_col_fac = "시설명" 
-    if target_col_fac in yearly_data.columns:
-        st.write(f"**{target_col_fac}별 점검 건수**")
-        # ... (데이터 집계 로직 동일) ...
-        
-        fig_bar = px.bar(
-            fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
-            color_discrete_map=FACILITY_COLOR_MAP
-        )
-        
-        # 1. 축 고정 (확대/축소 방지)
-        fig_bar.update_xaxes(fixedrange=True) # X축 고정
-        fig_bar.update_yaxes(fixedrange=True) # Y축 고정
-        
-        fig_bar.update_layout(
-            margin=dict(t=30, b=0, l=0, r=0), 
-            height=350, 
-            showlegend=False,
-            xaxis_title=None, 
-            yaxis_title="점검 건수",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color=None),
-            # 2. 드래그 모드 자체를 비활성화 (클릭/드래그 시 아무 반응 없게 함)
-            dragmode=False 
-        )
-        
-        # 3. 우측 상단 툴바(Modebar) 숨기기
-        st.plotly_chart(
-            fig_bar, 
-            use_container_width=True, 
-            theme="streamlit",
-            config={
-                'displayModeBar': False,  # 툴바 숨기기
-                'staticPlot': False       # True로 하면 툴팁까지 안 나오므로 False 유지
-            }
-        )
+        with g_col2:
+            target_col_fac = "시설명" 
+            if target_col_fac in yearly_data.columns:
+                st.write(f"**{target_col_fac}별 점검 건수**")
+                
+                # [중요] 데이터 집계 로직 (이 부분이 누락되어 NameError가 발생했었습니다)
+                yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
+                fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
+                fac_counts.columns = [target_col_fac, '건수']
+                
+                fig_bar = px.bar(
+                    fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
+                    color_discrete_map=FACILITY_COLOR_MAP
+                )
+                
+                # 확대/축소 방지 및 레이아웃 설정
+                fig_bar.update_xaxes(fixedrange=True)
+                fig_bar.update_yaxes(fixedrange=True)
+                
+                fig_bar.update_layout(
+                    margin=dict(t=30, b=0, l=0, r=0), 
+                    height=350, 
+                    showlegend=False,
+                    xaxis_title=None, 
+                    yaxis_title="점검 건수",
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color=None),
+                    dragmode=False 
+                )
+                
+                st.plotly_chart(
+                    fig_bar, 
+                    use_container_width=True, 
+                    theme="streamlit",
+                    config={'displayModeBar': False}
+                )
