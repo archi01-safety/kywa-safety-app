@@ -10,7 +10,10 @@ import pandas as pd
 from docx import Document
 import plotly.express as px
 
-# 앱 최상단에 배치하여 글자색 가독성 확보
+# [수정 1] 페이지 설정이 무조건 가장 먼저 와야 합니다!
+st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
+
+# [수정 2] 파라미터 이름을 unsafe_allow_html=True 로 변경
 st.markdown("""
     <style>
     /* 모든 텍스트가 현재 테마의 글자색을 따르도록 설정 */
@@ -29,7 +32,7 @@ st.markdown("""
         filter: brightness(var(--image-brightness, 1));
     }
     </style>
-    """, unsafe_index=True)
+    """, unsafe_allow_html=True)
 
 # 1. 환경 설정 및 보안 우회 (필요한 경우)
 os.environ['PYTHONHTTPSVERIFY'] = '0'
@@ -400,6 +403,10 @@ FACILITY_COLOR_MAP = {
     "미래": "#92B06A", "생태": "#5F7161"
 }
 
+# 차트 출력 시 theme="streamlit"을 명시 (기본값이지만 확인 필수)
+st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit")
+st.plotly_chart(fig_bar, use_container_width=True, theme="streamlit")
+
 # # 4. 그래프 시각화
 g_col1, g_col2 = st.columns(2)
 
@@ -434,4 +441,3 @@ with g_col2:
             plot_bgcolor='rgba(0,0,0,0)', # 배경을 투명하게 하여 더 깔끔하게
         )
         st.plotly_chart(fig_bar, use_container_width=True)
-
