@@ -144,7 +144,7 @@ with col1:
     selected_facility = st.radio("시설명 선택", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], horizontal=True)
     
     dept_list = ["활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "자회사"]
-    selected_dept = st.selectbox("담당 부서 선택", dept_list)
+    selected_dept = st.selectbox("담당 부서 선택(필수)", dept_list)
     
     st.markdown("### **📝 현장 상황 설명**")
     placeholder_text = "<예시>\n1. 본관 2층 테라스 난간 흔들림\n2. 정문 보도블록 파손으로 넘어질 위험"
@@ -166,7 +166,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
         try:
-            with st.spinner(f"✨ KYWA AI가 [{selected_facility}] 시설을 분석 중입니다..."):
+            with st.spinner(f"✨ KYWA AI가 [{selected_facility}] 위험성을 분석 중입니다..."):
                 prompt = f"""
                 당신은 한국청소년활동진흥원(KYWA)의 안전관리 전문가입니다.
                 다음 상황을 분석하여 위험성평가를 실시하십시오.
@@ -193,7 +193,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                 
                 # 결과 저장 (리스트 형태 보장)
                 st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
-                st.success("✅ 분석 완료!")
+                st.success("✅ 위험성 분석 완료!")
                 st.rerun()
         except Exception as e:
             st.error(f"❌ 오류 발생: {e}")
@@ -281,11 +281,11 @@ if st.session_state.analysis_results:
 
 # --- 8. 최종 데이터 전송 및 저장 (밀림 현상 수정본) ---
 st.write("")
-if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_width=True):
+if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
     if not st.session_state.final_data:
         st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
     else:
-        with st.spinner("🚀 KYWA 안전센터에 데이터를 전송 중입니다..."):
+        with st.spinner("🚀 'KYWA 안전센터'에 데이터를 전송 중입니다..."):
             try:
                 # 폼 응답 URL
                 form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
@@ -309,7 +309,7 @@ if st.button("✅ KYWA 안전센터로 데이터 최종 전송", use_container_w
                         success_count += 1
                 
                 if success_count > 0:
-                    st.success(f"✅ 최종 제출한 데이터 {success_count}건이 KYWA 안전센터에 정상적으로 도착했습니다!")
+                    st.success(f"✅ 최종 제출한 데이터 {success_count}건이 'KYWA AI 안전센터'에 정상적으로 전송되었습니다!")
                     st.balloons()
                 else:
                     st.error("전송에 실패했습니다. 응답 코드를 확인하세요.")
@@ -409,6 +409,7 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
 
 
