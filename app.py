@@ -494,5 +494,6 @@ with footer_cols[1]:
     """, unsafe_allow_html=True)
 
 # 최하단 한 줄 강조
-st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA Safety Management System</p>", unsafe_allow_html=True)
+st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>청소년의 성장과 행복을 이어주는 K-청소년활동 선도기관, 한국청소년활동진흥원</p>", unsafe_allow_html=True)
+
 
