@@ -364,19 +364,39 @@ if dashboard_data is not None:
         else:
             m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
 
-# 1. 공통 색상 맵 정의 (11가지 카테고리 + 알파)
+요청하신 요구사항을 완벽히 반영하여 코드를 수정했습니다.
+
+유해위험요인은 직관성을 위해 강렬한 원색 계열로, 시설명은 이와 대비되도록 부드러운 파스텔톤으로 구성했습니다. 특히 지시하신 대로 시설 안전(붉은색), 보건(핑크색), 전기(노란색) 등 의미에 맞는 색상 코드를 매칭했습니다.
+
+🎨 수정된 대시보드 시각화 코드
+Python
+import plotly.express as px
+import streamlit as st
+
+# 1. 유해위험요인 색상 맵 (원색 및 의미 기반 계열)
 CATEGORY_COLOR_MAP = {
-    "보행 안전": "#85C9FF",        # 하늘색
-    "시설 안전": "#0061C1",        # 진한 파랑
-    "화재 안전": "#FF3131",        # 빨강 (위험)
-    "작업 안전": "#FF8C00",        # 주황
-    "활동 안전": "#24A185",        # 녹색
-    "보건 및 위생관리": "#FFADAD",  # 분홍
-    "화학물질 관리": "#A020F0",     # 보라
-    "작업 환경": "#708090",        # 회색
-    "기계(설비)적 요인": "#DAA520", # 황금색
-    "전기적 요인": "#FFD700",      # 노랑
-    "재난 안전": "#B22222"         # 벽돌색
+    "보행 안전": "#1E90FF",        # 도저 블루 (청량한 파랑)
+    "시설 안전": "#FF0000",        # 순수 빨강 (강조)
+    "화재 안전": "#CD5C5C",        # 인디언 레드 (화색 계열)
+    "작업 안전": "#FF8C00",        # 다크 오렌지
+    "활동 안전": "#2E8B57",        # 씨 그린 (차분한 녹색)
+    "보건 및 위생관리": "#FF69B4",  # 핫 핑크
+    "화학물질 관리": "#8A2BE2",     # 블루 바이올렛
+    "작업 환경": "#708090",        # 슬레이트 그레이
+    "기계(설비)적 요인": "#B8860B", # 다크 골드 (기계 느낌)
+    "전기적 요인": "#FFD700",      # 골드 (노랑)
+    "재난 안전": "#8B0000"         # 다크 레드
+}
+
+# 2. 시설명 색상 맵 (파스텔톤 계열)
+FACILITY_COLOR_MAP = {
+    "중앙": "#A7C7E7",    # 파스텔 블루
+    "평창": "#FAC898",    # 파스텔 오렌지
+    "바이오": "#F9E076",  # 진한 노랑 (파스텔톤 조정)
+    "해양": "#89CFF0",    # 베이비 블루 (하늘색)
+    "우주": "#728FCE",    # 톤 다운된 남색
+    "미래": "#C1E1C1",    # 티 그린 (연두색)
+    "생태": "#77DD77"     # 파스텔 그린 (초록색)
 }
 
 # # 4. 그래프 시각화
@@ -388,7 +408,7 @@ with g_col1:
         st.write(f"**{target_col_cat} 현황**")
         
         if not yearly_data[target_col_cat].dropna().empty:
-            # 데이터 정제: 앞뒤 공백 제거하여 매칭 확률 높임
+            # 데이터 정제: 앞뒤 공백 제거
             yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
             
             fig_pie = px.pie(
@@ -396,7 +416,7 @@ with g_col1:
                 names=target_col_cat, 
                 hole=0.3,
                 color=target_col_cat,
-                color_discrete_map=CATEGORY_COLOR_MAP # 설정한 색상 적용
+                color_discrete_map=CATEGORY_COLOR_MAP # 원색 계열 적용
             )
             fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
             st.plotly_chart(fig_pie, use_container_width=True)
@@ -409,16 +429,18 @@ with g_col2:
     target_col_fac = "시설명" 
     if target_col_fac in yearly_data.columns:
         st.write(f"**{target_col_fac}별 점검 건수**")
+        # 데이터 정제: 시설명 공백 제거
+        yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
+        
         fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
         fac_counts.columns = [target_col_fac, '건수']
         
-        # 시설명은 개수가 유동적이므로 기본 팔레트(Plotly Pastel) 사용
         fig_bar = px.bar(
             fac_counts, 
             x=target_col_fac, 
             y='건수', 
             color=target_col_fac,
-            color_discrete_sequence=px.colors.qualitative.Pastel 
+            color_discrete_map=FACILITY_COLOR_MAP # 파스텔톤 계열 적용
         )
         fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
         st.plotly_chart(fig_bar, use_container_width=True)
