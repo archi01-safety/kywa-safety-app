@@ -364,58 +364,63 @@ if dashboard_data is not None:
         else:
             m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
 
-# 4. 그래프 시각화
+# 1. 공통 색상 맵 정의 (11가지 카테고리 + 알파)
+CATEGORY_COLOR_MAP = {
+    "보행 안전": "#85C9FF",        # 하늘색
+    "시설 안전": "#0061C1",        # 진한 파랑
+    "화재 안전": "#FF3131",        # 빨강 (위험)
+    "작업 안전": "#FF8C00",        # 주황
+    "활동 안전": "#24A185",        # 녹색
+    "보건 및 위생관리": "#FFADAD",  # 분홍
+    "화학물질 관리": "#A020F0",     # 보라
+    "작업 환경": "#708090",        # 회색
+    "기계(설비)적 요인": "#DAA520", # 황금색
+    "전기적 요인": "#FFD700",      # 노랑
+    "재난 안전": "#B22222"         # 벽돌색
+}
+
+# # 4. 그래프 시각화
 g_col1, g_col2 = st.columns(2)
 
 with g_col1:
-    # D열(인덱스 3)을 직접 지정하거나 이름을 확인합니다.
-    # 만약 컬럼명이 정확하지 않아도 위치로 찾아낼 수 있도록 안전장치를 추가합니다.
     if len(yearly_data.columns) >= 4:
-        # D열의 실제 이름을 가져옵니다.
         target_col_cat = yearly_data.columns[3] 
-        
         st.write(f"**{target_col_cat} 현황**")
-        # 데이터가 비어있지 않은지 확인 후 그래프 생성
+        
         if not yearly_data[target_col_cat].dropna().empty:
-            fig_pie = px.pie(yearly_data, names=target_col_cat, hole=0.3)
+            # 데이터 정제: 앞뒤 공백 제거하여 매칭 확률 높임
+            yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
+            
+            fig_pie = px.pie(
+                yearly_data, 
+                names=target_col_cat, 
+                hole=0.3,
+                color=target_col_cat,
+                color_discrete_map=CATEGORY_COLOR_MAP # 설정한 색상 적용
+            )
             fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
             st.plotly_chart(fig_pie, use_container_width=True)
         else:
             st.info("데이터가 충분하지 않아 그래프를 표시할 수 없습니다.")
     else:
-        st.error("💡 시트에서 D열(유해위험요인)을 찾을 수 없습니다. 시트 구조를 확인해주세요.")
+        st.error("💡 시트에서 D열(유해위험요인)을 찾을 수 없습니다.")
 
 with g_col2:
-    # '시설명' 컬럼 처리 (일반적으로 B열 또는 C열에 위치)
     target_col_fac = "시설명" 
     if target_col_fac in yearly_data.columns:
         st.write(f"**{target_col_fac}별 점검 건수**")
         fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
         fac_counts.columns = [target_col_fac, '건수']
-        fig_bar = px.bar(fac_counts, x=target_col_fac, y='건수', color=target_col_fac)
+        
+        # 시설명은 개수가 유동적이므로 기본 팔레트(Plotly Pastel) 사용
+        fig_bar = px.bar(
+            fac_counts, 
+            x=target_col_fac, 
+            y='건수', 
+            color=target_col_fac,
+            color_discrete_sequence=px.colors.qualitative.Pastel 
+        )
         fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
         st.plotly_chart(fig_bar, use_container_width=True)
     else:
-        # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
