@@ -130,7 +130,7 @@ col1, col2 = st.columns(2)
 
 with col1:
     st.markdown("### **🏢 점검 대상 정보**")
-    selected_facility = st.radio("시설명 선택", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], horizontal=True)
+    selected_facility = st.radio("시설명 선택(필수)", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], horizontal=True)
     
     dept_list = ["활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "자회사"]
     selected_dept = st.selectbox("담당 부서 선택(필수)", dept_list)
@@ -398,6 +398,7 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
 
 
