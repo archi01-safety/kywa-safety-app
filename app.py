@@ -463,3 +463,29 @@ if dashboard_data is not None:
                     theme="streamlit",
                     config={'displayModeBar': False}
                 )
+
+# --- 푸터(Footer) 섹션 ---
+st.write("") # 간격 확보
+st.write("---")
+footer_cols = st.columns([3, 1])
+
+with footer_cols[0]:
+    st.markdown("### 🔒 Data Governance & Privacy")
+    st.caption("""
+    **© 2026 한국청소년활동진흥원(KYWA) 안전경영부.** 본 시스템은 **'공공기관 AI 활용 가이드라인'** 및 기관 내부 **'정보보안 업무규정'**을 엄격히 준수합니다.
+    
+    * **데이터 보안:** 입력된 모든 정보는 API 옵트아웃(Opt-out) 설정이 적용되어 외부 모델 학습에 활용되지 않습니다.
+    * **운영 방침:** 'KYWA AI 안전센터'로 전송된 데이터는 **안전경영부 담당자의 데이터 정합성 검토**를 거칩니다. 
+      점검 내용이 부적절하거나 중복된 경우, 데이터 신뢰성 유지를 위해 운영 관리자에 의해 임의 수정 또는 삭제될 수 있습니다.
+    * **면책 고지:** AI 분석 결과는 안전 점검 보조 도구로써 제공되며, 실제 위험성 평가 시 전문가의 최종 확정을 권고합니다.
+    """)
+
+with footer_cols[1]:
+    st.markdown("### 📞 Contact")
+    st.caption("""
+    **안전경영부(Safety Management)** 📧 archi01@kywa.or.kr  
+    🏢 KYWA AI 위험성평가 시스템 운영팀  
+    """)
+
+# 최하단 한 줄 강조
+st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA Safety Management System</p>", unsafe_allow_html=True)
