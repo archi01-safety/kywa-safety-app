@@ -381,63 +381,73 @@ if dashboard_data is not None:
         m1, m2 = st.columns(2)
         m1.metric("올해 누적 점검 건수", f"{total_count} 건")
         
-        # '작성자 성명' 대신 '시설명' 기준으로 참여 분포 확인 (또는 실제 컬럼명으로 수정)
         author_col = "작성자 성명" 
         if author_col in yearly_data.columns:
             m2.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
         else:
             m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
 
-# 1. 유해위험요인 (강렬한 고대비 원색 중심)
-CATEGORY_COLOR_MAP = {
-    "시설 안전": "#D32F2F", "화재 안전": "#FF5722", "재난 안전": "#880E4F",
-    "작업환경 요인": "#455A64", "작업 환경": "#455A64", "기계(설비)적 요인": "#795548",
-    "작업 안전": "#FFA000", "전기적 요인": "#FBC02D", "보건 및 위생관리": "#E91E63",
-    "화학물질 관리": "#9C27B0", "보행 안전": "#1976D2", "활동 안전": "#388E3C"
-}
+        # --- 색상 맵 설정 ---
+        CATEGORY_COLOR_MAP = {
+            "시설 안전": "#D32F2F", "화재 안전": "#FF5722", "재난 안전": "#880E4F",
+            "작업환경 요인": "#455A64", "작업 환경": "#455A64", "기계(설비)적 요인": "#795548",
+            "작업 안전": "#FFA000", "전기적 요인": "#FBC02D", "보건 및 위생관리": "#E91E63",
+            "화학물질 관리": "#9C27B0", "보행 안전": "#1976D2", "활동 안전": "#388E3C"
+        }
 
-# 2. 시설명 (팬톤 기반 고급형 팔레트)
-FACILITY_COLOR_MAP = {
-    "중앙": "#B93444", "본원": "#6B5B95", "평창": "#E2725B",
-    "바이오": "#D2B48C", "해양": "#5B84B1", "우주": "#2E4A62",
-    "미래": "#92B06A", "생태": "#5F7161"
-}
+        FACILITY_COLOR_MAP = {
+            "중앙": "#B93444", "본원": "#6B5B95", "평창": "#E2725B",
+            "바이오": "#D2B48C", "해양": "#5B84B1", "우주": "#2E4A62",
+            "미래": "#92B06A", "생태": "#5F7161"
+        }
 
-# 차트 출력 시 theme="streamlit"을 명시 (기본값이지만 확인 필수)
-st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit")
-st.plotly_chart(fig_bar, use_container_width=True, theme="streamlit")
+        # --- 4. 그래프 시각화 영역 ---
+        g_col1, g_col2 = st.columns(2)
 
-# # 4. 그래프 시각화
-g_col1, g_col2 = st.columns(2)
+        with g_col1:
+            if len(yearly_data.columns) >= 4:
+                target_col_cat = yearly_data.columns[3] 
+                st.write(f"**{target_col_cat} 현황**")
+                if not yearly_data[target_col_cat].dropna().empty:
+                    yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
+                    
+                    # 피해 차트 생성
+                    fig_pie = px.pie(
+                        yearly_data, names=target_col_cat, hole=0.3,
+                        color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
+                    )
+                    # 다크모드 대응 레이아웃 설정
+                    fig_pie.update_layout(
+                        margin=dict(t=30, b=0, l=0, r=0), 
+                        height=350,
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color=None) # 시스템 테마 텍스트색 자동 추종
+                    )
+                    st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit")
 
-with g_col1:
-    if len(yearly_data.columns) >= 4:
-        target_col_cat = yearly_data.columns[3] 
-        st.write(f"**{target_col_cat} 현황**")
-        if not yearly_data[target_col_cat].dropna().empty:
-            yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
-            fig_pie = px.pie(
-                yearly_data, names=target_col_cat, hole=0.3,
-                color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
-            )
-            fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
-            st.plotly_chart(fig_pie, use_container_width=True)
-
-with g_col2:
-    target_col_fac = "시설명" 
-    if target_col_fac in yearly_data.columns:
-        st.write(f"**{target_col_fac}별 점검 건수**")
-        yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
-        fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
-        fac_counts.columns = [target_col_fac, '건수']
-        
-        fig_bar = px.bar(
-            fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
-            color_discrete_map=FACILITY_COLOR_MAP # 고급형 맵 적용
-        )
-        fig_bar.update_layout(
-            margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False,
-            xaxis_title=None, yaxis_title="점검 건수",
-            plot_bgcolor='rgba(0,0,0,0)', # 배경을 투명하게 하여 더 깔끔하게
-        )
-        st.plotly_chart(fig_bar, use_container_width=True)
+        with g_col2:
+            target_col_fac = "시설명" 
+            if target_col_fac in yearly_data.columns:
+                st.write(f"**{target_col_fac}별 점검 건수**")
+                yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
+                fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
+                fac_counts.columns = [target_col_fac, '건수']
+                
+                # 막대 그래프 생성
+                fig_bar = px.bar(
+                    fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
+                    color_discrete_map=FACILITY_COLOR_MAP
+                )
+                # 다크모드 대응 레이아웃 설정
+                fig_bar.update_layout(
+                    margin=dict(t=30, b=0, l=0, r=0), 
+                    height=350, 
+                    showlegend=False,
+                    xaxis_title=None, 
+                    yaxis_title="점검 건수",
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    font=dict(color=None)
+                )
+                st.plotly_chart(fig_bar, use_container_width=True, theme="streamlit")
