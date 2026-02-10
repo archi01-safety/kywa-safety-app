@@ -136,7 +136,7 @@ with col1:
     selected_dept = st.selectbox("담당 부서 선택(필수)", dept_list)
     
     st.markdown("### **📝 현장 상황 설명**")
-    placeholder_text = "<예시>\n1. 본관 2층 테라스 난간 흔들림\n2. 정문 보도블록 파손으로 넘어질 위험\n3. 자세히 작성할수록 정확한 결과가 나옵니다."
+    placeholder_text = "<예시>\n1. 본관 2층 테라스 난간 흔들림\n2. 정문 보도블록 파손으로 넘어질 위험\n(자세히 작성할수록 정확한 결과가 나옵니다.)"
     user_description = st.text_area("상황 설명 입력(권장)", placeholder=placeholder_text, height=150)
 
 with col2:
@@ -398,6 +398,7 @@ with g_col2:
     else:
         # 시설명도 못 찾을 경우를 대비해 첫 번째 컬럼(A열) 근처를 탐색할 수 있습니다.
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
 
 
 
