@@ -364,15 +364,6 @@ if dashboard_data is not None:
         else:
             m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
 
-요청하신 요구사항을 완벽히 반영하여 코드를 수정했습니다.
-
-유해위험요인은 직관성을 위해 강렬한 원색 계열로, 시설명은 이와 대비되도록 부드러운 파스텔톤으로 구성했습니다. 특히 지시하신 대로 시설 안전(붉은색), 보건(핑크색), 전기(노란색) 등 의미에 맞는 색상 코드를 매칭했습니다.
-
-🎨 수정된 대시보드 시각화 코드
-Python
-import plotly.express as px
-import streamlit as st
-
 # 1. 유해위험요인 색상 맵 (원색 및 의미 기반 계열)
 CATEGORY_COLOR_MAP = {
     "보행 안전": "#1E90FF",        # 도저 블루 (청량한 파랑)
@@ -446,3 +437,4 @@ with g_col2:
         st.plotly_chart(fig_bar, use_container_width=True)
     else:
         st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
+
