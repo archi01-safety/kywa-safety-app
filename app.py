@@ -364,40 +364,19 @@ if dashboard_data is not None:
         else:
             m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
 
-# 1. 유해위험요인 색상 맵 (고대비 및 내용 기반 구성)
+# 1. 유해위험요인 (강렬한 고대비 원색 중심)
 CATEGORY_COLOR_MAP = {
-    # 위험/경고 계열
-    "시설 안전": "#D32F2F",        # 진한 레드 (시설물 결함)
-    "화재 안전": "#FF5722",        # 선명한 주황 (불꽃)
-    "재난 안전": "#880E4F",        # 루비색 (중대 재난)
-    
-    # 산업/환경 계열 (레드와 확실히 구분)
-    "작업환경 요인": "#455A64",      # 블루 그레이 (산업 현장 느낌)
-    "작업 환경": "#455A64",        # (유사 명칭 대응)
-    "기계(설비)적 요인": "#795548",  # 브라운 (금속/기계)
-    "작업 안전": "#FFA000",        # 호박색 (안전 조끼)
-    
-    # 보건/생활 계열
-    "전기적 요인": "#FBC02D",      # 진한 노랑 (번개/주의)
-    "보건 및 위생관리": "#E91E63",  # 진한 핑크 (의료/위생)
-    "화학물질 관리": "#9C27B0",     # 퍼플 (화학 작용)
-    
-    # 일상/활동 계열
-    "보행 안전": "#1976D2",        # 진한 파랑 (길/바닥)
-    "활동 안전": "#388E3C",        # 진한 초록 (공원/활동)
-    "행동 안전": "#009688"         # 청록색 (사람의 움직임)
+    "시설 안전": "#D32F2F", "화재 안전": "#FF5722", "재난 안전": "#880E4F",
+    "작업환경 요인": "#455A64", "작업 환경": "#455A64", "기계(설비)적 요인": "#795548",
+    "작업 안전": "#FFA000", "전기적 요인": "#FBC02D", "보건 및 위생관리": "#E91E63",
+    "화학물질 관리": "#9C27B0", "보행 안전": "#1976D2", "활동 안전": "#388E3C"
 }
 
-# 2. 시설명 색상 맵 (요청하신 세미-비비드 및 중앙/본원 강조)
+# 2. 시설명 (팬톤 기반 고급형 팔레트)
 FACILITY_COLOR_MAP = {
-    "중앙": "#E53935",    # 세미 비비드 레드
-    "본원": "#8E24AA",    # 세미 비비드 퍼플
-    "평창": "#FB8C00",    # 선명한 주황
-    "바이오": "#FDD835",  # 진한 노랑
-    "해양": "#039BE5",    # 하늘색
-    "우주": "#3949AB",    # 세련된 남색
-    "미래": "#7CB342",    # 연두색
-    "생태": "#43A047"     # 초록색
+    "중앙": "#B93444", "본원": "#6B5B95", "평창": "#E2725B",
+    "바이오": "#D2B48C", "해양": "#5B84B1", "우주": "#2E4A62",
+    "미래": "#92B06A", "생태": "#5F7161"
 }
 
 # # 4. 그래프 시각화
@@ -407,44 +386,30 @@ with g_col1:
     if len(yearly_data.columns) >= 4:
         target_col_cat = yearly_data.columns[3] 
         st.write(f"**{target_col_cat} 현황**")
-        
         if not yearly_data[target_col_cat].dropna().empty:
-            # 데이터 정제: 앞뒤 공백 제거
             yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
-            
             fig_pie = px.pie(
-                yearly_data, 
-                names=target_col_cat, 
-                hole=0.3,
-                color=target_col_cat,
-                color_discrete_map=CATEGORY_COLOR_MAP # 원색 계열 적용
+                yearly_data, names=target_col_cat, hole=0.3,
+                color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
             )
             fig_pie.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350)
             st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.info("데이터가 충분하지 않아 그래프를 표시할 수 없습니다.")
-    else:
-        st.error("💡 시트에서 D열(유해위험요인)을 찾을 수 없습니다.")
 
 with g_col2:
     target_col_fac = "시설명" 
     if target_col_fac in yearly_data.columns:
         st.write(f"**{target_col_fac}별 점검 건수**")
-        # 데이터 정제: 시설명 공백 제거
         yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
-        
         fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
         fac_counts.columns = [target_col_fac, '건수']
         
         fig_bar = px.bar(
-            fac_counts, 
-            x=target_col_fac, 
-            y='건수', 
-            color=target_col_fac,
-            color_discrete_map=FACILITY_COLOR_MAP # 파스텔톤 계열 적용
+            fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
+            color_discrete_map=FACILITY_COLOR_MAP # 고급형 맵 적용
         )
-        fig_bar.update_layout(margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False)
+        fig_bar.update_layout(
+            margin=dict(t=30, b=0, l=0, r=0), height=350, showlegend=False,
+            xaxis_title=None, yaxis_title="점검 건수",
+            plot_bgcolor='rgba(0,0,0,0)', # 배경을 투명하게 하여 더 깔끔하게
+        )
         st.plotly_chart(fig_bar, use_container_width=True)
-    else:
-        st.info("💡 '시설명' 컬럼 이름을 확인해주세요.")
-
