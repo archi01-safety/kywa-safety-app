@@ -9,6 +9,29 @@ from PIL import Image
 import pandas as pd
 from docx import Document
 import plotly.express as px
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseUpload
+import datetime
+
+# --- [1단계] 구글 드라이브/시트 설정 (ID 입력 필수) ---
+# 아까 확인하신 ID를 여기에 넣으세요
+DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
+SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q" 
+
+# 인증 및 서비스 빌드 (Secrets 활용)
+try:
+    if "gcp_service_account" in st.secrets:
+        SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
+        creds_info = st.secrets["gcp_service_account"]
+        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+        
+        drive_service = build('drive', 'v3', credentials=creds)
+        sheets_service = build('sheets', 'v4', credentials=creds)
+    else:
+        st.error("Secrets에 'gcp_service_account' 설정이 없습니다.")
+except Exception as e:
+    st.error(f"GCP 인증 오류: {e}")
 
 # [수정 1] 페이지 설정이 무조건 가장 먼저 와야 합니다!
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
@@ -79,6 +102,41 @@ def create_excel(data):
     with pd.ExcelWriter(bio, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Sheet1')
     return bio.getvalue()
+
+
+
+# --- [2단계] 구글 드라이브/시트 전송 함수 추가 ---
+
+def upload_photo_to_drive(file_obj, filename):
+    """사진을 구글 드라이브에 업로드하고 링크를 반환"""
+    try:
+        file_metadata = {'name': filename, 'parents': [DRIVE_FOLDER_ID]}
+        # 파일 포인터 초기화 (중요)
+        file_obj.seek(0)
+        media = MediaIoBaseUpload(io.BytesIO(file_obj.getvalue()), mimetype='image/jpeg')
+        
+        uploaded_file = drive_service.files().create(
+            body=file_metadata, media_body=media, fields='id, webViewLink'
+        ).execute()
+        return uploaded_file.get('webViewLink')
+    except Exception as e:
+        return f"업로드 실패: {str(e)}"
+
+def append_row_to_sheet(row_data):
+    """구글 시트에 데이터 한 줄 추가"""
+    try:
+        # [수정됨] 시트 이름에 띄어쓰기가 있으면 양쪽에 작은따옴표(')가 필수입니다!
+        range_name = "'설문지 응답 시트1'!A1"  
+        body = {'values': [row_data]}
+        sheets_service.spreadsheets().values().append(
+            spreadsheetId=SPREADSHEET_ID, range=range_name,
+            valueInputOption='USER_ENTERED', body=body
+        ).execute()
+        return True
+    except Exception as e:
+        st.error(f"시트 저장 실패: {str(e)}")
+        return False
+
 
 # --- [추가] 버튼 스타일 설정 ---
 st.markdown("""
@@ -292,43 +350,56 @@ if st.session_state.analysis_results:
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
 
-# --- 8. 최종 데이터 전송 및 저장 (밀림 현상 수정본) ---
+
+# --- [3단계] 전송 버튼 로직 교체(기존#8) ---
 st.write("")
 if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
     if not st.session_state.final_data:
         st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
     else:
-        with st.spinner("🚀 'KYWA 안전센터'에 데이터를 전송 중입니다..."):
+        with st.spinner("🚀 구글 드라이브/시트로 데이터를 전송 중입니다..."):
             try:
-                # 폼 응답 URL
-                form_url = "https://docs.google.com/forms/d/e/1FAIpQLSeBGGpZQKh62zTomgTS14hhvgWzQ0FdGNVf9-r3FTzhd6ufQQ/formResponse"
+                # 1. 사진 업로드 (사진이 있다면 한 번만 수행)
+                photo_link = "사진 없음"
+                if img_file:
+                    timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    # 파일명: 시설명_일시.jpg
+                    filename = f"{selected_facility}_{timestamp_str}.jpg"
+                    photo_link = upload_photo_to_drive(img_file, filename)
                 
+                # 2. 시트 데이터 준비 및 전송
                 success_count = 0
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 for row in st.session_state.final_data:
-                    # 각 열(B~I)에 정확히 대응하도록 ID를 재배정함
-                    payload = {
-                        "entry.1651948586": selected_facility,      # B열: 시설명
-                        "entry.1328786382": selected_dept,          # C열: 담당 부서
-                        "entry.1297326802": row.get("category"),     # D열: 유해위험요인 (분류)
-                        "entry.1421719401": row.get("scenario"),     # E열: 위험상황
-                        "entry.1752607260": row.get("grade"),        # F열: 위험등급
-                        "entry.271461796": row.get("solution"),      # G열: 감소대책
-                        "entry.956205828": row.get("law"),           # H열: 관련근거
-                        "entry.1058871339": "사진 포함" if img_file else "사진 없음"      # I열: 사진 기록 (텍스트)
-                    }
+                    # [수정됨] 담당자님의 구글 시트 헤더 순서에 완벽하게 맞춘 데이터 리스트
+                    # 순서: [타임스탬프 | 시설명 | 담당 부서 | 유해위험요인 | 위험상황 | 위험등급 | 감소대책 | 관련근거 | 사진 기록]
+                    sheet_row = [
+                        current_time,                   # A열: 타임스탬프
+                        selected_facility,              # B열: 시설명
+                        selected_dept,                  # C열: 담당 부서
+                        row.get("category"),            # D열: 유해위험요인
+                        row.get("scenario"),            # E열: 위험상황
+                        row.get("grade"),               # F열: 위험등급 (점수 제외함)
+                        row.get("solution"),            # G열: 감소대책
+                        row.get("law"),                 # H열: 관련근거
+                        photo_link                      # I열: 사진 기록
+                    ]
                     
-                    res = requests.post(form_url, data=payload)
-                    if res.status_code == 200:
+                    if append_row_to_sheet(sheet_row):
                         success_count += 1
                 
                 if success_count > 0:
-                    st.success(f"✅ 최종 제출한 데이터 {success_count}건이 'KYWA AI 안전센터'에 정상적으로 전송되었습니다!")
+                    st.success(f"✅ 데이터 {success_count}건과 현장 사진이 정상적으로 저장되었습니다!")
                     st.balloons()
-                else:
-                    st.error("전송에 실패했습니다. 응답 코드를 확인하세요.")
-                    
+                    # (선택) 전송 후 데이터 초기화가 필요하다면 아래 주석 해제
+                    # st.session_state.final_data = None
+                    # st.session_state.analysis_results = None
+                    # st.rerun()
+                
             except Exception as e:
-                st.error(f"❌ 오류 발생: {e}")
+                st.error(f"❌ 전송 중 오류 발생: {e}")
+
                 
     # 저장 버튼
     dl_col1, dl_col2 = st.columns(2)
@@ -495,5 +566,6 @@ with footer_cols[1]:
 
 # 최하단 한 줄 강조
 st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
+
 
 
