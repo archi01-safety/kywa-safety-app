@@ -64,32 +64,20 @@ sheets_service = None
 
 if "gcp_service_account" in st.secrets:
     try:
-        # Secrets 데이터를 딕셔너리로 복사
-        creds_dict = dict(st.secrets["gcp_service_account"])
+        creds_info = st.secrets["gcp_service_account"]
         
-        # PEM 파일 로드 에러 방지를 위한 3단계 정제 작업
-        pk = creds_dict["private_key"]
-        
-        # 1. 앞뒤 공백 및 불필요한 등호(=)나 특수문자 제거
-        pk = pk.strip()
-        
-        # 2. 리터럴 \n (역슬래시+n)이 글자로 들어온 경우 실제 개행 문자로 치환
-        pk = pk.replace("\\n", "\n")
-        
-        # 3. 만약 따옴표 등으로 감싸져서 개행이 중복 처리된 경우 정규화
-        if pk.startswith('"') and pk.endswith('"'):
-            pk = pk[1:-1]
-        
-        creds_dict["private_key"] = pk
-
-        SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-        
-        drive_service = build('drive', 'v3', credentials=creds)
-        sheets_service = build('sheets', 'v4', credentials=creds)
-        
+        # private_key 내의 실제 줄바꿈 문자 처리 (가장 흔한 오류 원인)
+        if isinstance(creds_info, (dict, st.runtime.secrets.AttrDict)):
+            creds_dict = dict(creds_info)
+            creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            
+            SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
+            creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+            
+            drive_service = build('drive', 'v3', credentials=creds)
+            sheets_service = build('sheets', 'v4', credentials=creds)
     except Exception as e:
-        st.error(f"⚠️ GCP 인증 설정 오류 (PEM 확인 필요): {e}")
+        st.error(f"⚠️ 인증 설정 오류: {e}")
 
 else:
     st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
@@ -184,20 +172,23 @@ def upload_photo_to_drive(file_obj, filename):
         return f"업로드 실패: {str(e)}"
 
 def append_row_to_sheet(row_data):
-    """구글 시트에 데이터 한 줄 추가"""
     try:
-        # [수정됨] 시트 이름에 띄어쓰기가 있으면 양쪽에 작은따옴표(')가 필수입니다!
-        range_name = "'설문지 응답 시트1'!A1"  
+        # [확인 필요] 실제 시트 탭 이름과 공백이 정확히 일치해야 합니다.
+        # 만약 구글폼 연동 시트라면 보통 '설문지 응답 1' 입니다.
+        range_name = "'설문지 응답 시트1'!A1" 
+        
         body = {'values': [row_data]}
         sheets_service.spreadsheets().values().append(
-            spreadsheetId=SPREADSHEET_ID, range=range_name,
-            valueInputOption='USER_ENTERED', body=body
+            spreadsheetId=SPREADSHEET_ID, 
+            range=range_name,
+            valueInputOption='USER_ENTERED', 
+            insertDataOption='INSERT_ROWS', # [추가] 새 행을 삽입하며 추가하도록 명시
+            body=body
         ).execute()
         return True
     except Exception as e:
         st.error(f"시트 저장 실패: {str(e)}")
         return False
-
 
 # --- [추가] 버튼 스타일 설정 ---
 st.markdown("""
