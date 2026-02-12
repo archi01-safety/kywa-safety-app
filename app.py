@@ -428,7 +428,7 @@ if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_containe
                 # 1. 사진 업로드 (사진이 있다면 한 번만 수행)
                 photo_link = "사진 없음"
                 if img_file:
-                    timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    timestamp_str = (datetime.datetime.now() + datetime.timedelta(hours=9)).strftime("%Y%m%d_%H%M%S")
                     # 파일명: 시설명_일시.jpg
                     filename = f"{selected_facility}_{timestamp_str}.jpg"
                     photo_link = upload_photo_to_drive(img_file, filename)
