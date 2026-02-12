@@ -19,11 +19,20 @@ import datetime
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
 SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q" 
 
-# 인증 및 서비스 빌드 (Secrets 활용)
+# --- [1단계 수정본] ---
+# 변수를 미리 None으로 초기화하여 'not defined' 에러를 방지합니다.
+drive_service = None
+sheets_service = None
+
 try:
     if "gcp_service_account" in st.secrets:
         SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds_info = st.secrets["gcp_service_account"]
+        creds_info = dict(st.secrets["gcp_service_account"])
+        
+        # [중요] JSON의 \n 문자를 실제 줄바꿈 문자로 치환하여 PEM 로드 오류 방지
+        if "\\n" in creds_info["private_key"]:
+            creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
+            
         creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
         
         drive_service = build('drive', 'v3', credentials=creds)
@@ -354,6 +363,11 @@ if st.session_state.analysis_results:
 # --- [3단계] 전송 버튼 로직 교체(기존#8) ---
 st.write("")
 if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
+    # 서비스 계정 로드 실패 시 차단
+    if sheets_service is None or drive_service is None:
+        st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요 (Secrets 키 형식 확인).")
+        st.stop()
+    
     if not st.session_state.final_data:
         st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
     else:
