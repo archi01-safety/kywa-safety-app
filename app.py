@@ -13,6 +13,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import datetime
+import codecs # PEM 로드를 위해 추가
 
 # --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
@@ -20,6 +21,43 @@ st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide"
 # --- [1단계] 구글 드라이브/시트 설정 (PEM 로드 집중 수정 버전) ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
 SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q"
+
+# --- [추가] 실제 구글 드라이브에 파일을 업로드하는 함수 ---
+def upload_to_drive(file_name, file_content, mime_type):
+    """
+    구글 드라이브의 특정 폴더로 파일을 업로드합니다.
+    """
+    if drive_service is None:
+        st.error("구글 드라이브 서비스가 연결되지 않았습니다.")
+        return None
+    
+    try:
+        # 파일 메타데이터 설정 (이름과 저장될 폴더 지정)
+        file_metadata = {
+            'name': file_name,
+            'parents': [DRIVE_FOLDER_ID]  # 이전에 설정하신 폴더 ID가 여기 쓰입니다.
+        }
+        
+        # 파일 콘텐츠 준비
+        media = MediaIoBaseUpload(
+            io.BytesIO(file_content), 
+            mimetype=mime_type, 
+            resumable=True
+        )
+        
+        # 드라이브에 파일 생성
+        file = drive_service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields='id, webViewLink'
+        ).execute()
+        
+        # 업로드된 파일의 링크 반환
+        return file.get('webViewLink')
+        
+    except Exception as e:
+        st.error(f"구글 드라이브 업로드 중 에러 발생: {e}")
+        return None
 
 drive_service = None
 sheets_service = None
