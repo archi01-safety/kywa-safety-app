@@ -14,46 +14,44 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import datetime
 
-# --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치 ---
+# --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
 # --- [1단계] 구글 드라이브/시트 설정 ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
-SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q"
+SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q" 
 
 drive_service = None
 sheets_service = None
 
-# [핵심 변경] gcp_json 방식(통문자열)으로 로드하여 에러 원천 차단
-try:
-    if "gcp_json" in st.secrets:
-        # JSON 문자열을 파싱
-        creds_dict = json.loads(st.secrets["gcp_json"])
+if "gcp_service_account" in st.secrets:
+    try:
+        # Secrets 데이터를 딕셔너리로 가져오기
+        creds_info = dict(st.secrets["gcp_service_account"])
         
-        # SCOPES 설정
+        # [핵심 수정] private_key의 줄바꿈 및 특수문자 완벽 처리
+        if "private_key" in creds_info:
+            # 1. 실제 줄바꿈 문자로 치환
+            pk = creds_info["private_key"].replace("\\n", "\n")
+            # 2. 양 끝의 불필요한 따옴표 제거
+            pk = pk.strip().strip('"').strip("'")
+            creds_info["private_key"] = pk
+
         SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
         
         drive_service = build('drive', 'v3', credentials=creds)
         sheets_service = build('sheets', 'v4', credentials=creds)
         
-    elif "gcp_service_account" in st.secrets:
-        # (구버전 호환용 - 혹시 몰라 남겨둠)
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        if "private_key" in creds_dict:
-            pk = creds_dict["private_key"].strip().replace("\\n", "\n")
-            creds_dict["private_key"] = pk
-            
-        SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-        drive_service = build('drive', 'v3', credentials=creds)
-        sheets_service = build('sheets', 'v4', credentials=creds)
-        
-except Exception as e:
-    st.error(f"⚠️ GCP 인증 설정 오류: {e}")
+    except Exception as e:
+        st.error(f"GCP 인증 시스템 초기화 실패: {e}")
+else:
+    st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
 
+# (이후 기존의 CSS 설정 및 나머지 코드를 이어 붙이시면 됩니다.)
+# 주의: 아래쪽에 있는 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", ...) 코드는 삭제하세요.
 
-# --- CSS 설정 ---
+# [수정 2] 파라미터 이름을 unsafe_allow_html=True 로 변경
 st.markdown("""
     <style>
     /* 모든 텍스트가 현재 테마의 글자색을 따르도록 설정 */
@@ -71,37 +69,12 @@ st.markdown("""
         max-width: 100%;
         filter: brightness(var(--image-brightness, 1));
     }
-    
-    /* 버튼 스타일 */
-    div.stButton > button {
-        background-color: #ff4b4b !important;
-        color: white !important;
-        border: none !important;
-        padding: 0.5rem 1rem !important;
-        border-radius: 0.5rem !important;
-        font-weight: bold !important;
-        transition: all 0.3s ease !important;
-    }
-    div.stButton > button:hover {
-        background-color: #ff3333 !important;
-        transform: scale(1.01);
-    }
-    
-    /* 로고 및 타이틀 스타일 */
-    .logo-img { cursor: pointer; display: block; margin-top: 10px; }
-    .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
-    .refresh-title:hover { color: #FF4B4B !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# 1. 환경 설정 및 보안
+# 1. 환경 설정 및 보안 우회 (필요한 경우)
 os.environ['PYTHONHTTPSVERIFY'] = '0'
 ssl._create_default_https_context = ssl._create_unverified_context
-
-if "analysis_results" not in st.session_state:
-    st.session_state.analysis_results = None
-if "final_data" not in st.session_state:
-    st.session_state.final_data = None
 
 # 2. 페이지 설정 및 세션 초기화
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
