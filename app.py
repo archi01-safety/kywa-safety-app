@@ -431,43 +431,42 @@ if st.session_state.analysis_results:
     st.markdown(table_html, unsafe_allow_html=True)
 
 
-# --- [3단계] 전송 버튼 로직 교체(기존#8) ---
+# --- [3단계] 전송 버튼 로직 (타임스탬프 수정 버전) ---
 st.write("")
 if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
-    # 서비스 계정 로드 실패 시 차단
     if sheets_service is None or drive_service is None:
-        st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요 (Secrets 키 형식 확인).")
+        st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
         st.stop()
     
     if not st.session_state.final_data:
         st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
     else:
-        with st.spinner("🚀 구글 드라이브/시트로 데이터를 전송 중입니다..."):
+        with st.spinner("🚀 KYWA AI 안전센터로 데이터를 전송 중입니다..."):
             try:
-                # 1. 사진 업로드 (사진이 있다면 한 번만 수행)
+                # [수정] 한국 시간(KST)으로 현재 시간 설정
+                now_kst = datetime.datetime.now() + datetime.timedelta(hours=9)
+                current_time = now_kst.strftime("%Y-%m-%d %H:%M:%S") # 시트 기록용 (2026-02-12 18:00:20)
+                timestamp_str = now_kst.strftime("%Y%m%d_%H%M%S")    # 파일 이름용 (20260212_180020)
+
+                # 1. 사진 업로드
                 photo_link = "사진 없음"
                 if img_file:
-                    timestamp_str = (datetime.datetime.now() + datetime.timedelta(hours=9)).strftime("%Y%m%d_%H%M%S")
-                    # 파일명: 시설명_일시.jpg
                     filename = f"{selected_facility}_{timestamp_str}.jpg"
                     photo_link = upload_photo_to_drive(img_file, filename)
                 
                 # 2. 시트 데이터 준비 및 전송
                 success_count = 0
-                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
                 for row in st.session_state.final_data:
-                    # [수정됨] 담당자님의 구글 시트 헤더 순서에 완벽하게 맞춘 데이터 리스트
-                    # 순서: [타임스탬프 | 시설명 | 담당 부서 | 유해위험요인 | 위험상황 | 위험등급 | 감소대책 | 관련근거 | 사진 기록]
+                    # current_time 변수가 이제 한국 시간으로 전달됩니다.
                     sheet_row = [
-                        current_time,                   # A열: 타임스탬프
+                        current_time,                   # A열: 타임스탬프 (한국 시간)
                         selected_facility,              # B열: 시설명
                         selected_dept,                  # C열: 담당 부서
                         row.get("category"),            # D열: 유해위험요인
                         row.get("scenario"),            # E열: 위험상황
-                        row.get("grade"),               # F열: 위험등급 (점수 제외함)
+                        row.get("grade"),               # F열: 위험등급
                         row.get("solution"),            # G열: 감소대책
-                        row.get("law"),                 # H열: 관련근거
+                        row.get("law"),                  # H열: 관련근거
                         photo_link                      # I열: 사진 기록
                     ]
                     
