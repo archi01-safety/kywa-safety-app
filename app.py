@@ -28,15 +28,25 @@ if "gcp_service_account" in st.secrets:
     try:
         creds_dict = dict(st.secrets["gcp_service_account"])
         
-        # [수정된 정제 로직] 
-        # 따옴표 세 개(''') 방식을 쓰면 파이썬이 읽을 때 이미 줄바꿈이 포함됩니다.
-        # 하지만 혹시 모를 글자 형태의 \n(\n)도 처리할 수 있게 중복 적용합니다.
         if "private_key" in creds_dict:
             pk = creds_dict["private_key"]
-            # 1. 문자열로 된 \n을 실제 줄바꿈으로 변경
+            
+            # 1단계: \n 문자열을 실제 줄바꿈으로 변경
             pk = pk.replace("\\n", "\n")
-            # 2. 양 끝 불필요한 공백 및 따옴표 제거
-            pk = pk.strip().strip('"').strip("'")
+            
+            # 2단계: PEM 헤더와 푸터 사이의 불필요한 공백이나 제어문자 완벽 제거
+            # 헤더와 푸터를 기준으로 실제 데이터만 추출합니다.
+            if "-----BEGIN PRIVATE KEY-----" in pk and "-----END PRIVATE KEY-----" in pk:
+                start_marker = "-----BEGIN PRIVATE KEY-----"
+                end_marker = "-----END PRIVATE KEY-----"
+                
+                content = pk.split(start_marker)[1].split(end_marker)[0]
+                # 내부의 모든 공백, 줄바꿈 제거 후 다시 64자씩 나누거나 그냥 합쳐도 라이브러리가 처리함
+                content = "".join(content.split()) 
+                
+                # 최종적으로 표준 PEM 형식으로 재조립
+                pk = f"{start_marker}\n{content}\n{end_marker}\n"
+            
             creds_dict["private_key"] = pk
 
         SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
@@ -46,10 +56,8 @@ if "gcp_service_account" in st.secrets:
         sheets_service = build('sheets', 'v4', credentials=creds)
         
     except Exception as e:
-        st.error(f"GCP 인증 시스템 초기화 실패: {e}")
-
-else:
-    st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
+        # 이 에러가 보인다면 키 조립 과정에서 문제가 생긴 것임
+        st.error(f"GCP 인증 실패 세부 에러: {e}")
 
 # (이후 기존의 CSS 설정 및 나머지 코드를 이어 붙이시면 됩니다.)
 # 주의: 아래쪽에 있는 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", ...) 코드는 삭제하세요.
