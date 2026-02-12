@@ -26,25 +26,28 @@ sheets_service = None
 
 if "gcp_service_account" in st.secrets:
     try:
-        # Secrets 데이터를 딕셔너리로 가져오기
-        creds_info = dict(st.secrets["gcp_service_account"])
+        creds_dict = dict(st.secrets["gcp_service_account"])
         
-        # [핵심 수정] private_key의 줄바꿈 및 특수문자 완벽 처리
-        if "private_key" in creds_info:
-            # 1. 실제 줄바꿈 문자로 치환
-            pk = creds_info["private_key"].replace("\\n", "\n")
-            # 2. 양 끝의 불필요한 따옴표 제거
+        # [수정된 정제 로직] 
+        # 따옴표 세 개(''') 방식을 쓰면 파이썬이 읽을 때 이미 줄바꿈이 포함됩니다.
+        # 하지만 혹시 모를 글자 형태의 \n(\n)도 처리할 수 있게 중복 적용합니다.
+        if "private_key" in creds_dict:
+            pk = creds_dict["private_key"]
+            # 1. 문자열로 된 \n을 실제 줄바꿈으로 변경
+            pk = pk.replace("\\n", "\n")
+            # 2. 양 끝 불필요한 공백 및 따옴표 제거
             pk = pk.strip().strip('"').strip("'")
-            creds_info["private_key"] = pk
+            creds_dict["private_key"] = pk
 
         SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
         
         drive_service = build('drive', 'v3', credentials=creds)
         sheets_service = build('sheets', 'v4', credentials=creds)
         
     except Exception as e:
         st.error(f"GCP 인증 시스템 초기화 실패: {e}")
+
 else:
     st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
 
