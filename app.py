@@ -14,45 +14,44 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import datetime
 
-# --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치 ---
+# --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
 # --- [1단계] 구글 드라이브/시트 설정 ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
-SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q"
+SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q" 
 
 drive_service = None
 sheets_service = None
 
-# [핵심 변경] gcp_json 방식(통문자열)으로 로드하여 에러 원천 차단
-try:
-    if "gcp_json" in st.secrets:
-        # JSON 문자열을 파싱
-        creds_dict = json.loads(st.secrets["gcp_json"])
+if "gcp_service_account" in st.secrets:
+    try:
+        # Secrets 데이터를 딕셔너리로 가져오기
+        creds_info = dict(st.secrets["gcp_service_account"])
         
-        # SCOPES 설정
-        SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-        
-        drive_service = build('drive', 'v3', credentials=creds)
-        sheets_service = build('sheets', 'v4', credentials=creds)
-        
-    elif "gcp_service_account" in st.secrets:
-        # (구버전 호환용 - 혹시 몰라 남겨둠)
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        if "private_key" in creds_dict:
-            pk = creds_dict["private_key"].strip().replace("\\n", "\n")
-            creds_dict["private_key"] = pk
-            
-        SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
-        drive_service = build('drive', 'v3', credentials=creds)
-        sheets_service = build('sheets', 'v4', credentials=creds)
-        
-except Exception as e:
-    st.error(f"⚠️ GCP 인증 설정 오류: {e}")
+        # [핵심 수정] private_key의 줄바꿈 및 특수문자 완벽 처리
+        if "private_key" in creds_info:
+            # 1. 실제 줄바꿈 문자로 치환
+            pk = creds_info["private_key"].replace("\\n", "\n")
+            # 2. 양 끝의 불필요한 따옴표 제거
+            pk = pk.strip().strip('"').strip("'")
+            creds_info["private_key"] = pk
 
-# --- CSS 설정 ---
+        SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
+        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+        
+        drive_service = build('drive', 'v3', credentials=creds)
+        sheets_service = build('sheets', 'v4', credentials=creds)
+        
+    except Exception as e:
+        st.error(f"GCP 인증 시스템 초기화 실패: {e}")
+else:
+    st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
+
+# (이후 기존의 CSS 설정 및 나머지 코드를 이어 붙이시면 됩니다.)
+# 주의: 아래쪽에 있는 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", ...) 코드는 삭제하세요.
+
+# [수정 2] 파라미터 이름을 unsafe_allow_html=True 로 변경
 st.markdown("""
     <style>
     /* 모든 텍스트가 현재 테마의 글자색을 따르도록 설정 */
@@ -70,32 +69,15 @@ st.markdown("""
         max-width: 100%;
         filter: brightness(var(--image-brightness, 1));
     }
-    
-    /* 버튼 스타일 */
-    div.stButton > button {
-        background-color: #ff4b4b !important;
-        color: white !important;
-        border: none !important;
-        padding: 0.5rem 1rem !important;
-        border-radius: 0.5rem !important;
-        font-weight: bold !important;
-        transition: all 0.3s ease !important;
-    }
-    div.stButton > button:hover {
-        background-color: #ff3333 !important;
-        transform: scale(1.01);
-    }
-    
-    /* 로고 및 타이틀 스타일 */
-    .logo-img { cursor: pointer; display: block; margin-top: 10px; }
-    .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
-    .refresh-title:hover { color: #FF4B4B !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# 1. 환경 설정 및 보안 우회
+# 1. 환경 설정 및 보안 우회 (필요한 경우)
 os.environ['PYTHONHTTPSVERIFY'] = '0'
 ssl._create_default_https_context = ssl._create_unverified_context
+
+# 2. 페이지 설정 및 세션 초기화
+st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
 if "analysis_results" not in st.session_state:
     st.session_state.analysis_results = None
@@ -136,11 +118,15 @@ def create_excel(data):
         df.to_excel(writer, index=False, sheet_name='Sheet1')
     return bio.getvalue()
 
-# --- [2단계] 구글 드라이브/시트 전송 함수 ---
+
+
+# --- [2단계] 구글 드라이브/시트 전송 함수 추가 ---
+
 def upload_photo_to_drive(file_obj, filename):
     """사진을 구글 드라이브에 업로드하고 링크를 반환"""
     try:
         file_metadata = {'name': filename, 'parents': [DRIVE_FOLDER_ID]}
+        # 파일 포인터 초기화 (중요)
         file_obj.seek(0)
         media = MediaIoBaseUpload(io.BytesIO(file_obj.getvalue()), mimetype='image/jpeg')
         
@@ -154,6 +140,7 @@ def upload_photo_to_drive(file_obj, filename):
 def append_row_to_sheet(row_data):
     """구글 시트에 데이터 한 줄 추가"""
     try:
+        # [수정됨] 시트 이름에 띄어쓰기가 있으면 양쪽에 작은따옴표(')가 필수입니다!
         range_name = "'설문지 응답 시트1'!A1"  
         body = {'values': [row_data]}
         sheets_service.spreadsheets().values().append(
@@ -165,11 +152,60 @@ def append_row_to_sheet(row_data):
         st.error(f"시트 저장 실패: {str(e)}")
         return False
 
-# --- 헤더 디자인 ---
+
+# --- [추가] 버튼 스타일 설정 ---
+st.markdown("""
+    <style>
+    /* 모든 Streamlit 버튼 스타일 수정 */
+    div.stButton > button {
+        background-color: #ff4b4b !important; /* 기본 붉은색 */
+        color: white !important;
+        border: none !important;
+        padding: 0.5rem 1rem !important;
+        border-radius: 0.5rem !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease !important;
+    }
+
+    /* 마우스 호버(Hover) 시 효과 */
+    div.stButton > button:hover {
+        background-color: #ff3333 !important; /* 마우스 올렸을 때 더 진한 빨강 */
+        color: white !important;
+        border: none !important;
+        transform: scale(1.01); /* 아주 살짝 커지는 효과 */
+    }
+    
+    /* Word/Excel 저장 버튼 등 일반 버튼도 동일 적용을 원치 않으시면 위 범위를 좁힐 수 있습니다 */
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 4. 스타일 및 헤더 디자인 (오류 방지 중괄호 처리) ---
+st.markdown("""
+    <style>
+    /* 버튼 스타일 */
+    div.stButton > button {
+        background-color: #ff4b4b !important;
+        color: white !important;
+        font-weight: bold !important;
+        border-radius: 0.5rem !important;
+        transition: all 0.3s ease !important;
+    }
+    div.stButton > button:hover {
+        background-color: #ff3333 !important;
+        transform: scale(1.01);
+    }
+    /* 로고 및 타이틀 스타일 */
+    .logo-img { cursor: pointer; display: block; margin-top: 10px; }
+    .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
+    .refresh-title:hover { color: #FF4B4B !important; }
+    </style>
+""", unsafe_allow_html=True)
+
 header_col1, header_col2 = st.columns([1, 4])
 raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
 
 with header_col1:
+    # f-string을 쓰지 않고 직접 삽입하여 중괄호 오류 원천 차단
     st.markdown(f'''
         <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
             <img src="{raw_logo_url}" width="300" class="logo-img">
@@ -254,7 +290,7 @@ if st.session_state.analysis_results:
     
     st.session_state.final_data = [] # 데이터 저장용 리스트 초기화
 
-    # 테이블 HTML 생성
+    # 1. 스타일 및 헤더 정의 (예전 코드처럼 table_html 변수 하나로 시작)
     table_html = """
     <style>
         .report-table { width:100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
@@ -281,7 +317,9 @@ if st.session_state.analysis_results:
         <tbody>
     """
 
+    # 2. 데이터 반복문 (table_html에 직접 문자열 이어붙이기)
     for item in st.session_state.analysis_results:
+        # 빈도/강도 숫자 변환
         try:
             p = int(item.get('p', 0))
             s = int(item.get('s', 0))
@@ -290,18 +328,23 @@ if st.session_state.analysis_results:
             
         score = p * s
         
+        # 등급 계산
         if score <= 3: grade = "매우 낮음"
         elif score <= 6: grade = "낮음"
         elif score <= 12: grade = "보통"
         else: grade = "높음"
         
+        # 스타일 클래스 지정
         if grade == "높음": grade_class = "grade-high"
         elif grade == "보통": grade_class = "grade-medium"
         else: grade_class = "grade-low"
 
+        # 텍스트 내 줄바꿈 처리 (예전 코드의 replace 로직 적용)
+        # 엑셀 셀 내에서 줄바꿈(Alt+Enter)한 내용을 HTML 줄바꿈(<br>)으로 변경
         scenario_text = str(item.get('scenario', '-')).replace('\n', '<br>')
         solution_text = str(item.get('solution', '-')).replace('\n', '<br>')
 
+        # HTML 행 추가 (들여쓰기 없이 한 줄로 이어붙여 오류 방지)
         table_html += f'<tr>'
         table_html += f'<td>{item.get("category", "-")}</td>'
         table_html += f'<td class="text-left">{scenario_text}</td>'
@@ -313,59 +356,69 @@ if st.session_state.analysis_results:
         table_html += f'<td class="text-left">{solution_text}</td>'
         table_html += f'</tr>'
         
+        # 최종 데이터 저장용 업데이트
         item['score'] = score
         item['grade'] = grade
         st.session_state.final_data.append(item)
 
+    # 3. 테이블 닫기 및 출력
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
 
 
-    # --- [3단계] 전송 버튼 로직 ---
-    st.write("")
-    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
-        if sheets_service is None or drive_service is None:
-            st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요 (Secrets 키 형식 확인).")
-            st.stop()
-        
-        if not st.session_state.final_data:
-            st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
-        else:
-            with st.spinner("🚀 구글 드라이브/시트로 데이터를 전송 중입니다..."):
-                try:
-                    # 1. 사진 업로드
-                    photo_link = "사진 없음"
-                    if img_file:
-                        timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                        filename = f"{selected_facility}_{timestamp_str}.jpg"
-                        photo_link = upload_photo_to_drive(img_file, filename)
-                    
-                    # 2. 시트 데이터 준비 및 전송
-                    success_count = 0
-                    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+# --- [3단계] 전송 버튼 로직 교체(기존#8) ---
+st.write("")
+if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
+    # 서비스 계정 로드 실패 시 차단
+    if sheets_service is None or drive_service is None:
+        st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요 (Secrets 키 형식 확인).")
+        st.stop()
+    
+    if not st.session_state.final_data:
+        st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
+    else:
+        with st.spinner("🚀 구글 드라이브/시트로 데이터를 전송 중입니다..."):
+            try:
+                # 1. 사진 업로드 (사진이 있다면 한 번만 수행)
+                photo_link = "사진 없음"
+                if img_file:
+                    timestamp_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    # 파일명: 시설명_일시.jpg
+                    filename = f"{selected_facility}_{timestamp_str}.jpg"
+                    photo_link = upload_photo_to_drive(img_file, filename)
+                
+                # 2. 시트 데이터 준비 및 전송
+                success_count = 0
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                    for row in st.session_state.final_data:
-                        sheet_row = [
-                            current_time,                   # A열
-                            selected_facility,              # B열
-                            selected_dept,                  # C열
-                            row.get("category"),            # D열
-                            row.get("scenario"),            # E열
-                            row.get("grade"),               # F열
-                            row.get("solution"),            # G열
-                            row.get("law"),                 # H열
-                            photo_link                      # I열
-                        ]
-                        
-                        if append_row_to_sheet(sheet_row):
-                            success_count += 1
+                for row in st.session_state.final_data:
+                    # [수정됨] 담당자님의 구글 시트 헤더 순서에 완벽하게 맞춘 데이터 리스트
+                    # 순서: [타임스탬프 | 시설명 | 담당 부서 | 유해위험요인 | 위험상황 | 위험등급 | 감소대책 | 관련근거 | 사진 기록]
+                    sheet_row = [
+                        current_time,                   # A열: 타임스탬프
+                        selected_facility,              # B열: 시설명
+                        selected_dept,                  # C열: 담당 부서
+                        row.get("category"),            # D열: 유해위험요인
+                        row.get("scenario"),            # E열: 위험상황
+                        row.get("grade"),               # F열: 위험등급 (점수 제외함)
+                        row.get("solution"),            # G열: 감소대책
+                        row.get("law"),                 # H열: 관련근거
+                        photo_link                      # I열: 사진 기록
+                    ]
                     
-                    if success_count > 0:
-                        st.success(f"✅ 데이터 {success_count}건과 현장 사진이 정상적으로 저장되었습니다!")
-                        st.balloons()
-                    
-                except Exception as e:
-                    st.error(f"❌ 전송 중 오류 발생: {e}")
+                    if append_row_to_sheet(sheet_row):
+                        success_count += 1
+                
+                if success_count > 0:
+                    st.success(f"✅ 데이터 {success_count}건과 현장 사진이 정상적으로 저장되었습니다!")
+                    st.balloons()
+                    # (선택) 전송 후 데이터 초기화가 필요하다면 아래 주석 해제
+                    # st.session_state.final_data = None
+                    # st.session_state.analysis_results = None
+                    # st.rerun()
+                
+            except Exception as e:
+                st.error(f"❌ 전송 중 오류 발생: {e}")
 
                 
     # 저장 버튼
@@ -375,16 +428,22 @@ if st.session_state.analysis_results:
     with dl_col2:
         st.download_button("📊 Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{selected_facility}.xlsx", use_container_width=True)
 
-# --- 대시보드 데이터 로드 ---
+# --- [수정] 날짜 형식 오류를 해결한 데이터 로드 함수 ---
 def load_dashboard_data():
+    # 구글 시트 CSV 내보내기 링크
     sheet_url = "https://docs.google.com/spreadsheets/d/1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q/export?format=csv&gid=413707311"
     
     try:
         df = pd.read_csv(sheet_url)
         
         if '타임스탬프' in df.columns:
+            # 1. 한국어 '오전/오후'를 Pandas가 인식 가능한 'AM/PM'으로 변경
             df['타임스탬프'] = df['타임스탬프'].str.replace('오전', 'AM').str.replace('오후', 'PM')
+            
+            # 2. 날짜 형식으로 변환 (format을 지정하지 않아도 치환 후에는 잘 작동합니다)
             df['타임스탬프'] = pd.to_datetime(df['타임스탬프'], errors='coerce')
+            
+            # 3. 변환 실패한 데이터(NaT) 제거 (선택 사항)
             df = df.dropna(subset=['타임스탬프'])
             
         return df
@@ -397,6 +456,7 @@ st.write("---")
 dashboard_data = load_dashboard_data()
 
 if dashboard_data is not None:
+    # 2. 날짜 필터링 (2026년 데이터만)
     if '타임스탬프' in dashboard_data.columns:
         yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026].copy()
     else:
@@ -407,6 +467,7 @@ if dashboard_data is not None:
     else:
         st.subheader("📊 실시간 점검 데이터 현황 (2026년)")
         
+        # 3. 상단 지표
         total_count = len(yearly_data)
         m1, m2 = st.columns(2)
         m1.metric("올해 누적 점검 건수", f"{total_count} 건")
@@ -417,6 +478,7 @@ if dashboard_data is not None:
         else:
             m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
 
+        # --- 색상 맵 설정 ---
         CATEGORY_COLOR_MAP = {
             "시설 안전": "#D32F2F", "화재 안전": "#FF5722", "재난 안전": "#880E4F",
             "작업환경 요인": "#455A64", "작업 환경": "#455A64", "기계(설비)적 요인": "#795548",
@@ -430,6 +492,7 @@ if dashboard_data is not None:
             "미래": "#92B06A", "생태": "#5F7161"
         }
 
+        # --- 4. 그래프 시각화 영역 ---
         g_col1, g_col2 = st.columns(2)
 
         with g_col1:
@@ -443,6 +506,7 @@ if dashboard_data is not None:
                         yearly_data, names=target_col_cat, hole=0.3,
                         color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
                     )
+                    # 파이 차트도 확대/축소 방지 적용
                     fig_pie.update_layout(
                         margin=dict(t=30, b=0, l=0, r=0), 
                         height=350,
@@ -458,6 +522,7 @@ if dashboard_data is not None:
             if target_col_fac in yearly_data.columns:
                 st.write(f"**{target_col_fac}별 점검 건수**")
                 
+                # [중요] 데이터 집계 로직 (이 부분이 누락되어 NameError가 발생했었습니다)
                 yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
                 fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
                 fac_counts.columns = [target_col_fac, '건수']
@@ -467,6 +532,7 @@ if dashboard_data is not None:
                     color_discrete_map=FACILITY_COLOR_MAP
                 )
                 
+                # 확대/축소 방지 및 레이아웃 설정
                 fig_bar.update_xaxes(fixedrange=True)
                 fig_bar.update_yaxes(fixedrange=True)
                 
@@ -488,3 +554,38 @@ if dashboard_data is not None:
                     theme="streamlit",
                     config={'displayModeBar': False}
                 )
+
+# --- 푸터(Footer) 섹션 ---
+st.write("") # 간격 확보
+st.write("---")
+footer_cols = st.columns([3, 1])
+
+with footer_cols[0]:
+    st.markdown("### 🔒 Data Governance & Privacy")
+    st.caption("""
+    **© 2026 한국청소년활동진흥원(KYWA) 안전경영부.** 본 시스템은 **공공기관 AI 활용 가이드라인** 및 **정보보안 업무규정** 을 엄격히 준수합니다.
+    
+    * **데이터 보안:** 입력된 모든 정보는 **API 옵트아웃(Opt-out) 설정**이 적용되어 외부 모델 학습에 활용되지 않습니다.
+    * **운영 방침:** **KYWA AI 안전센터**로 전송된 데이터는 **담당자의 데이터 정합성 검토**를 거칩니다. 
+      점검 내용이 부적절하거나 중복된 경우, 데이터 신뢰성 유지를 위해 운영 관리자에 의해 임의 수정 또는 삭제될 수 있습니다.
+    * **면책 고지:** AI 분석 정보는 위험 요인 발굴을 돕는 가이드라인입니다. 실제 위험성 평가 시에는 현장 상황을 반영한 담당 직원의 면밀한 검토를 권고합니다.
+    """)
+
+with footer_cols[1]:
+    st.markdown("### 📞 Contact")
+    # HTML을 사용하여 아이콘 색상을 제어합니다 (Dark Gray/Black 계열)
+    st.markdown(f"""
+    <div style="line-height: 1.6;">
+        <span style="font-weight: bold; font-size: 0.9rem; color: #31333F;">경영지원본부 안전경영부</span><br>
+        <span style="color: #444; font-size: 0.85rem;">📧 archi01@kywa.or.kr</span><br>
+        <span style="color: #444; font-size: 0.85rem;">
+            <span style="display: inline-block; transform: rotate(10deg); color: #000;">📞</span> 02-6959-7138
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+# 최하단 한 줄 강조
+st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
+
+
+
