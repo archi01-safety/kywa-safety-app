@@ -19,28 +19,39 @@ import datetime
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
 SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q" 
 
-# --- [1단계 수정본] ---
-# 변수를 미리 None으로 초기화하여 'not defined' 에러를 방지합니다.
+# --- [1단계 최종 보완본] ---
 drive_service = None
 sheets_service = None
 
-try:
-    if "gcp_service_account" in st.secrets:
-        SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds_info = dict(st.secrets["gcp_service_account"])
+if "gcp_service_account" in st.secrets:
+    try:
+        # Secrets 데이터를 복사해서 딕셔너리로 변환
+        creds_dict = dict(st.secrets["gcp_service_account"])
         
-        # [중요] JSON의 \n 문자를 실제 줄바꿈 문자로 치환하여 PEM 로드 오류 방지
-        if "\\n" in creds_info["private_key"]:
-            creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
-            
-        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+        # [핵심] 개인키 데이터 정밀 청소
+        pk = creds_dict["private_key"]
+        
+        # 1. 만약 키 앞뒤에 불필요한 따옴표가 섞여 있다면 제거
+        pk = pk.strip().strip('"').strip("'")
+        
+        # 2. 역슬래시 2개로 표기된 줄바꿈(\\n)을 실제 줄바꿈(\n)으로 변환
+        pk = pk.replace("\\n", "\n")
+        
+        # 3. (중요) 혹시 모를 중복 줄바꿈이나 공백 정리
+        creds_dict["private_key"] = pk
+
+        SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
+        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
         
         drive_service = build('drive', 'v3', credentials=creds)
         sheets_service = build('sheets', 'v4', credentials=creds)
-    else:
-        st.error("Secrets에 'gcp_service_account' 설정이 없습니다.")
-except Exception as e:
-    st.error(f"GCP 인증 오류: {e}")
+        
+        # 성공 시 에러 메시지 없음
+    except Exception as e:
+        st.error(f"GCP 인증 시스템 초기화 실패: {e}")
+else:
+    st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
+
 
 # [수정 1] 페이지 설정이 무조건 가장 먼저 와야 합니다!
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
