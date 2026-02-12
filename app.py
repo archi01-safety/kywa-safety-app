@@ -45,8 +45,7 @@ if "gcp_service_account" in st.secrets:
         
     except Exception as e:
         st.error(f"GCP 인증 시스템 초기화 실패: {e}")
-else:
-    st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
+
 
 # (이후 기존의 CSS 설정 및 나머지 코드를 이어 붙이시면 됩니다.)
 # 주의: 아래쪽에 있는 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", ...) 코드는 삭제하세요.
