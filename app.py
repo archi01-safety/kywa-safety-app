@@ -298,37 +298,59 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
         try:
-            with st.spinner(f"✨ KYWA AI가 [{selected_facility}] 위험성을 분석 중입니다..."):
+            with st.spinner(f"✨ KYWA AI가 [{selected_facility}] 시설의 데이터를 분석 중입니다...🔍"):
+                
+                # 모든 지침을 하나의 prompt 문자열 안에 포함시킵니다.
                 prompt = f"""
                 당신은 한국청소년활동진흥원(KYWA)의 안전관리 전문가입니다.
-                다음 상황을 분석하여 위험성평가를 실시하십시오.
-
+                
                 [시설 정보]
                 - 시설명: {selected_facility}
                 - 담당부서: {selected_dept}
                 - 현장 상황: {user_description}
 
                 [필수 지시사항]
-                1. category(분류): [보행 안전, 시설 안전, 화재 안전, 작업 안전, 활동 안전, 보건 및 위생관리, 화학물질 관리, 작업 환경, 기계(설비)적 요인, 전기적 요인, 재난 안전] 중 선택.
-                2. p(빈도)와 s(강도)는 1~5 정수. 
-                3. 매우 낮음(1~3점), 낮음(4~6점), 보통(8~12점), 높음(15점 이상).
-                4. 반드시 다음 JSON 형식(리스트 형태)으로 출력:
-                   [{{ "category": "...", "scenario": "...", "p": 0, "s": 0, "score": 0, "grade": "...", "law": "...", "solution": "..." }}]
+                1. category(분류): 시설명이 '생태', '해양' 등이라 하더라도 이를 category에 적지 마십시오. 
+                   반드시 [보행 안전, 시설 안전, 화재 안전, 작업 안전, 활동 안전, 보건 및 위생관리, 화학물질 관리, 작업특성 요인, 작업환경 요인, 작업 환경, 기계(설비)적 요인, 전기적 요인, 재난 안전] 중 상황에 가장 적합한 표준 분류를 선택하십시오.
+                2. 등급 판정의 객관성: 단순 노후화나 경미한 파손(예: 보도블럭 일부 들뜸/파손)은 강도(s)를 2 이하로 설정하여 전체 score가 6점 이하가 되도록 하십시오.
+
+                [빈도 등급 판정 가이드라인] ※1~5번 기준과 예를 근거로 하되 안전수칙 및 작업표준은 있음을 전제로 등급 판정.
+                1. 빈도 5점(기준: 피해가 발생할 가능성이 매우 높음)
+                2. 빈도 4점(기준: 피해가 발생할 가능성이 높음)
+                3. 빈도 3점(기준: 부주의하면 피해가 발생할 가능성이 있음)
+                4. 빈도 2점(기준: 피해가 발생할 가능성이 낮음)
+                5. 빈도 1점(기준: 피해가 발생할 가능성이 매우 낮음)
+
+                [강도 등급 판정 가이드라인]
+                1. 강도 4점(사망 또는 영구 장애), 3점(중대한 부상/휴업 수반), 2점(응급처치 이상/비휴업), 1점(경미한 부상)
+
+                [판정 원칙 및 예외 기준]
+                1. 일상적 위험 vs 산업적 위험 구분: 단순 전도 등은 강도 1점을 원칙으로 함.
+                2. 점수 조정 예시: 보도블럭 파손(빈도 2, 강도 1 -> 2점), 바닥 물기(빈도 3, 강도 1 -> 3점)
+
+                [종합 등급 판정 가이드라인]
+                - 매우 낮음(1~3점), 낮음(4~6점), 보통(8~12점), 높음(15점), 매우 높음(16~20점)
+                - 모든 문장은 명사형 종결.
+                - 반드시 다음 JSON 형식을 엄수하세요: 키는 category, scenario, p, s, score, grade, law, solution 이며 리스트 [] 안에 담아 출력하세요.
                 """
-                
+
+                # 분석 데이터 준비
                 content = [prompt]
                 if img_file:
+                    from PIL import Image
                     content.append(Image.open(img_file))
                 
+                # 모델 호출 및 결과 처리
                 response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
                 res_data = json.loads(response.text.strip())
                 
-                # 결과 저장 (리스트 형태 보장)
+                # 결과 저장 및 리프레시
                 st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
-                st.success("✅ 위험성 분석 완료!")
+                st.success(f"✅ [{selected_facility}] 시설 분석 완료!")
                 st.rerun()
+
         except Exception as e:
-            st.error(f"❌ 오류 발생: {e}")
+            st.error(f"❌ 오류가 발생했습니다: {e}")
 
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
@@ -336,15 +358,20 @@ if st.session_state.analysis_results:
     
     st.session_state.final_data = [] # 데이터 저장용 리스트 초기화
 
-    # 1. 스타일 및 헤더 정의 (예전 코드처럼 table_html 변수 하나로 시작)
+# 1. 스타일 정의 (요청하신 5단계 색상 반영)
     table_html = """
     <style>
         .report-table { width:100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        .report-table th { background-color: #f0f2f6; color: #31333F; padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold; }
-        .report-table td { padding: 10px; border: 1px solid #ddd; text-align: center; color: #31333F; vertical-align: middle; }
-        .grade-high { background-color: #ff4b4b; color: white !important; font-weight: bold; }
-        .grade-medium { background-color: #ffa421; color: white !important; font-weight: bold; }
-        .grade-low { background-color: #00cc96; color: white !important; font-weight: bold; }
+        .report-table th { background-color: #f0f2f6; color: #31333F; padding: 10px; border: 1px solid #ddd; text-align: center; }
+        .report-table td { padding: 10px; border: 1px solid #ddd; text-align: center; vertical-align: middle; }
+        
+        /* 등급별 배경색 설정 */
+        .grade-very-low, .grade-low { background-color: #ffffff; color: #31333F; } /* 흰색 */
+        .grade-medium { background-color: #ffff00; color: #000000; font-weight: bold; } /* 노란색 */
+        .grade-slightly-high { background-color: #ffcc00; color: #000000; font-weight: bold; } /* 주황색(짙은노랑) */
+        .grade-high { background-color: #ff9999; color: #000000; font-weight: bold; } /* 옅은 빨간색 */
+        .grade-very-high { background-color: #cc0000; color: #ffffff !important; font-weight: bold; } /* 어두운 빨간색 */
+        
         .text-left { text-align: left !important; }
     </style>
     <table class="report-table">
@@ -363,9 +390,8 @@ if st.session_state.analysis_results:
         <tbody>
     """
 
-    # 2. 데이터 반복문 (table_html에 직접 문자열 이어붙이기)
+    # 2. 데이터 반복문
     for item in st.session_state.analysis_results:
-        # 빈도/강도 숫자 변환
         try:
             p = int(item.get('p', 0))
             s = int(item.get('s', 0))
@@ -374,40 +400,41 @@ if st.session_state.analysis_results:
             
         score = p * s
         
-        # 등급 계산
-        if score <= 3: grade = "매우 낮음"
-        elif score <= 6: grade = "낮음"
-        elif score <= 12: grade = "보통"
-        else: grade = "높음"
+        # [수정] 등급 판정 및 스타일 클래스 매칭
+        if score <= 3: 
+            grade, grade_class = "매우 낮음", "grade-very-low"
+        elif score <= 6: 
+            grade, grade_class = "낮음", "grade-low"
+        elif score <= 9: # 8, 9점 포함
+            grade, grade_class = "보통", "grade-medium"
+        elif score <= 12: 
+            grade, grade_class = "약간 높음", "grade-slightly-high"
+        elif score <= 16: # 15, 16점 포함
+            grade, grade_class = "높음", "grade-high"
+        else: # 20점 이상
+            grade, grade_class = "매우 높음", "grade-very-high"
         
-        # 스타일 클래스 지정
-        if grade == "높음": grade_class = "grade-high"
-        elif grade == "보통": grade_class = "grade-medium"
-        else: grade_class = "grade-low"
-
-        # 텍스트 내 줄바꿈 처리 (예전 코드의 replace 로직 적용)
-        # 엑셀 셀 내에서 줄바꿈(Alt+Enter)한 내용을 HTML 줄바꿈(<br>)으로 변경
+        # 텍스트 내 줄바꿈 처리
         scenario_text = str(item.get('scenario', '-')).replace('\n', '<br>')
         solution_text = str(item.get('solution', '-')).replace('\n', '<br>')
 
-        # HTML 행 추가 (들여쓰기 없이 한 줄로 이어붙여 오류 방지)
+        # HTML 행 생성
         table_html += f'<tr>'
         table_html += f'<td>{item.get("category", "-")}</td>'
         table_html += f'<td class="text-left">{scenario_text}</td>'
         table_html += f'<td>{p}</td>'
         table_html += f'<td>{s}</td>'
         table_html += f'<td>{score}</td>'
-        table_html += f'<td class="{grade_class}">{grade}</td>'
+        table_html += f'<td class="{grade_class}">{grade}</td>' # 적용된 클래스
         table_html += f'<td>{item.get("law", "-")}</td>'
         table_html += f'<td class="text-left">{solution_text}</td>'
         table_html += f'</tr>'
         
-        # 최종 데이터 저장용 업데이트
+        # 세션 데이터 업데이트
         item['score'] = score
         item['grade'] = grade
         st.session_state.final_data.append(item)
 
-    # 3. 테이블 닫기 및 출력
     table_html += '</tbody></table>'
     st.markdown(table_html, unsafe_allow_html=True)
 
