@@ -19,23 +19,21 @@ st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide"
 
 # --- [1단계] 구글 드라이브/시트 설정 ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
-SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q" 
+SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q"
 
 drive_service = None
 sheets_service = None
 
 if "gcp_service_account" in st.secrets:
     try:
-        # Secrets 데이터를 딕셔너리로 가져오기
+        # Secrets에서 정보 로드
         creds_info = dict(st.secrets["gcp_service_account"])
         
-        # [핵심 수정] private_key의 줄바꿈 및 특수문자 완벽 처리
-        if "private_key" in creds_info:
-            # 1. 실제 줄바꿈 문자로 치환
-            pk = creds_info["private_key"].replace("\\n", "\n")
-            # 2. 양 끝의 불필요한 따옴표 제거
-            pk = pk.strip().strip('"').strip("'")
-            creds_info["private_key"] = pk
+        # [해결 핵심] private_key 내부의 \n 문자열을 실제 개행 문자로 변환
+        # 역슬래시(\) 관련 0, 92 에러를 해결하는 가장 강력한 방법입니다.
+        raw_key = creds_info["private_key"]
+        fixed_key = raw_key.encode('utf-8').decode('unicode_escape')
+        creds_info["private_key"] = fixed_key
 
         SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
         creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
@@ -44,7 +42,8 @@ if "gcp_service_account" in st.secrets:
         sheets_service = build('sheets', 'v4', credentials=creds)
         
     except Exception as e:
-        st.error(f"GCP 인증 시스템 초기화 실패: {e}")
+        # 에러 발생 시 상세 메시지 출력
+        st.error(f"⚠️ GCP 인증 설정 오류: {e}")
 else:
     st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
 
