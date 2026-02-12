@@ -17,7 +17,7 @@ import datetime
 # --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
-# --- [1단계] 구글 드라이브/시트 설정 ---
+# --- [1단계] 구글 드라이브/시트 설정 (PEM 로드 집중 수정 버전) ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
 SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q"
 
@@ -26,24 +26,33 @@ sheets_service = None
 
 if "gcp_service_account" in st.secrets:
     try:
-        # Secrets에서 정보 로드
-        creds_info = dict(st.secrets["gcp_service_account"])
+        # Secrets 데이터를 딕셔너리로 복사
+        creds_dict = dict(st.secrets["gcp_service_account"])
         
-        # [해결 핵심] private_key 내부의 \n 문자열을 실제 개행 문자로 변환
-        # 역슬래시(\) 관련 0, 92 에러를 해결하는 가장 강력한 방법입니다.
-        raw_key = creds_info["private_key"]
-        fixed_key = raw_key.encode('utf-8').decode('unicode_escape')
-        creds_info["private_key"] = fixed_key
+        # PEM 파일 로드 에러 방지를 위한 3단계 정제 작업
+        pk = creds_dict["private_key"]
+        
+        # 1. 앞뒤 공백 및 불필요한 등호(=)나 특수문자 제거
+        pk = pk.strip()
+        
+        # 2. 리터럴 \n (역슬래시+n)이 글자로 들어온 경우 실제 개행 문자로 치환
+        pk = pk.replace("\\n", "\n")
+        
+        # 3. 만약 따옴표 등으로 감싸져서 개행이 중복 처리된 경우 정규화
+        if pk.startswith('"') and pk.endswith('"'):
+            pk = pk[1:-1]
+        
+        creds_dict["private_key"] = pk
 
         SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
         
         drive_service = build('drive', 'v3', credentials=creds)
         sheets_service = build('sheets', 'v4', credentials=creds)
         
     except Exception as e:
-        # 에러 발생 시 상세 메시지 출력
-        st.error(f"⚠️ GCP 인증 설정 오류: {e}")
+        st.error(f"⚠️ GCP 인증 설정 오류 (PEM 확인 필요): {e}")
+
 else:
     st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
 
