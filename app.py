@@ -14,47 +14,42 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import datetime
 
-# --- [1단계] 구글 드라이브/시트 설정 (ID 입력 필수) ---
-# 아까 확인하신 ID를 여기에 넣으세요
+# --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
+st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
+
+# --- [1단계] 구글 드라이브/시트 설정 ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
 SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q" 
 
-# --- [1단계 최종 보완본] ---
 drive_service = None
 sheets_service = None
 
 if "gcp_service_account" in st.secrets:
     try:
-        # Secrets 데이터를 복사해서 딕셔너리로 변환
-        creds_dict = dict(st.secrets["gcp_service_account"])
+        # Secrets 데이터를 딕셔너리로 가져오기
+        creds_info = dict(st.secrets["gcp_service_account"])
         
-        # [핵심] 개인키 데이터 정밀 청소
-        pk = creds_dict["private_key"]
-        
-        # 1. 만약 키 앞뒤에 불필요한 따옴표가 섞여 있다면 제거
-        pk = pk.strip().strip('"').strip("'")
-        
-        # 2. 역슬래시 2개로 표기된 줄바꿈(\\n)을 실제 줄바꿈(\n)으로 변환
-        pk = pk.replace("\\n", "\n")
-        
-        # 3. (중요) 혹시 모를 중복 줄바꿈이나 공백 정리
-        creds_dict["private_key"] = pk
+        # [핵심 수정] private_key의 줄바꿈 및 특수문자 완벽 처리
+        if "private_key" in creds_info:
+            # 1. 실제 줄바꿈 문자로 치환
+            pk = creds_info["private_key"].replace("\\n", "\n")
+            # 2. 양 끝의 불필요한 따옴표 제거
+            pk = pk.strip().strip('"').strip("'")
+            creds_info["private_key"] = pk
 
         SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
-        creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        creds = service_account.Credentials.from_service_account_info(creds_info, scopes=SCOPES)
         
         drive_service = build('drive', 'v3', credentials=creds)
         sheets_service = build('sheets', 'v4', credentials=creds)
         
-        # 성공 시 에러 메시지 없음
     except Exception as e:
         st.error(f"GCP 인증 시스템 초기화 실패: {e}")
 else:
     st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
 
-
-# [수정 1] 페이지 설정이 무조건 가장 먼저 와야 합니다!
-st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
+# (이후 기존의 CSS 설정 및 나머지 코드를 이어 붙이시면 됩니다.)
+# 주의: 아래쪽에 있는 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", ...) 코드는 삭제하세요.
 
 # [수정 2] 파라미터 이름을 unsafe_allow_html=True 로 변경
 st.markdown("""
