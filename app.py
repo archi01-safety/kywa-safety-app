@@ -484,7 +484,7 @@ if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_containe
                         success_count += 1
                 
                 if success_count > 0:
-                    st.success(f"✅ 데이터 {success_count}건과 정상적으로 제출되었습니다!")
+                    st.success(f"✅ 데이터 {success_count}건이 KYWA AI 안전센터로 정상 제출되었습니다!")
                     st.balloons()
                     # (선택) 전송 후 데이터 초기화가 필요하다면 아래 주석 해제
                     # st.session_state.final_data = None
