@@ -299,19 +299,24 @@ with col2:
         unsafe_allow_html=True
     )
     
-    # 2. 라디오 버튼 (라벨 숨김 유지)
-    source_option = st.radio(
-        label="사진 방식 선택 레이블(숨김)", 
-        options=("📷 카메라", "🖼️ 갤러리", "🚫 없음"), 
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-    
-    img_file = None
+img_file = None
     if "📷" in source_option:
-        img_file = st.camera_input("📸 현장 사진 촬영")
+        # [교체] camera_input 대신 file_uploader를 사용 (accept_multiple_files=False)
+        # label_visibility="collapsed"를 사용하여 폼이 깨지지 않게 배치합니다.
+        st.info("📸 [촬영] 버튼을 누른 후 '카메라'를 선택하면 후면 카메라가 활성화됩니다.")
+        img_file = st.file_uploader(
+            "카메라 촬영 전용", 
+            type=['png', 'jpg', 'jpeg'], 
+            label_visibility="collapsed",
+            key="camera_upload_alternative"
+        )
+        
     elif "🖼️" in source_option:
-        img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
+        img_file = st.file_uploader(
+            "🖼️ 사진 파일 업로드", 
+            type=['png', 'jpg', 'jpeg'],
+            key="gallery_upload"
+        )
 
 def apply_face_blur(img_file):
     import cv2
@@ -478,20 +483,47 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 
                 # 분석 데이터 준비
                 content = [prompt]
+                
+                # [수정] 이미지 로드 부분 (PIL import 위치 확인)
+                from PIL import Image 
+                
                 if img_file:
-                    from PIL import Image
                     content.append(Image.open(img_file))
                 
-                # 모델 호출 및 결과 처리
                 if processed_img_final:
                     content.append(Image.open(processed_img_final))
-                response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
-                res_data = json.loads(response.text.strip())
-                
-                # 결과 저장 및 리프레시
-                st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
-                st.success(f"✅ [{selected_facility}] 시설 분석 완료!")
-                st.rerun()
+
+                # [핵심 수정] 재시도 로직 추가 (API 한도 초과 방지)
+                import time
+                response = None
+                max_retries = 3  # 최대 3번까지 재시도
+
+                for attempt in range(max_retries):
+                    try:
+                        # 모델 호출
+                        response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
+                        break  # 성공하면 반복문 탈출!
+                    except Exception as e:
+                        # 429 에러(Quota)나 과부하 에러가 났을 때만 재시도
+                        if "429" in str(e) or "quota" in str(e).lower() or "503" in str(e):
+                            if attempt < max_retries - 1:
+                                time.sleep(2 * (attempt + 1))  # 2초, 4초... 점차 길게 대기
+                                st.toast(f"⏳ 사용량 조절 중... 재시도 {attempt+1}/{max_retries}")
+                                continue
+                            else:
+                                st.error("🚨 현재 AI 이용량이 많아 분석이 어렵습니다. 1분 뒤에 다시 시도해주세요.")
+                                st.stop() # 코드 실행 중단
+                        else:
+                            raise e # 다른 에러(코드 오류 등)는 바로 띄움
+
+                # 결과 처리 (성공했을 때만 실행)
+                if response:
+                    res_data = json.loads(response.text.strip())
+                    
+                    # 결과 저장 및 리프레시
+                    st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
+                    st.success(f"✅ [{selected_facility}] 시설 분석 완료!")
+                    st.rerun()
 
         except Exception as e:
             st.error(f"❌ 오류가 발생했습니다: {e}")
@@ -693,7 +725,7 @@ if dashboard_data is not None:
         if author_col in yearly_data.columns:
             m2.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
         else:
-            m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
+            m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 개 시설")
 
         # --- 색상 맵 설정 ---
         CATEGORY_COLOR_MAP = {
