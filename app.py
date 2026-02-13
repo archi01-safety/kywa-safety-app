@@ -18,6 +18,9 @@ import base64
 import cv2
 import mediapipe as mp
 import numpy as np
+import mediapipe as mp
+# 명시적으로 내부 솔루션까지 미리 불러오기
+from mediapipe.python.solutions import face_detection as mp_face
 
 # --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
@@ -297,18 +300,6 @@ def apply_face_blur(img_file):
     import cv2
     import numpy as np
     import sys
-
-    # [1] 라이브러리 강제 로드 로직
-    try:
-        import mediapipe as mp
-        from mediapipe.python.solutions import face_detection as mp_face
-    except ImportError:
-        try:
-            from mediapipe.solutions import face_detection as mp_face
-        except:
-            st.error("🚨 라이브러리 로딩에 실패했습니다. requirements.txt를 다시 확인해주세요.")
-            img_file.seek(0)
-            return img_file.getvalue()
 
     try:
         # 이미지 읽기
