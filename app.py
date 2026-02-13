@@ -15,6 +15,9 @@ from googleapiclient.http import MediaIoBaseUpload
 import datetime
 import codecs # PEM 로드를 위해 추가
 import base64
+import cv2
+import mediapipe as mp
+import numpy as np
 
 # --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
@@ -289,6 +292,47 @@ with col2:
         img_file = st.camera_input("📸 현장 사진 촬영")
     elif "🖼️" in source_option:
         img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
+
+def apply_face_blur(img_file):
+    # 1. 이미지 읽기
+    file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
+    image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    
+    # 2. MediaPipe 얼굴 탐지 설정
+    mp_face_detection = mp.solutions.face_detection
+    with mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5) as face_detection:
+        results = face_detection.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+        if results.detections:
+            for detection in results.detections:
+                bbox = detection.location_data.relative_bounding_box
+                h, w, c = image.shape
+                
+                # 좌표 계산
+                x, y, rw, rh = int(bbox.xmin * w), int(bbox.ymin * h), int(bbox.width * w), int(bbox.height * h)
+                
+                # 가끔 영역이 이미지 밖으로 나가는 것 방지
+                x, y = max(0, x), max(0, y)
+                
+                # 블러 처리할 얼굴 영역 추출
+                face_roi = image[y:y+rh, x:x+rw]
+                # 가우시안 블러 적용 (강도 조절 가능)
+                blurred_face = cv2.GaussianBlur(face_roi, (99, 99), 30)
+                image[y:y+rh, x:x+rw] = blurred_face
+
+    # 3. 인코딩해서 반환
+    _, buffer = cv2.imencode('.jpg', image)
+    return buffer.tobytes()
+
+# --- [3단계] 전송 버튼 로직 내 수정 ---
+if img_file:
+    with st.spinner("🔒 개인정보 비식별화 처리 중..."):
+        # 원본 대신 블러 처리된 이미지 생성
+        processed_img_bytes = apply_face_blur(img_file)
+        
+        # 업로드 함수에 원본 대신 처리된 바이트 전달
+        # (단, upload_photo_to_drive 함수도 바이트를 받도록 소폭 수정 필요)
+        photo_link = upload_photo_to_drive_bytes(processed_img_bytes, filename)
 
 # --- 6. AI 분석 실행 ---
 if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
