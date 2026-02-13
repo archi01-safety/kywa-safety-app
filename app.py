@@ -294,31 +294,55 @@ with col2:
         img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
 
 def apply_face_blur(img_file):
-    # 1. 이미지 읽기
-    file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
-    image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-    
-    # 2. MediaPipe 얼굴 탐지 설정
-    mp_face_detection = mp.solutions.face_detection
-    with mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5) as face_detection:
-        results = face_detection.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    try:
+        # 파일 포인터를 처음으로 되돌림 (중요!)
+        img_file.seek(0)
+        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        
+        if image is None:
+            return img_file.getvalue()
 
-        if results.detections:
-            for detection in results.detections:
-                bbox = detection.location_data.relative_bounding_box
-                h, w, c = image.shape
-                
-                # 좌표 계산
-                x, y, rw, rh = int(bbox.xmin * w), int(bbox.ymin * h), int(bbox.width * w), int(bbox.height * h)
-                
-                # 가끔 영역이 이미지 밖으로 나가는 것 방지
-                x, y = max(0, x), max(0, y)
-                
-                # 블러 처리할 얼굴 영역 추출
-                face_roi = image[y:y+rh, x:x+rw]
-                # 가우시안 블러 적용 (강도 조절 가능)
-                blurred_face = cv2.GaussianBlur(face_roi, (99, 99), 30)
-                image[y:y+rh, x:x+rw] = blurred_face
+        # MediaPipe 솔루션 로드 시도
+        import mediapipe as mp
+        # AttributeError 방지를 위해 직접 하위 모듈 확인
+        if not hasattr(mp.solutions, 'face_detection'):
+            st.error("MediaPipe 초기화 실패. 앱을 재부팅해 주세요.")
+            return img_file.getvalue()
+            
+        mp_face_detection = mp.solutions.face_detection
+        
+        # 실제 처리 로직
+        with mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.4) as face_detection:
+            results = face_detection.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+            if results.detections:
+                h, w, _ = image.shape
+                for detection in results.detections:
+                    bbox = detection.location_data.relative_bounding_box
+                    x, y = int(bbox.xmin * w), int(bbox.ymin * h)
+                    rw, rh = int(bbox.width * w), int(bbox.height * h)
+                    
+                    # 이미지 경계 처리
+                    x, y = max(0, x), max(0, y)
+                    rw = min(rw, w - x)
+                    rh = min(rh, h - y)
+                    
+                    if rw > 0 and rh > 0:
+                        face_roi = image[y:y+rh, x:x+rw]
+                        # 블러 강도 설정 (얼굴 크기에 비례)
+                        kernel_size = (int(rw/3) | 1, int(rh/3) | 1) 
+                        image[y:y+rh, x:x+rw] = cv2.GaussianBlur(face_roi, kernel_size, 0)
+
+        _, buffer = cv2.imencode('.jpg', image)
+        return buffer.tobytes()
+
+    except Exception as e:
+        # 에러 발생 시 사용자에게 알리고 원본 반환 (중단 방지)
+        st.warning(f"⚠️ 얼굴 인식 처리 중 경미한 오류 발생: {e}")
+        img_file.seek(0)
+        return img_file.getvalue()
+
 
     # 3. 인코딩해서 반환
     _, buffer = cv2.imencode('.jpg', image)
