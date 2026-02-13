@@ -802,7 +802,17 @@ if dashboard_data is not None:
                         yearly_data, names=target_col_cat, hole=0.3,
                         color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
                     )
-                    # 파이 차트도 확대/축소 방지 적용
+                    
+                    # --- [추가 및 수정된 부분 시작] ---
+                    fig_pie.update_traces(
+                        textinfo='percent+value', 
+                        texttemplate='%{percent:.1%}<br>(%{value}건)', # 퍼센트(소수점 1자리)와 건수 표시
+                        insidetextorientation='horizontal', # 글자를 가로로 고정
+                        textfont_size=12 # 글자 크기 조절 (필요시)
+                    )
+                    # --- [추가 및 수정된 부분 끝] ---
+
+                    # 기존 레이아웃 설정
                     fig_pie.update_layout(
                         margin=dict(t=30, b=0, l=0, r=0), 
                         height=350,
