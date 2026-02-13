@@ -244,11 +244,24 @@ st.markdown("""
         transform: scale(1.01);
     }
     /* 로고 및 타이틀 스타일 */
-    .logo-img { cursor: pointer; display: block; margin-top: 10px; }
-    .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
-    .refresh-title:hover { color: #FF4B4B !important; }
-    </style>
-""", unsafe_allow_html=True)
+    /* 로고 이미지 스타일 수정 */
+    .logo-img { 
+        cursor: pointer; 
+        display: block; 
+        
+        /* 1. 크기 조절: 원하는 높이로 숫자를 변경하세요 */
+        height: 40px; 
+        width: auto; 
+        
+        /* 2. 상단 여백 제거 및 강제 끌어올리기 */
+        margin-top: -30px !important;  /* 음수 값을 키울수록 더 위로 올라갑니다 */
+        margin-bottom: 0px;
+    }
+
+    /* 전체 페이지 상단 여백 자체를 줄이고 싶을 때 추가 */
+    .block-container {
+        padding-top: 1rem !important; /* 기본 여백(보통 6rem)을 크게 줄입니다 */
+    }
 
 header_col1, header_col2 = st.columns([1, 4])
 raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
