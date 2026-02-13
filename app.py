@@ -157,19 +157,34 @@ def create_excel(data):
 # --- [2단계] 구글 드라이브/시트 전송 함수 추가 ---
 
 def upload_photo_to_drive(file_obj, filename):
-    """사진을 구글 드라이브에 업로드하고 링크를 반환"""
+    """사진을 구글 드라이브에 업로드하고 링크를 반환 (할당량 에러 해결 버전)"""
     try:
-        file_metadata = {'name': filename, 'parents': [DRIVE_FOLDER_ID]}
-        # 파일 포인터 초기화 (중요)
-        file_obj.seek(0)
-        media = MediaIoBaseUpload(io.BytesIO(file_obj.getvalue()), mimetype='image/jpeg')
+        # 파일 메타데이터 설정
+        file_metadata = {
+            'name': filename, 
+            'parents': [DRIVE_FOLDER_ID]
+        }
         
+        # 파일 포인터 초기화
+        file_obj.seek(0)
+        media = MediaIoBaseUpload(
+            io.BytesIO(file_obj.getvalue()), 
+            mimetype='image/jpeg',
+            resumable=True # 대용량 대응을 위해 추가
+        )
+        
+        # [수정] supportsAllDrives=True 옵션을 추가하여 서비스 계정의 용량 제한 우회
         uploaded_file = drive_service.files().create(
-            body=file_metadata, media_body=media, fields='id, webViewLink'
+            body=file_metadata, 
+            media_body=media, 
+            fields='id, webViewLink',
+            supportsAllDrives=True  # 중요: 공유 드라이브/폴더 권한 허용
         ).execute()
+        
         return uploaded_file.get('webViewLink')
     except Exception as e:
-        return f"업로드 실패: {str(e)}"
+        # 에러 메시지가 너무 길면 시트가 지저분해지므로 요약 출력
+        return f"업로드 실패: {str(e)[:100]}"
 
 def append_row_to_sheet(row_data):
     try:
@@ -650,6 +665,7 @@ with footer_cols[1]:
 
 # 최하단 한 줄 강조
 st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
+
 
 
 
