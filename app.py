@@ -94,6 +94,27 @@ else:
 # [수정 2] 파라미터 이름을 unsafe_allow_html=True 로 변경
 st.markdown("""
     <style>
+    /* 1. 페이지 전체 상단 여백 제거 (천장에 바짝 붙임) */
+    .block-container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1rem !important;
+    }
+
+    /* 2. 로고 이미지 크기 및 간격 조절 */
+    .logo-img {
+        height: 40px !important;  /* 높이를 줄여서 로고를 작게 만듦 */
+        width: auto;
+        margin-top: -10px !important; /* 위로 더 올리고 싶으면 숫자를 더 낮추세요(예: -20px) */
+        display: block;
+        cursor: pointer;
+    }
+
+    /* 3. 타이틀 관련 스타일 (이미 있을 경우 대비) */
+    .refresh-title {
+        text-decoration: none !important;
+        color: inherit !important;
+    }
+
     /* 모든 텍스트가 현재 테마의 글자색을 따르도록 설정 */
     html, body, [data-testid="stWidgetLabel"] p {
         color: var(--text-color);
