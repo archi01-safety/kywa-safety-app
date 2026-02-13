@@ -15,6 +15,9 @@ from googleapiclient.http import MediaIoBaseUpload
 import datetime
 import codecs # PEM 로드를 위해 추가
 import base64
+import cv2
+import mediapipe as mp
+import numpy as np
 
 # --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
@@ -290,6 +293,101 @@ with col2:
     elif "🖼️" in source_option:
         img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
 
+def apply_face_blur(img_file):
+    import cv2
+    import numpy as np
+    import sys
+
+    # [1] 라이브러리 강제 로드 로직
+    try:
+        import mediapipe as mp
+        from mediapipe.python.solutions import face_detection as mp_face
+    except ImportError:
+        try:
+            from mediapipe.solutions import face_detection as mp_face
+        except:
+            st.error("🚨 라이브러리 로딩에 실패했습니다. requirements.txt를 다시 확인해주세요.")
+            img_file.seek(0)
+            return img_file.getvalue()
+
+    try:
+        # 이미지 읽기
+        img_file.seek(0)
+        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        if image is None: return img_file.getvalue()
+        
+        h, w, _ = image.shape
+
+        # [2] 이미지 전처리 (어두운 얼굴 인식률 향상)
+        # 대비를 높여 측면이나 그늘진 얼굴 특징을 부각시킵니다.
+        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        cl = clahe.apply(l)
+        enhanced_img = cv2.merge((cl,a,b))
+        enhanced_img = cv2.cvtColor(enhanced_img, cv2.COLOR_LAB2RGB) # 모델 입력용
+
+        all_detections = []
+
+        # [3] 초강력 이중 감지 (근거리 + 원거리 합집합)
+        # 감지 민감도를 0.3으로 낮추어 측면 얼굴도 최대한 잡습니다.
+        for model_type in [0, 1]: 
+            with mp_face.FaceDetection(model_selection=model_type, min_detection_confidence=0.3) as detector:
+                results = detector.process(enhanced_img)
+                if results.detections:
+                    all_detections.extend(results.detections)
+
+        if all_detections:
+            for detection in all_detections:
+                bbox = detection.location_data.relative_bounding_box
+                
+                # 좌표 계산 및 안전 범위 지정
+                x = int(bbox.xmin * w)
+                y = int(bbox.ymin * h)
+                rw = int(bbox.width * w)
+                rh = int(bbox.height * h)
+                
+                # 얼굴 영역을 실제보다 20% 더 넓게 잡음 (머리카락, 귀 보호)
+                padding_w = int(rw * 0.2)
+                padding_h = int(rh * 0.2)
+                
+                x_final = max(0, x - padding_w)
+                y_final = max(0, y - padding_h)
+                rw_final = min(w - x_final, rw + (padding_w * 2))
+                rh_final = min(h - y_final, rh + (padding_h * 2))
+
+                if rw_final > 0 and rh_final > 0:
+                    face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
+                    
+                    # 더 강력한 블러 효과 (가우시안 + 모자이크 혼합 느낌)
+                    level = max(rw_final, rh_final) // 4
+                    if level % 2 == 0: level += 1
+                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = cv2.GaussianBlur(face_roi, (level, level), 0)
+
+            st.toast(f"✅ {len(all_detections)}개 포인트 비식별화 완료")
+
+        # 결과 반환
+        _, buffer = cv2.imencode('.jpg', image)
+        return buffer.tobytes()
+
+    except Exception as e:
+        st.error(f"비식별화 프로세스 오류: {e}")
+        img_file.seek(0)
+        return img_file.getvalue()
+
+# --- [3단계] 전송 버튼 로직 내 수정 ---
+processed_img_final = None  # 처리된 이미지를 담을 변수
+
+if img_file:
+    with st.spinner("🔒 개인정보 비식별화 처리 중..."):
+        # 원본 대신 블러 처리된 이미지 생성
+        processed_img_bytes = apply_face_blur(img_file)
+        # Bytes 데이터를 파일 객체처럼 변환 (io.BytesIO 사용)
+        processed_img_final = io.BytesIO(processed_img_bytes)
+        # 파일 이름을 식별하기 위해 name 속성 부여
+        processed_img_final.name = img_file.name
+
 # --- 6. AI 분석 실행 ---
 if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
     if not user_description.strip() and not img_file:
@@ -340,6 +438,8 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                     content.append(Image.open(img_file))
                 
                 # 모델 호출 및 결과 처리
+                if processed_img_final:
+                    content.append(Image.open(processed_img_final))
                 response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
                 res_data = json.loads(response.text.strip())
                 
@@ -457,9 +557,10 @@ if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_containe
 
                 # 1. 사진 업로드
                 photo_link = "사진 없음"
-                if img_file:
+                if processed_img_final: # img_file 대신 블러 처리된 변수 사용
                     filename = f"{selected_facility}_{timestamp_str}.jpg"
-                    photo_link = upload_photo_to_drive(img_file, filename)
+                    # 위에서 정의한 함수 이름으로 호출 (upload_photo_to_drive)
+                    photo_link = upload_photo_to_drive(processed_img_final, filename)
                 
                 # 2. 시트 데이터 준비 및 전송
                 success_count = 0
