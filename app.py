@@ -294,38 +294,82 @@ with col2:
         img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
 
 def apply_face_blur(img_file):
+    import cv2
+    import numpy as np
+    
+    # [핵심 수정] MediaPipe 솔루션을 안전하게 가져오는 함수
+    def get_face_detection_model():
+        try:
+            import mediapipe as mp
+            # 솔루션이 로드되지 않았을 경우 강제로 하위 모듈 임포트
+            import mediapipe.python.solutions.face_detection as mp_face
+            return mp_face
+        except ImportError:
+            # 경로가 다를 경우 표준 경로 재시도
+            try:
+                from mediapipe.solutions import face_detection as mp_face
+                return mp_face
+            except Exception:
+                return None
+
     try:
-        # 1. 이미지 로드
+        # 1. 이미지 읽기
         img_file.seek(0)
         file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         
         if image is None: return img_file.getvalue()
 
-        # 2. OpenCV 내장 얼굴 인식 모델 로드 (별도 설치 불필요)
-        # haarcascade_frontalface_default.xml은 cv2 내부에 포함되어 있습니다.
-        cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
-        face_cascade = cv2.CascadeClassifier(cascade_path)
+        # 2. 모델 로드 (위에서 정의한 안전한 함수 사용)
+        mp_face_detection = get_face_detection_model()
         
-        # 인식률 향상을 위해 흑백 변환 후 탐지
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-        # scaleFactor=1.1, minNeighbors=5 (일반적인 설정)
-        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(30, 30))
+        if mp_face_detection is None:
+            st.warning("⚠️ 미디어파이프 로드 실패: 원본 이미지가 사용됩니다.")
+            return img_file.getvalue()
 
-        # 3. 탐지된 얼굴 블러 처리
-        for (x, y, w, h) in faces:
-            face_roi = image[y:y+h, x:x+w]
-            # 블러 강도 유동적 조절
-            k_size = (w // 3) | 1
-            image[y:y+h, x:x+w] = cv2.GaussianBlur(face_roi, (k_size, k_size), 0)
+        # 3. 얼굴 인식 및 블러링 수행
+        # model_selection=1 (원거리/전신 촬영에 최적화)
+        with mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.4) as face_detection:
+            # BGR -> RGB 변환하여 분석
+            results = face_detection.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 
-        # 4. 결과 반환
+            if results.detections:
+                h, w, _ = image.shape
+                face_count = 0 # 탐지된 얼굴 수 카운트
+                
+                for detection in results.detections:
+                    face_count += 1
+                    bbox = detection.location_data.relative_bounding_box
+                    
+                    # 좌표 계산 (절대 좌표)
+                    x = int(bbox.xmin * w)
+                    y = int(bbox.ymin * h)
+                    rw = int(bbox.width * w)
+                    rh = int(bbox.height * h)
+                    
+                    # 이미지 범위 벗어남 방지
+                    x, y = max(0, x), max(0, y)
+                    rw, rh = min(rw, w - x), min(rh, h - y)
+                    
+                    if rw > 0 and rh > 0:
+                        face_roi = image[y:y+rh, x:x+rw]
+                        
+                        # 모자이크 강도 (얼굴 크기에 비례, 홀수여야 함)
+                        k_w = int(rw / 5) | 1
+                        k_h = int(rh / 5) | 1
+                        
+                        # 가우시안 블러 적용
+                        image[y:y+rh, x:x+rw] = cv2.GaussianBlur(face_roi, (k_w, k_h), 0)
+                
+                # [디버깅용] 화면에 처리 결과 살짝 표시 (나중에 삭제 가능)
+                st.toast(f"✅ {face_count}명의 얼굴을 비식별화했습니다.")
+
+        # 4. 결과 인코딩 및 반환
         _, buffer = cv2.imencode('.jpg', image)
         return buffer.tobytes()
 
     except Exception as e:
-        st.warning(f"⚠️ 얼굴 비식별화 건너뜀: {e}")
+        st.error(f"비식별화 중 에러 발생: {e}")
         img_file.seek(0)
         return img_file.getvalue()
 
