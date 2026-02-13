@@ -295,7 +295,7 @@ with col2:
 
 def apply_face_blur(img_file):
     try:
-        # 파일 포인터를 처음으로 되돌림 (중요!)
+        # 1. 파일 포인터 초기화 및 이미지 로드
         img_file.seek(0)
         file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
@@ -303,43 +303,53 @@ def apply_face_blur(img_file):
         if image is None:
             return img_file.getvalue()
 
-        # MediaPipe 솔루션 로드 시도
-        import mediapipe as mp
-        # AttributeError 방지를 위해 직접 하위 모듈 확인
-        if not hasattr(mp.solutions, 'face_detection'):
-            st.error("MediaPipe 초기화 실패. 앱을 재부팅해 주세요.")
+        # [핵심 수정] mp.solutions를 거치지 않고 직접 모듈을 가져옵니다.
+        # 이 방식은 버전 변경에 훨씬 강합니다.
+        try:
+            from mediapipe.solutions import face_detection
+        except ImportError:
+            # 만약 라이브러리 자체가 꼬여서 Import가 안 되면 경고 후 원본 반환
+            st.warning("⚠️ MediaPipe 모듈 로드 실패 (얼굴 인식 건너뜀)")
             return img_file.getvalue()
-            
-        mp_face_detection = mp.solutions.face_detection
-        
-        # 실제 처리 로직
-        with mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.4) as face_detection:
-            results = face_detection.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+        # 2. 얼굴 인식 및 블러 처리
+        # model_selection=1 (원거리/전신용)
+        with face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.4) as detector:
+            # MediaPipe는 RGB를 사용하므로 변환
+            results = detector.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
 
             if results.detections:
                 h, w, _ = image.shape
                 for detection in results.detections:
                     bbox = detection.location_data.relative_bounding_box
-                    x, y = int(bbox.xmin * w), int(bbox.ymin * h)
-                    rw, rh = int(bbox.width * w), int(bbox.height * h)
                     
-                    # 이미지 경계 처리
-                    x, y = max(0, x), max(0, y)
+                    # 좌표 계산
+                    x = int(bbox.xmin * w)
+                    y = int(bbox.ymin * h)
+                    rw = int(bbox.width * w)
+                    rh = int(bbox.height * h)
+                    
+                    # 좌표가 음수이거나 이미지 범위를 벗어나는 경우 보정
+                    x = max(0, x)
+                    y = max(0, y)
                     rw = min(rw, w - x)
                     rh = min(rh, h - y)
                     
+                    # 유효한 영역인 경우에만 블러 처리
                     if rw > 0 and rh > 0:
                         face_roi = image[y:y+rh, x:x+rw]
-                        # 블러 강도 설정 (얼굴 크기에 비례)
-                        kernel_size = (int(rw/3) | 1, int(rh/3) | 1) 
-                        image[y:y+rh, x:x+rw] = cv2.GaussianBlur(face_roi, kernel_size, 0)
+                        # 블러 강도: 얼굴 크기의 1/3 수준 (반드시 홀수)
+                        k_w = int(rw / 3) | 1
+                        k_h = int(rh / 3) | 1
+                        image[y:y+rh, x:x+rw] = cv2.GaussianBlur(face_roi, (k_w, k_h), 0)
 
+        # 3. 결과 인코딩 및 반환
         _, buffer = cv2.imencode('.jpg', image)
         return buffer.tobytes()
 
     except Exception as e:
-        # 에러 발생 시 사용자에게 알리고 원본 반환 (중단 방지)
-        st.warning(f"⚠️ 얼굴 인식 처리 중 경미한 오류 발생: {e}")
+        # 어떤 에러가 나더라도 앱이 멈추지 않도록 원본 반환
+        st.warning(f"⚠️ 비식별화 처리 중 오류(자동 건너뜀): {e}")
         img_file.seek(0)
         return img_file.getvalue()
 
