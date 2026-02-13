@@ -295,68 +295,39 @@ with col2:
 
 def apply_face_blur(img_file):
     try:
-        # 1. 파일 포인터 초기화 및 이미지 로드
+        # 1. 이미지 로드
         img_file.seek(0)
         file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         
-        if image is None:
-            return img_file.getvalue()
+        if image is None: return img_file.getvalue()
 
-        # [핵심 수정] mp.solutions를 거치지 않고 직접 모듈을 가져옵니다.
-        # 이 방식은 버전 변경에 훨씬 강합니다.
-        try:
-            from mediapipe.solutions import face_detection
-        except ImportError:
-            # 만약 라이브러리 자체가 꼬여서 Import가 안 되면 경고 후 원본 반환
-            st.warning("⚠️ MediaPipe 모듈 로드 실패 (얼굴 인식 건너뜀)")
-            return img_file.getvalue()
+        # 2. OpenCV 내장 얼굴 인식 모델 로드 (별도 설치 불필요)
+        # haarcascade_frontalface_default.xml은 cv2 내부에 포함되어 있습니다.
+        cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+        face_cascade = cv2.CascadeClassifier(cascade_path)
+        
+        # 인식률 향상을 위해 흑백 변환 후 탐지
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # scaleFactor=1.1, minNeighbors=5 (일반적인 설정)
+        faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(30, 30))
 
-        # 2. 얼굴 인식 및 블러 처리
-        # model_selection=1 (원거리/전신용)
-        with face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.4) as detector:
-            # MediaPipe는 RGB를 사용하므로 변환
-            results = detector.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        # 3. 탐지된 얼굴 블러 처리
+        for (x, y, w, h) in faces:
+            face_roi = image[y:y+h, x:x+w]
+            # 블러 강도 유동적 조절
+            k_size = (w // 3) | 1
+            image[y:y+h, x:x+w] = cv2.GaussianBlur(face_roi, (k_size, k_size), 0)
 
-            if results.detections:
-                h, w, _ = image.shape
-                for detection in results.detections:
-                    bbox = detection.location_data.relative_bounding_box
-                    
-                    # 좌표 계산
-                    x = int(bbox.xmin * w)
-                    y = int(bbox.ymin * h)
-                    rw = int(bbox.width * w)
-                    rh = int(bbox.height * h)
-                    
-                    # 좌표가 음수이거나 이미지 범위를 벗어나는 경우 보정
-                    x = max(0, x)
-                    y = max(0, y)
-                    rw = min(rw, w - x)
-                    rh = min(rh, h - y)
-                    
-                    # 유효한 영역인 경우에만 블러 처리
-                    if rw > 0 and rh > 0:
-                        face_roi = image[y:y+rh, x:x+rw]
-                        # 블러 강도: 얼굴 크기의 1/3 수준 (반드시 홀수)
-                        k_w = int(rw / 3) | 1
-                        k_h = int(rh / 3) | 1
-                        image[y:y+rh, x:x+rw] = cv2.GaussianBlur(face_roi, (k_w, k_h), 0)
-
-        # 3. 결과 인코딩 및 반환
+        # 4. 결과 반환
         _, buffer = cv2.imencode('.jpg', image)
         return buffer.tobytes()
 
     except Exception as e:
-        # 어떤 에러가 나더라도 앱이 멈추지 않도록 원본 반환
-        st.warning(f"⚠️ 비식별화 처리 중 오류(자동 건너뜀): {e}")
+        st.warning(f"⚠️ 얼굴 비식별화 건너뜀: {e}")
         img_file.seek(0)
         return img_file.getvalue()
-
-
-    # 3. 인코딩해서 반환
-    _, buffer = cv2.imencode('.jpg', image)
-    return buffer.tobytes()
 
 # --- [3단계] 전송 버튼 로직 내 수정 ---
 processed_img_final = None  # 처리된 이미지를 담을 변수
@@ -740,7 +711,4 @@ with footer_cols[1]:
 
 # 최하단 한 줄 강조
 st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
-
-
-
 
