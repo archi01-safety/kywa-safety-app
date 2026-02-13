@@ -275,11 +275,36 @@ with header_col1:
     ''', unsafe_allow_html=True)
 
 with header_col2:
+    # 1. 상단 여백을 강제로 줄이는 CSS 포함
     st.markdown("""
+        <style>
+            /* 메인 컨테이너의 상단 패딩을 줄여서 위로 바짝 붙임 */
+            .block-container {
+                padding-top: 1.5rem !important; 
+            }
+            /* 타이틀 링크 스타일 */
+            .refresh-title { 
+                text-decoration: none !important; 
+                color: inherit !important; 
+            }
+            /* 타이틀 크기 및 여백 세밀 조절 */
+            .main-title {
+                font-size: 1.8rem !important; /* 크기를 약간 줄임 (기존 h1은 보통 2.5rem) */
+                margin-bottom: 0px !important;
+                margin-top: -10px !important; /* 위로 더 올림 */
+                line-height: 1.2;
+            }
+            .sub-title {
+                color: gray;
+                margin-top: 0px !important;
+                font-size: 0.9rem;
+            }
+        </style>
+        
         <a href="/" target="_self" class="refresh-title">
-            <h1 style='margin-bottom: 0;'>🚨 KYWA AI 위험성평가 시스템</h1>
+            <h1 class="main-title">🚨 KYWA AI 위험성평가 시스템</h1>
         </a>
-        <p style='color: gray; margin-top: 0;'>Korea Youth Work Agency - 스마트 안전관리 플랫폼</p>
+        <p class="sub-title">Korea Youth Work Agency - 스마트 안전관리 플랫폼</p>
     """, unsafe_allow_html=True)
 
 st.divider()
