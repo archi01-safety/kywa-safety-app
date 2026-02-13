@@ -288,18 +288,23 @@ with col1:
 with col2:
     st.markdown("### **📸 사진 기록 방식**")
     
-    # 1. 안내 문구 배치 (마크다운 사용)
-    st.markdown("""
-    • **사진 방식 선택** 🚫 **얼굴(정면)**을 업로드 하지 않도록 주의  
-    🚫 **개인정보 및 주요자료**가 포함되지 않도록 주의
-    """)
+    # 1. 안내 문구 배치 (HTML/CSS 사용으로 스타일 세밀 조정)
+    st.markdown(
+        """
+        • **사진 방식 선택** <div style="font-size: 0.85rem; color: #808080; line-height: 1.5; margin-top: 5px;">
+            🚫 얼굴(정면)을 업로드 하지 않도록 주의<br>
+            🚫 개인정보 및 주요자료가 포함되지 않도록 주의
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
     
-    # 2. 라디오 버튼 (라벨은 빈 문자열로 처리하여 중복 방지)
+    # 2. 라디오 버튼 (라벨 숨김 유지)
     source_option = st.radio(
         label="사진 방식 선택 레이블(숨김)", 
         options=("📷 카메라", "🖼️ 갤러리", "🚫 없음"), 
         horizontal=True,
-        label_visibility="collapsed" # 레이블을 숨겨서 깔끔하게 만듭니다
+        label_visibility="collapsed"
     )
     
     img_file = None
