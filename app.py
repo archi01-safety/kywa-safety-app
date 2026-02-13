@@ -244,24 +244,11 @@ st.markdown("""
         transform: scale(1.01);
     }
     /* 로고 및 타이틀 스타일 */
-    /* 로고 이미지 스타일 수정 */
-    .logo-img { 
-        cursor: pointer; 
-        display: block; 
-        
-        /* 1. 크기 조절: 원하는 높이로 숫자를 변경하세요 */
-        height: 40px; 
-        width: auto; 
-        
-        /* 2. 상단 여백 제거 및 강제 끌어올리기 */
-        margin-top: -30px !important;  /* 음수 값을 키울수록 더 위로 올라갑니다 */
-        margin-bottom: 0px;
-    }
-
-    /* 전체 페이지 상단 여백 자체를 줄이고 싶을 때 추가 */
-    .block-container {
-        padding-top: 1rem !important; /* 기본 여백(보통 6rem)을 크게 줄입니다 */
-    }
+    .logo-img { cursor: pointer; display: block; margin-top: 10px; }
+    .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
+    .refresh-title:hover { color: #FF4B4B !important; }
+    </style>
+""", unsafe_allow_html=True)
 
 header_col1, header_col2 = st.columns([1, 4])
 raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
@@ -276,29 +263,14 @@ with header_col1:
 
 with header_col2:
     st.markdown("""
-        <style>
-            /* 1. 페이지 최상단 여백 제거 */
-            .block-container {
-                padding-top: 1.5rem !important; 
-            }
-            /* 2. 타이틀 크기 및 상단 밀착 */
-            .main-title {
-                font-size: 1.8rem !important;
-                margin-top: -10px !important;
-                margin-bottom: -5px !important; /* 아래 구분선과 가깝게 하기 위해 추가 */
-            }
-            /* 3. 구분선(hr)의 여백도 조절하고 싶을 때 */
-            hr {
-                margin-top: 0px !important;
-                margin-bottom: 20px !important;
-            }
-        </style>
-        <a href="/" target="_self" style="text-decoration:none; color:inherit;">
-            <h1 class="main-title">🚨 KYWA AI 위험성평가 시스템</h1>
+        <a href="/" target="_self" class="refresh-title">
+            <h1 style='margin-bottom: 0;'>🚨 KYWA AI 위험성평가 시스템</h1>
         </a>
+        <p style='color: gray; margin-top: 0;'>Korea Youth Work Agency - 스마트 안전관리 플랫폼</p>
     """, unsafe_allow_html=True)
 
 st.divider()
+
 # --- 5. 입력 섹션 ---
 col1, col2 = st.columns(2)
 
@@ -850,7 +822,6 @@ if dashboard_data is not None:
                         dragmode=False
                     )
                     st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit", config={'displayModeBar': False})
-
         with g_col2:
             target_col_fac = "시설명" 
             if target_col_fac in yearly_data.columns:
