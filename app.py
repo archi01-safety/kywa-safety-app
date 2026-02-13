@@ -299,10 +299,18 @@ with col2:
         unsafe_allow_html=True
     )
     
-img_file = None
+# 2. 라디오 버튼 (라벨 숨김 유지)
+    source_option = st.radio(
+        label="사진 방식 선택 레이블(숨김)", 
+        options=("📷 카메라", "🖼️ 갤러리", "🚫 없음"), 
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    
+    img_file = None
+    
+    # --- 아래 부분의 들여쓰기를 왼쪽으로 한 칸 당겨서 맞추세요 ---
     if "📷" in source_option:
-        # [교체] camera_input 대신 file_uploader를 사용 (accept_multiple_files=False)
-        # label_visibility="collapsed"를 사용하여 폼이 깨지지 않게 배치합니다.
         st.info("📸 [촬영] 버튼을 누른 후 '카메라'를 선택하면 후면 카메라가 활성화됩니다.")
         img_file = st.file_uploader(
             "카메라 촬영 전용", 
@@ -310,7 +318,6 @@ img_file = None
             label_visibility="collapsed",
             key="camera_upload_alternative"
         )
-        
     elif "🖼️" in source_option:
         img_file = st.file_uploader(
             "🖼️ 사진 파일 업로드", 
