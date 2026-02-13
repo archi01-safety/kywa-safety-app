@@ -6,3 +6,4 @@ python-docx
 xlsxwriter
 openpyxl
 mediapipe
+opencv-python-headless
