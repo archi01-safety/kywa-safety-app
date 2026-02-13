@@ -1,23 +1,9 @@
-import subprocess
-import sys
-import time
-
-# [1] 라이브러리 강제 설치 (가장 먼저 실행)
-def install_requirements():
-    try:
-        import mediapipe
-    except ImportError:
-        # 설치가 안 되어 있다면 강제로 설치 프로세스 실행
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "mediapipe==0.10.11", "opencv-python-headless"])
-        time.sleep(2) 
-
-install_requirements()
-
-# [2] 페이지 설정 (모든 st 함수 중 가장 처음에 와야 함)
 import streamlit as st
+
+# [1] 페이지 설정 (반드시 모든 st 함수 중 가장 처음에 위치)
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
-# [3] 필수 라이브러리 임포트 (중복 제거)
+# [2] 필수 라이브러리 임포트
 import os
 import ssl
 import json
@@ -28,7 +14,7 @@ import base64
 import codecs
 import pandas as pd
 import numpy as np
-import cv2
+import cv2  # 비식별화의 핵심
 import plotly.express as px
 from PIL import Image
 from docx import Document
@@ -37,17 +23,6 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
-# [4] MediaPipe 임포트 (가장 안전한 방식)
-try:
-    import mediapipe as mp
-    from mediapipe.python.solutions import face_detection as mp_face
-except Exception as e:
-    st.error(f"MediaPipe 로딩 실패: {e}")
-
-
-
-# --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
-st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
 # --- [1단계] 구글 드라이브/시트 설정 (PEM 로드 집중 수정 버전) ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
@@ -323,10 +298,9 @@ with col2:
 def apply_face_blur(img_file):
     import cv2
     import numpy as np
-    import sys
 
     try:
-        # 이미지 읽기
+        # 1. 이미지 읽기
         img_file.seek(0)
         file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
@@ -334,53 +308,54 @@ def apply_face_blur(img_file):
         
         h, w, _ = image.shape
 
-        # [2] 이미지 전처리 (어두운 얼굴 인식률 향상)
-        # 대비를 높여 측면이나 그늘진 얼굴 특징을 부각시킵니다.
+        # [2] 어두운 얼굴 인식률 향상 (CLAHE 전처리)
+        # 이미지를 밝고 선명하게 만들어 그늘진 얼굴 특징을 추출합니다.
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         cl = clahe.apply(l)
-        enhanced_img = cv2.merge((cl,a,b))
-        enhanced_img = cv2.cvtColor(enhanced_img, cv2.COLOR_LAB2RGB) # 모델 입력용
+        enhanced_gray = cv2.merge((cl, a, b))
+        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_LAB2BGR)
+        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_BGR2GRAY) # OpenCV 감지용
 
-        all_detections = []
+        # [3] OpenCV 얼굴 인식기 로드
+        # Haar Cascade 방식 사용 (정면 및 측면 얼굴 대응)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
 
-        # [3] 초강력 이중 감지 (근거리 + 원거리 합집합)
-        # 감지 민감도를 0.3으로 낮추어 측면 얼굴도 최대한 잡습니다.
-        for model_type in [0, 1]: 
-            with mp_face.FaceDetection(model_selection=model_type, min_detection_confidence=0.3) as detector:
-                results = detector.process(enhanced_img)
-                if results.detections:
-                    all_detections.extend(results.detections)
+        # [4] 초강력 이중 감지 (정면 + 측면 합집합)
+        faces_front = face_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30))
+        faces_profile = profile_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30))
+        
+        # 두 결과를 하나로 합침
+        all_faces = []
+        if len(faces_front) > 0: all_faces.extend(faces_front)
+        if len(faces_profile) > 0: all_faces.extend(faces_profile)
 
-        if all_detections:
-            for detection in all_detections:
-                bbox = detection.location_data.relative_bounding_box
+        if len(all_faces) > 0:
+            for (x, y, rw, rh) in all_faces:
+                # [5] 얼굴 영역 20% 더 넓게 잡음 (Padding)
+                pad_w = int(rw * 0.2)
+                pad_h = int(rh * 0.2)
                 
-                # 좌표 계산 및 안전 범위 지정
-                x = int(bbox.xmin * w)
-                y = int(bbox.ymin * h)
-                rw = int(bbox.width * w)
-                rh = int(bbox.height * h)
-                
-                # 얼굴 영역을 실제보다 20% 더 넓게 잡음 (머리카락, 귀 보호)
-                padding_w = int(rw * 0.2)
-                padding_h = int(rh * 0.2)
-                
-                x_final = max(0, x - padding_w)
-                y_final = max(0, y - padding_h)
-                rw_final = min(w - x_final, rw + (padding_w * 2))
-                rh_final = min(h - y_final, rh + (padding_h * 2))
+                x_final = max(0, x - pad_w)
+                y_final = max(0, y - pad_h)
+                rw_final = min(w - x_final, rw + (pad_w * 2))
+                rh_final = min(h - y_final, rh + (pad_h * 2))
 
                 if rw_final > 0 and rh_final > 0:
                     face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
                     
-                    # 더 강력한 블러 효과 (가우시안 + 모자이크 혼합 느낌)
-                    level = max(rw_final, rh_final) // 4
+                    # [6] 더 강력한 블러 효과 (가우시안 블러 세기 증가)
+                    # 얼굴 크기에 따라 유동적으로 강도 조절
+                    level = max(rw_final, rh_final) // 2 
                     if level % 2 == 0: level += 1
-                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = cv2.GaussianBlur(face_roi, (level, level), 0)
+                    
+                    # 중첩 블러 (더 확실하게 가리기 위해 2회 적용)
+                    blurred = cv2.GaussianBlur(face_roi, (level, level), 0)
+                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = cv2.GaussianBlur(blurred, (level, level), 0)
 
-            st.toast(f"✅ {len(all_detections)}개 포인트 비식별화 완료")
+            st.toast(f"✅ {len(all_faces)}개의 얼굴 비식별화 완료 (OpenCV 엔진)")
 
         # 결과 반환
         _, buffer = cv2.imencode('.jpg', image)
@@ -390,6 +365,7 @@ def apply_face_blur(img_file):
         st.error(f"비식별화 프로세스 오류: {e}")
         img_file.seek(0)
         return img_file.getvalue()
+
 
 # --- [3단계] 전송 버튼 로직 내 수정 ---
 processed_img_final = None  # 처리된 이미지를 담을 변수
