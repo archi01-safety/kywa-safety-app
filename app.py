@@ -244,7 +244,7 @@ st.markdown("""
         transform: scale(1.01);
     }
     /* 로고 및 타이틀 스타일 */
-    .logo-img { cursor: pointer; display: block; margin-top: 10px; }
+    .logo-img { cursor: pointer; display: block; margin-top: 2px; }
     .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
     .refresh-title:hover { color: #FF4B4B !important; }
     </style>
