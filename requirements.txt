@@ -7,3 +7,4 @@ xlsxwriter
 openpyxl
 opencv-python-headless
 mediapipe
+numpy
