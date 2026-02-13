@@ -287,7 +287,20 @@ with col1:
 
 with col2:
     st.markdown("### **📸 사진 기록 방식**")
-    source_option = st.radio("• 사진 방식 선택  -  얼굴(정면)을 업로드 하지 않도록 주의🚨", ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), horizontal=True)
+    
+    # 1. 안내 문구 배치 (마크다운 사용)
+    st.markdown("""
+    • **사진 방식 선택** 🚫 **얼굴(정면)**을 업로드 하지 않도록 주의  
+    🚫 **개인정보 및 주요자료**가 포함되지 않도록 주의
+    """)
+    
+    # 2. 라디오 버튼 (라벨은 빈 문자열로 처리하여 중복 방지)
+    source_option = st.radio(
+        label="사진 방식 선택 레이블(숨김)", 
+        options=("📷 카메라", "🖼️ 갤러리", "🚫 없음"), 
+        horizontal=True,
+        label_visibility="collapsed" # 레이블을 숨겨서 깔끔하게 만듭니다
+    )
     
     img_file = None
     if "📷" in source_option:
@@ -392,8 +405,6 @@ def apply_face_blur(img_file):
 
                     # 5. 원본 이미지에 다시 붙여넣기
                     image[y_final:y_final+rh_final, x_final:x_final+rw_final] = combined_roi
-
-            st.toast(f"✅ {len(all_faces)}개의 얼굴 비식별화 완료 (OpenCV 엔진)")
 
         # 결과 반환
         _, buffer = cv2.imencode('.jpg', image)
