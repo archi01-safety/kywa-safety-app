@@ -323,7 +323,17 @@ def apply_face_blur(img_file):
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
 
-# [4] 초강력 이중 감지 (정면 + 측면 합집합)
+# [4] 초강력 이중 감지 (정면 + 측면 합집합) 및 이미지 회전 및 다중 검사 (0도, -20도, 20도)
+        # 기울어진 안전모 인물을 잡기 위한 핵심 로직입니다.
+        for angle in [0, -20, 20]:
+            if angle == 0:
+                rotated_img = image
+                matrix = None
+            else:
+                # 이미지 중심 기준 회전 행렬 생성
+                matrix = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
+                rotated_img = cv2.warpAffine(image, matrix, (w, h))
+
         # 정면(front): minNeighbors=5 (깐깐하게 감지하여 다리 오탐지 감소)
         # 측면(profile): minNeighbors=3 (너그럽게 감지하여 옆모습 포착)
         faces_front = face_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
