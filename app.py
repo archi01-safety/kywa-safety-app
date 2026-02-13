@@ -285,10 +285,8 @@ with header_col1:
 with header_col2:
     st.markdown("""
         <a href="/" target="_self" class="refresh-title">
-            /* h1의 크기를 font-size로 조절 (기존보다 작게) */
-            <h1 style='margin-bottom: 0; font-size: 24px;'>🚨 KYWA AI 위험성평가 시스템</h1>
+            <h1 style='margin-bottom: 0; font-size: 36px;'>🚨 KYWA AI 위험성평가 시스템</h1>
         </a>
-        /* p 태그의 크기도 font-size로 조절 */
         <p style='color: gray; margin-top: 0; font-size: 13px;'>Korea Youth Work Agency - 스마트 안전관리 플랫폼</p>
     """, unsafe_allow_html=True)
 
