@@ -15,9 +15,6 @@ from googleapiclient.http import MediaIoBaseUpload
 import datetime
 import codecs # PEM 로드를 위해 추가
 import base64
-import cv2
-import mediapipe as mp
-import numpy as np
 
 # --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
@@ -293,98 +290,6 @@ with col2:
     elif "🖼️" in source_option:
         img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
 
-def apply_face_blur(img_file):
-    import cv2
-    import numpy as np
-    
-    # [핵심 수정] MediaPipe 솔루션을 안전하게 가져오는 함수
-    def get_face_detection_model():
-        try:
-            import mediapipe as mp
-            # 솔루션이 로드되지 않았을 경우 강제로 하위 모듈 임포트
-            import mediapipe.python.solutions.face_detection as mp_face
-            return mp_face
-        except ImportError:
-            # 경로가 다를 경우 표준 경로 재시도
-            try:
-                from mediapipe.solutions import face_detection as mp_face
-                return mp_face
-            except Exception:
-                return None
-
-    try:
-        # 1. 이미지 읽기
-        img_file.seek(0)
-        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        
-        if image is None: return img_file.getvalue()
-
-        # 2. 모델 로드 (위에서 정의한 안전한 함수 사용)
-        mp_face_detection = get_face_detection_model()
-        
-        if mp_face_detection is None:
-            st.warning("⚠️ 미디어파이프 로드 실패: 원본 이미지가 사용됩니다.")
-            return img_file.getvalue()
-
-        # 3. 얼굴 인식 및 블러링 수행
-        # model_selection=1 (원거리/전신 촬영에 최적화)
-        with mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.4) as face_detection:
-            # BGR -> RGB 변환하여 분석
-            results = face_detection.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
-
-            if results.detections:
-                h, w, _ = image.shape
-                face_count = 0 # 탐지된 얼굴 수 카운트
-                
-                for detection in results.detections:
-                    face_count += 1
-                    bbox = detection.location_data.relative_bounding_box
-                    
-                    # 좌표 계산 (절대 좌표)
-                    x = int(bbox.xmin * w)
-                    y = int(bbox.ymin * h)
-                    rw = int(bbox.width * w)
-                    rh = int(bbox.height * h)
-                    
-                    # 이미지 범위 벗어남 방지
-                    x, y = max(0, x), max(0, y)
-                    rw, rh = min(rw, w - x), min(rh, h - y)
-                    
-                    if rw > 0 and rh > 0:
-                        face_roi = image[y:y+rh, x:x+rw]
-                        
-                        # 모자이크 강도 (얼굴 크기에 비례, 홀수여야 함)
-                        k_w = int(rw / 5) | 1
-                        k_h = int(rh / 5) | 1
-                        
-                        # 가우시안 블러 적용
-                        image[y:y+rh, x:x+rw] = cv2.GaussianBlur(face_roi, (k_w, k_h), 0)
-                
-                # [디버깅용] 화면에 처리 결과 살짝 표시 (나중에 삭제 가능)
-                st.toast(f"✅ {face_count}명의 얼굴을 비식별화했습니다.")
-
-        # 4. 결과 인코딩 및 반환
-        _, buffer = cv2.imencode('.jpg', image)
-        return buffer.tobytes()
-
-    except Exception as e:
-        st.error(f"비식별화 중 에러 발생: {e}")
-        img_file.seek(0)
-        return img_file.getvalue()
-
-# --- [3단계] 전송 버튼 로직 내 수정 ---
-processed_img_final = None  # 처리된 이미지를 담을 변수
-
-if img_file:
-    with st.spinner("🔒 개인정보 비식별화 처리 중..."):
-        # 원본 대신 블러 처리된 이미지 생성
-        processed_img_bytes = apply_face_blur(img_file)
-        # Bytes 데이터를 파일 객체처럼 변환 (io.BytesIO 사용)
-        processed_img_final = io.BytesIO(processed_img_bytes)
-        # 파일 이름을 식별하기 위해 name 속성 부여
-        processed_img_final.name = img_file.name
-
 # --- 6. AI 분석 실행 ---
 if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
     if not user_description.strip() and not img_file:
@@ -435,8 +340,6 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                     content.append(Image.open(img_file))
                 
                 # 모델 호출 및 결과 처리
-                if processed_img_final:
-                    content.append(Image.open(processed_img_final))
                 response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
                 res_data = json.loads(response.text.strip())
                 
@@ -554,10 +457,9 @@ if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_containe
 
                 # 1. 사진 업로드
                 photo_link = "사진 없음"
-                if processed_img_final: # img_file 대신 블러 처리된 변수 사용
+                if img_file:
                     filename = f"{selected_facility}_{timestamp_str}.jpg"
-                    # 위에서 정의한 함수 이름으로 호출 (upload_photo_to_drive)
-                    photo_link = upload_photo_to_drive(processed_img_final, filename)
+                    photo_link = upload_photo_to_drive(img_file, filename)
                 
                 # 2. 시트 데이터 준비 및 전송
                 success_count = 0
@@ -755,4 +657,7 @@ with footer_cols[1]:
 
 # 최하단 한 줄 강조
 st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
+
+
+
 
