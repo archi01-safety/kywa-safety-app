@@ -288,21 +288,29 @@ with col1:
 with col2:
     st.markdown("### **📸 사진 기록 방식**")
     
-    # 1. 안내 문구 배치 (HTML/CSS 사용으로 스타일 세밀 조정)
-    st.markdown(
-        """
+    # [1] 안내 문구
+    st.markdown("""
         • **사진 방식 선택** <div style="font-size: 0.85rem; color: #808080; line-height: 1.5; margin-top: 5px;">
             🚫 얼굴(정면)을 업로드 하지 않도록 주의<br>
             🚫 개인정보 및 주요자료가 포함되지 않도록 주의
         </div>
-        """, 
-        unsafe_allow_html=True
+        """, unsafe_allow_html=True)
+
+    # [2] 변수 정의 (이 줄이 반드시 if문보다 위에 있어야 합니다)
+    source_option = st.radio(
+        label="사진 방식 선택 레이블(숨김)", 
+        options=("📸 사진", "🚫 없음"), 
+        horizontal=True,
+        label_visibility="collapsed"
     )
-    
-if "📸" in source_option:
-        # 1. 안내 문구
+
+    img_file = None
+
+    # [3] 조건문 실행
+    if "📸" in source_option:
         st.info("📸 버튼 클릭 후 [카메라]를 선택하면 촬영, [사진 보관함]을 선택하면 갤러리 이용이 가능합니다.")
         
+       
         # 2. 업로더 한글화 CSS (여기에 위치)
         st.markdown("""
             <style>
