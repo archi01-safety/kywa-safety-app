@@ -275,36 +275,30 @@ with header_col1:
     ''', unsafe_allow_html=True)
 
 with header_col2:
-    # 따옴표 앞에 f를 붙이지 마세요!
     st.markdown("""
         <style>
+            /* 1. 페이지 최상단 여백 제거 */
             .block-container {
                 padding-top: 1.5rem !important; 
             }
-            .refresh-title { 
-                text-decoration: none !important; 
-                color: inherit !important; 
-            }
+            /* 2. 타이틀 크기 및 상단 밀착 */
             .main-title {
                 font-size: 1.8rem !important;
-                margin-bottom: 0px !important;
                 margin-top: -10px !important;
-                line-height: 1.2;
+                margin-bottom: -5px !important; /* 아래 구분선과 가깝게 하기 위해 추가 */
             }
-            .sub-title {
-                color: gray;
+            /* 3. 구분선(hr)의 여백도 조절하고 싶을 때 */
+            hr {
                 margin-top: 0px !important;
-                font-size: 0.9rem;
+                margin-bottom: 20px !important;
             }
         </style>
-        
-        <a href="/" target="_self" class="refresh-title">
+        <a href="/" target="_self" style="text-decoration:none; color:inherit;">
             <h1 class="main-title">🚨 KYWA AI 위험성평가 시스템</h1>
         </a>
-        <p class="sub-title">Korea Youth Work Agency - 스마트 안전관리 플랫폼</p>
     """, unsafe_allow_html=True)
-st.divider()
 
+st.divider()
 # --- 5. 입력 섹션 ---
 col1, col2 = st.columns(2)
 
