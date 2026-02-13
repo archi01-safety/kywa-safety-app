@@ -299,30 +299,26 @@ with col2:
         unsafe_allow_html=True
     )
     
-# 2. 라디오 버튼 (라벨 숨김 유지)
+# 2. 라디오 버튼 (옵션 단순화: 사진 / 없음)
     source_option = st.radio(
         label="사진 방식 선택 레이블(숨김)", 
-        options=("📷 카메라", "🖼️ 갤러리", "🚫 없음"), 
+        options=("📸 사진", "🚫 없음"), 
         horizontal=True,
         label_visibility="collapsed"
     )
     
     img_file = None
     
-    # --- 아래 부분의 들여쓰기를 왼쪽으로 한 칸 당겨서 맞추세요 ---
-    if "📷" in source_option:
-        st.info("📸 [촬영] 버튼을 누른 후 '카메라'를 선택하면 후면 카메라가 활성화됩니다.")
+    if "📸" in source_option:
+        # 안내 문구 최적화
+        st.info("📸 버튼 클릭 후 [카메라]를 선택하면 촬영, [사진 보관함]을 선택하면 갤러리 이용이 가능합니다.")
+        
+        # 통합된 업로더 (카메라+갤러리 동시 지원)
         img_file = st.file_uploader(
-            "카메라 촬영 전용", 
+            "사진 업로드 전용", 
             type=['png', 'jpg', 'jpeg'], 
             label_visibility="collapsed",
-            key="camera_upload_alternative"
-        )
-    elif "🖼️" in source_option:
-        img_file = st.file_uploader(
-            "🖼️ 사진 파일 업로드", 
-            type=['png', 'jpg', 'jpeg'],
-            key="gallery_upload"
+            key="integrated_photo_upload"
         )
 
 def apply_face_blur(img_file):
