@@ -243,12 +243,19 @@ st.markdown("""
         background-color: #ff3333 !important;
         transform: scale(1.01);
     }
-    /* 로고 및 타이틀 스타일 */
-    .logo-img { cursor: pointer; display: block; margin-top: 2px; }
-    .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
-    .refresh-title:hover { color: #FF4B4B !important; }
-    </style>
-""", unsafe_allow_html=True)
+
+/* 로고 및 타이틀 스타일 */
+    .logo-img { 
+        cursor: pointer; 
+        display: block; 
+        
+        /* 1. 크기 조절 (숫자를 줄이면 작아집니다) */
+        height: 45px; 
+        width: auto; 
+        
+        /* 2. 위치 조절 (10px를 0이나 마이너스로 바꾸면 위로 올라갑니다) */
+        margin-top: 0px; 
+    }
 
 header_col1, header_col2 = st.columns([1, 4])
 raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
