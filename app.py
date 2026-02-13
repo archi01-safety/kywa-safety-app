@@ -299,10 +299,21 @@ with col1:
     st.markdown("### **🏢 점검 대상 정보**")
     selected_facility = st.radio("• 시설명 선택 (필수)", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], horizontal=True)
     
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        background-color: #f0f2f6 !important;
+        border: 1px solid #d1d5db !important;
+    }
     dept_list = ["활동부", "협력부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "자회사"]
     selected_dept = st.selectbox("• 담당 부서 선택 (필수)", dept_list)
     
     st.markdown("### **📝 현장 상황 설명**")
+    div[data-testid="stTextArea"] textarea, 
+    div[data-testid="stTextInput"] input {
+        background-color: #f0f2f6 !important; /* 더 어두운 회색 (원하는 만큼 조절) */
+        color: #31333F !important; /* 글자색 */
+        border: 1px solid #d1d5db !important;
+    }
+
     placeholder_text = "<예  시>\n1. 본관 2층 테라스 난간 흔들림\n2. 정문 보도블록 파손으로 넘어질 위험\n  (자세히 작성할수록 정확한 결과가 나옵니다.)"
     user_description = st.text_area("• 상황 설명 입력 (권장)", placeholder=placeholder_text, height=150)
 
@@ -335,6 +346,15 @@ with col2:
 # 2. 업로더 한글화 CSS (보강된 버전)
         st.markdown("""
             <style>
+    section[data-testid="stFileUploadDropzone"] {
+        background-color: #f0f2f6 !important;
+        border: 2px dashed #9ca3af !important;
+    }
+    div[data-testid="stTextArea"] textarea:focus {
+        border-color: #ff4b4b !important;
+        box-shadow: 0 0 0 1px #ff4b4b !important;
+    }
+
                 /* 1. 원래 있던 텍스트들 숨기기 */
                 section[data-testid="stFileUploadDropzone"] div div span,
                 section[data-testid="stFileUploadDropzone"] small,
