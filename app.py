@@ -1,26 +1,50 @@
+import subprocess
+import sys
+import time
+
+# [1] 라이브러리 강제 설치 (가장 먼저 실행)
+def install_requirements():
+    try:
+        import mediapipe
+    except ImportError:
+        # 설치가 안 되어 있다면 강제로 설치 프로세스 실행
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "mediapipe==0.10.11", "opencv-python-headless"])
+        time.sleep(2) 
+
+install_requirements()
+
+# [2] 페이지 설정 (모든 st 함수 중 가장 처음에 와야 함)
+import streamlit as st
+st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
+
+# [3] 필수 라이브러리 임포트 (중복 제거)
 import os
 import ssl
 import json
 import requests
 import io
-import streamlit as st
-import google.generativeai as genai
-from PIL import Image
+import datetime
+import base64
+import codecs
 import pandas as pd
-from docx import Document
+import numpy as np
+import cv2
 import plotly.express as px
+from PIL import Image
+from docx import Document
+import google.generativeai as genai
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
-import datetime
-import codecs # PEM 로드를 위해 추가
-import base64
-import cv2
-import mediapipe as mp
-import numpy as np
-import mediapipe as mp
-# 명시적으로 내부 솔루션까지 미리 불러오기
-from mediapipe.python.solutions import face_detection as mp_face
+
+# [4] MediaPipe 임포트 (가장 안전한 방식)
+try:
+    import mediapipe as mp
+    from mediapipe.python.solutions import face_detection as mp_face
+except Exception as e:
+    st.error(f"MediaPipe 로딩 실패: {e}")
+
+
 
 # --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
