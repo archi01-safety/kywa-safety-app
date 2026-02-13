@@ -343,17 +343,36 @@ def apply_face_blur(img_file):
                 rw_final = min(w - x_final, rw + (pad_w * 2))
                 rh_final = min(h - y_final, rh + (pad_h * 2))
 
+# [얼굴부분 동그라미로 블러처리] if rw_final > 0 and rh_final > 0: 블록 내부를 교체
+
                 if rw_final > 0 and rh_final > 0:
+                    # 1. 얼굴 영역 ROI 추출
                     face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
                     
-                    # [6] 더 강력한 블러 효과 (가우시안 블러 세기 증가)
-                    # 얼굴 크기에 따라 유동적으로 강도 조절
+                    # 2. 원형 마스크 생성
+                    # ROI와 같은 크기의 검은색 이미지 생성
+                    mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
+                    # 중심점과 반지름 계산
+                    center = (rw_final // 2, rh_final // 2)
+                    radius = min(rw_final, rh_final) // 2
+                    # 하얀색 꽉 찬 원 그리기
+                    cv2.circle(mask, center, radius, (255), -1)
+
+                    # 3. 강력한 블러 이미지 생성
                     level = max(rw_final, rh_final) // 2 
                     if level % 2 == 0: level += 1
-                    
-                    # 중첩 블러 (더 확실하게 가리기 위해 2회 적용)
-                    blurred = cv2.GaussianBlur(face_roi, (level, level), 0)
-                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = cv2.GaussianBlur(blurred, (level, level), 0)
+                    # 2중 블러로 더 강력하게
+                    blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
+                    blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
+
+                    # 4. 마스크를 이용해 합치기 (핵심)
+                    # 마스크가 하얀색(255)인 부분은 블러 이미지를, 아니면 원본 ROI를 사용
+                    # 마스크를 3채널(RGB)로 맞춰줘야 함
+                    mask_3ch = cv2.merge([mask, mask, mask])
+                    combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
+
+                    # 5. 원본 이미지에 다시 붙여넣기
+                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = combined_roi
 
             st.toast(f"✅ {len(all_faces)}개의 얼굴 비식별화 완료 (OpenCV 엔진)")
 
@@ -749,7 +768,4 @@ with footer_cols[1]:
 
 # 최하단 한 줄 강조
 st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
-
-
-
 
