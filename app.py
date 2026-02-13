@@ -296,80 +296,83 @@ with col2:
 def apply_face_blur(img_file):
     import cv2
     import numpy as np
-    
-    # [핵심 수정] MediaPipe 솔루션을 안전하게 가져오는 함수
-    def get_face_detection_model():
+    import sys
+
+    # [1] 라이브러리 강제 로드 로직
+    try:
+        import mediapipe as mp
+        from mediapipe.python.solutions import face_detection as mp_face
+    except ImportError:
         try:
-            import mediapipe as mp
-            # 솔루션이 로드되지 않았을 경우 강제로 하위 모듈 임포트
-            import mediapipe.python.solutions.face_detection as mp_face
-            return mp_face
-        except ImportError:
-            # 경로가 다를 경우 표준 경로 재시도
-            try:
-                from mediapipe.solutions import face_detection as mp_face
-                return mp_face
-            except Exception:
-                return None
+            from mediapipe.solutions import face_detection as mp_face
+        except:
+            st.error("🚨 라이브러리 로딩에 실패했습니다. requirements.txt를 다시 확인해주세요.")
+            img_file.seek(0)
+            return img_file.getvalue()
 
     try:
-        # 1. 이미지 읽기
+        # 이미지 읽기
         img_file.seek(0)
         file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        
         if image is None: return img_file.getvalue()
-
-        # 2. 모델 로드 (위에서 정의한 안전한 함수 사용)
-        mp_face_detection = get_face_detection_model()
         
-        if mp_face_detection is None:
-            st.warning("⚠️ 미디어파이프 로드 실패: 원본 이미지가 사용됩니다.")
-            return img_file.getvalue()
+        h, w, _ = image.shape
 
-        # 3. 얼굴 인식 및 블러링 수행
-        # model_selection=1 (원거리/전신 촬영에 최적화)
-        with mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.4) as face_detection:
-            # BGR -> RGB 변환하여 분석
-            results = face_detection.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        # [2] 이미지 전처리 (어두운 얼굴 인식률 향상)
+        # 대비를 높여 측면이나 그늘진 얼굴 특징을 부각시킵니다.
+        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+        l, a, b = cv2.split(lab)
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        cl = clahe.apply(l)
+        enhanced_img = cv2.merge((cl,a,b))
+        enhanced_img = cv2.cvtColor(enhanced_img, cv2.COLOR_LAB2RGB) # 모델 입력용
 
-            if results.detections:
-                h, w, _ = image.shape
-                face_count = 0 # 탐지된 얼굴 수 카운트
+        all_detections = []
+
+        # [3] 초강력 이중 감지 (근거리 + 원거리 합집합)
+        # 감지 민감도를 0.3으로 낮추어 측면 얼굴도 최대한 잡습니다.
+        for model_type in [0, 1]: 
+            with mp_face.FaceDetection(model_selection=model_type, min_detection_confidence=0.3) as detector:
+                results = detector.process(enhanced_img)
+                if results.detections:
+                    all_detections.extend(results.detections)
+
+        if all_detections:
+            for detection in all_detections:
+                bbox = detection.location_data.relative_bounding_box
                 
-                for detection in results.detections:
-                    face_count += 1
-                    bbox = detection.location_data.relative_bounding_box
-                    
-                    # 좌표 계산 (절대 좌표)
-                    x = int(bbox.xmin * w)
-                    y = int(bbox.ymin * h)
-                    rw = int(bbox.width * w)
-                    rh = int(bbox.height * h)
-                    
-                    # 이미지 범위 벗어남 방지
-                    x, y = max(0, x), max(0, y)
-                    rw, rh = min(rw, w - x), min(rh, h - y)
-                    
-                    if rw > 0 and rh > 0:
-                        face_roi = image[y:y+rh, x:x+rw]
-                        
-                        # 모자이크 강도 (얼굴 크기에 비례, 홀수여야 함)
-                        k_w = int(rw / 5) | 1
-                        k_h = int(rh / 5) | 1
-                        
-                        # 가우시안 블러 적용
-                        image[y:y+rh, x:x+rw] = cv2.GaussianBlur(face_roi, (k_w, k_h), 0)
+                # 좌표 계산 및 안전 범위 지정
+                x = int(bbox.xmin * w)
+                y = int(bbox.ymin * h)
+                rw = int(bbox.width * w)
+                rh = int(bbox.height * h)
                 
-                # [디버깅용] 화면에 처리 결과 살짝 표시 (나중에 삭제 가능)
-                st.toast(f"✅ {face_count}명의 얼굴을 비식별화했습니다.")
+                # 얼굴 영역을 실제보다 20% 더 넓게 잡음 (머리카락, 귀 보호)
+                padding_w = int(rw * 0.2)
+                padding_h = int(rh * 0.2)
+                
+                x_final = max(0, x - padding_w)
+                y_final = max(0, y - padding_h)
+                rw_final = min(w - x_final, rw + (padding_w * 2))
+                rh_final = min(h - y_final, rh + (padding_h * 2))
 
-        # 4. 결과 인코딩 및 반환
+                if rw_final > 0 and rh_final > 0:
+                    face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
+                    
+                    # 더 강력한 블러 효과 (가우시안 + 모자이크 혼합 느낌)
+                    level = max(rw_final, rh_final) // 4
+                    if level % 2 == 0: level += 1
+                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = cv2.GaussianBlur(face_roi, (level, level), 0)
+
+            st.toast(f"✅ {len(all_detections)}개 포인트 비식별화 완료")
+
+        # 결과 반환
         _, buffer = cv2.imencode('.jpg', image)
         return buffer.tobytes()
 
     except Exception as e:
-        st.error(f"비식별화 중 에러 발생: {e}")
+        st.error(f"비식별화 프로세스 오류: {e}")
         img_file.seek(0)
         return img_file.getvalue()
 
