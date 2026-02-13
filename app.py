@@ -325,14 +325,16 @@ def apply_face_blur(img_file):
     return buffer.tobytes()
 
 # --- [3단계] 전송 버튼 로직 내 수정 ---
+processed_img_final = None  # 처리된 이미지를 담을 변수
+
 if img_file:
     with st.spinner("🔒 개인정보 비식별화 처리 중..."):
         # 원본 대신 블러 처리된 이미지 생성
         processed_img_bytes = apply_face_blur(img_file)
-        
-        # 업로드 함수에 원본 대신 처리된 바이트 전달
-        # (단, upload_photo_to_drive 함수도 바이트를 받도록 소폭 수정 필요)
-        photo_link = upload_photo_to_drive_bytes(processed_img_bytes, filename)
+        # Bytes 데이터를 파일 객체처럼 변환 (io.BytesIO 사용)
+        processed_img_final = io.BytesIO(processed_img_bytes)
+        # 파일 이름을 식별하기 위해 name 속성 부여
+        processed_img_final.name = img_file.name
 
 # --- 6. AI 분석 실행 ---
 if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
@@ -384,6 +386,8 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                     content.append(Image.open(img_file))
                 
                 # 모델 호출 및 결과 처리
+                if processed_img_final:
+                    content.append(Image.open(processed_img_final))
                 response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
                 res_data = json.loads(response.text.strip())
                 
@@ -501,9 +505,10 @@ if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_containe
 
                 # 1. 사진 업로드
                 photo_link = "사진 없음"
-                if img_file:
+                if processed_img_final: # img_file 대신 블러 처리된 변수 사용
                     filename = f"{selected_facility}_{timestamp_str}.jpg"
-                    photo_link = upload_photo_to_drive(img_file, filename)
+                    # 위에서 정의한 함수 이름으로 호출 (upload_photo_to_drive)
+                    photo_link = upload_photo_to_drive(processed_img_final, filename)
                 
                 # 2. 시트 데이터 준비 및 전송
                 success_count = 0
