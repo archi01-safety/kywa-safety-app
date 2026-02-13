@@ -7,3 +7,4 @@ xlsxwriter
 openpyxl
 mediapipe
 opencv-python-headless
+streamlit-webrtc
