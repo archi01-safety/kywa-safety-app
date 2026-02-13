@@ -311,42 +311,47 @@ with col2:
         st.info("📸 버튼 클릭 후 [카메라]를 선택하면 촬영, [사진 보관함]을 선택하면 갤러리 이용이 가능합니다.")
         
        
-        # 2. 업로더 한글화 CSS (여기에 위치)
+# 2. 업로더 한글화 CSS (보강된 버전)
         st.markdown("""
             <style>
-                /* 전체적인 폰트 크기 및 색상 조절 */
-                section[data-testid="stFileUploadDropzone"] div div span { display: none; }
-                section[data-testid="stFileUploadDropzone"] div div::before {
-                    content: "여기에 사진을 끌어다 놓거나 아래 버튼을 누르세요";
-                    font-size: 0.9rem;
-                    color: #808080;
-                }
-                
-                /* 버튼 문구 변경 */
-                section[data-testid="stFileUploadDropzone"] button { display: none; }
-                section[data-testid="stFileUploadDropzone"]::before {
-                    content: "📸 사진 촬영 또는 선택하기";
-                    display: block;
-                    margin: 10px auto;
-                    padding: 8px 16px;
-                    background-color: #ffffff;
-                    border: 1px solid #ff4b4b;
-                    color: #ff4b4b;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-weight: bold;
-                    text-align: center;
-                    width: fit-content;
+                /* 1. 원래 있던 텍스트들 숨기기 */
+                section[data-testid="stFileUploadDropzone"] div div span,
+                section[data-testid="stFileUploadDropzone"] small,
+                section[data-testid="stFileUploadDropzone"] button {
+                    display: none !important;
                 }
 
-                /* 용량 제한 문구 변경 */
-                section[data-testid="stFileUploadDropzone"] small { display: none; }
+                /* 2. 상단에 새로운 안내 문구 추가 */
+                section[data-testid="stFileUploadDropzone"] div div::before {
+                    content: "여기에 사진을 끌어다 놓으세요";
+                    display: block !important;
+                    font-size: 0.9rem !important;
+                    color: #808080 !important;
+                    margin-bottom: 10px !important;
+                }
+
+                /* 3. 버튼처럼 보이는 가짜 버튼 생성 */
+                section[data-testid="stFileUploadDropzone"]::before {
+                    content: "📸 사진 촬영 또는 선택하기";
+                    display: block !important;
+                    margin: 10px auto !important;
+                    padding: 10px 20px !important;
+                    background-color: #ff4b4b !important; /* 배경색을 빨간색으로 */
+                    color: white !important; /* 글자를 흰색으로 */
+                    border-radius: 8px !important;
+                    cursor: pointer !important;
+                    font-weight: bold !important;
+                    text-align: center !important;
+                    width: fit-content !important;
+                }
+
+                /* 4. 하단에 용량 제한 문구 추가 */
                 section[data-testid="stFileUploadDropzone"] div div::after {
                     content: "파일당 최대 200MB • PNG, JPG, JPEG";
-                    font-size: 0.75rem;
-                    color: #a0a0a0;
-                    display: block;
-                    margin-top: 5px;
+                    display: block !important;
+                    font-size: 0.75rem !important;
+                    color: #a0a0a0 !important;
+                    margin-top: 5px !important;
                 }
             </style>
         """, unsafe_allow_html=True)
