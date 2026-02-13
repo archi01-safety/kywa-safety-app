@@ -323,9 +323,11 @@ def apply_face_blur(img_file):
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
         profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
 
-        # [4] 초강력 이중 감지 (정면 + 측면 합집합)
-        faces_front = face_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30))
-        faces_profile = profile_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=4, minSize=(30, 30))
+# [4] 초강력 이중 감지 (정면 + 측면 합집합)
+        # 정면(front): minNeighbors=5 (깐깐하게 감지하여 다리 오탐지 감소)
+        # 측면(profile): minNeighbors=3 (너그럽게 감지하여 옆모습 포착)
+        faces_front = face_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
+        faces_profile = profile_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=3, minSize=(30, 30))
         
         # 두 결과를 하나로 합침
         all_faces = []
@@ -334,6 +336,13 @@ def apply_face_blur(img_file):
 
         if len(all_faces) > 0:
             for (x, y, rw, rh) in all_faces:
+                # --- [수정] 이미지 하단 10% 영역만 얼굴 제외 구역으로 설정 ---
+                # y + (rh / 2)는 감지된 박스의 중심점 높이입니다.
+                # h * 0.9 보다 크다는 것은 이미지의 맨 아래쪽 10% 지점에 위치한다는 뜻입니다.
+                if y + (rh / 2) > h * 0.9:
+                    continue
+
+
                 # [5] 얼굴 영역 20% 더 넓게 잡음 (Padding)
                 pad_w = int(rw * 0.2)
                 pad_h = int(rh * 0.2)
