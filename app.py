@@ -14,6 +14,7 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 import datetime
 import codecs # PEM 로드를 위해 추가
+import base64
 
 # --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
@@ -157,34 +158,25 @@ def create_excel(data):
 # --- [2단계] 구글 드라이브/시트 전송 함수 추가 ---
 
 def upload_photo_to_drive(file_obj, filename):
-    """사진을 구글 드라이브에 업로드하고 링크를 반환 (할당량 에러 해결 버전)"""
     try:
-        # 파일 메타데이터 설정
-        file_metadata = {
-            'name': filename, 
-            'parents': [DRIVE_FOLDER_ID]
+        # Apps Script 웹 앱 URL (방금 복사한 주소)
+        apps_script_url = "https://script.google.com/macros/s/AKfycbwMhipDH9zMVajhbD2LBXGgnJdaqs3oHmatjqtvAXWL0PXhInk6tqsqRcb6MJkZFChm/exec"
+        
+        file_obj.seek(0)
+        img_base64 = base64.b64encode(file_obj.getvalue()).decode('utf-8')
+        
+        payload = {
+            "filename": filename,
+            "fileBase64": img_base64
         }
         
-        # 파일 포인터 초기화
-        file_obj.seek(0)
-        media = MediaIoBaseUpload(
-            io.BytesIO(file_obj.getvalue()), 
-            mimetype='image/jpeg',
-            resumable=True # 대용량 대응을 위해 추가
-        )
+        # POST 요청으로 사진 전송
+        response = requests.post(apps_script_url, json=payload)
+        res_data = response.json()
         
-        # [수정] supportsAllDrives=True 옵션을 추가하여 서비스 계정의 용량 제한 우회
-        uploaded_file = drive_service.files().create(
-            body=file_metadata, 
-            media_body=media, 
-            fields='id, webViewLink',
-            supportsAllDrives=True  # 중요: 공유 드라이브/폴더 권한 허용
-        ).execute()
-        
-        return uploaded_file.get('webViewLink')
+        return res_data.get("url", "업로드 실패")
     except Exception as e:
-        # 에러 메시지가 너무 길면 시트가 지저분해지므로 요약 출력
-        return f"업로드 실패: {str(e)[:100]}"
+        return f"업로드 실패: {str(e)}"
 
 def append_row_to_sheet(row_data):
     try:
