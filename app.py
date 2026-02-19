@@ -1,26 +1,28 @@
+import streamlit as st
+
+# [1] 페이지 설정 (반드시 모든 st 함수 중 가장 처음에 위치)
+st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
+
+# [2] 필수 라이브러리 임포트
 import os
 import ssl
 import json
 import requests
 import io
-import streamlit as st
-import google.generativeai as genai
-from PIL import Image
+import datetime
+import base64
+import codecs
 import pandas as pd
-from docx import Document
+import numpy as np
+import cv2  # 비식별화의 핵심
 import plotly.express as px
+from PIL import Image
+from docx import Document
+import google.generativeai as genai
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
-import datetime
-import codecs # PEM 로드를 위해 추가
-import base64
-import cv2
-import mediapipe as mp
-import numpy as np
 
-# --- [수정] 페이지 설정은 코드 최상단에 "단 한 번만" 위치해야 합니다 ---
-st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
 
 # --- [1단계] 구글 드라이브/시트 설정 (PEM 로드 집중 수정 버전) ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
@@ -242,7 +244,7 @@ st.markdown("""
         transform: scale(1.01);
     }
     /* 로고 및 타이틀 스타일 */
-    .logo-img { cursor: pointer; display: block; margin-top: 10px; }
+    .logo-img { cursor: pointer; display: block; margin-top: 2px; }
     .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
     .refresh-title:hover { color: #FF4B4B !important; }
     </style>
@@ -285,33 +287,90 @@ with col1:
 
 with col2:
     st.markdown("### **📸 사진 기록 방식**")
-    source_option = st.radio("• 사진 방식 선택  -  얼굴(정면)을 업로드 하지 않도록 주의🚨", ("📷 카메라", "🖼️ 갤러리", "🚫 없음"), horizontal=True)
     
+    # [1] 안내 문구
+    st.markdown("""
+        • **사진 방식 선택** <div style="font-size: 0.85rem; color: #808080; line-height: 1.5; margin-top: 5px;">
+            🚫 얼굴(정면)을 업로드 하지 않도록 주의<br>
+            🚫 개인정보 및 주요자료가 포함되지 않도록 주의
+        </div>
+        """, unsafe_allow_html=True)
+
+    # [2] 변수 정의 (이 줄이 반드시 if문보다 위에 있어야 합니다)
+    source_option = st.radio(
+        label="사진 방식 선택 레이블(숨김)", 
+        options=("📸 사진", "🚫 없음"), 
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+
     img_file = None
-    if "📷" in source_option:
-        img_file = st.camera_input("📸 현장 사진 촬영")
-    elif "🖼️" in source_option:
-        img_file = st.file_uploader("🖼️ 사진 파일 업로드", type=['png', 'jpg', 'jpeg'])
+
+    # [3] 조건문 실행
+    if "📸" in source_option:
+        st.info("📸 아래 박스를 클릭하면 [사진촬영] 또는 [사진업로드] 선택이 가능합니다.")
+        
+       
+# 2. 업로더 한글화 CSS (보강된 버전)
+        st.markdown("""
+            <style>
+                /* 1. 원래 있던 텍스트들 숨기기 */
+                section[data-testid="stFileUploadDropzone"] div div span,
+                section[data-testid="stFileUploadDropzone"] small,
+                section[data-testid="stFileUploadDropzone"] button {
+                    display: none !important;
+                }
+
+                /* 2. 상단에 새로운 안내 문구 추가 */
+                section[data-testid="stFileUploadDropzone"] div div::before {
+                    content: "여기에 사진을 끌어다 놓으세요";
+                    display: block !important;
+                    font-size: 0.9rem !important;
+                    color: #808080 !important;
+                    margin-bottom: 10px !important;
+                }
+
+                /* 3. 버튼처럼 보이는 가짜 버튼 생성 */
+                section[data-testid="stFileUploadDropzone"]::before {
+                    content: "📸 사진 촬영 또는 선택하기";
+                    display: block !important;
+                    margin: 10px auto !important;
+                    padding: 10px 20px !important;
+                    background-color: #ff4b4b !important; /* 배경색을 빨간색으로 */
+                    color: white !important; /* 글자를 흰색으로 */
+                    border-radius: 8px !important;
+                    cursor: pointer !important;
+                    font-weight: bold !important;
+                    text-align: center !important;
+                    width: fit-content !important;
+                }
+
+                /* 4. 하단에 용량 제한 문구 추가 */
+                section[data-testid="stFileUploadDropzone"] div div::after {
+                    content: "파일당 최대 200MB • PNG, JPG, JPEG";
+                    display: block !important;
+                    font-size: 0.75rem !important;
+                    color: #a0a0a0 !important;
+                    margin-top: 5px !important;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        # 3. 통합된 업로더 실행
+        img_file = st.file_uploader(
+            "사진 업로드 전용", 
+            type=['png', 'jpg', 'jpeg'], 
+            label_visibility="collapsed",
+            key="integrated_photo_upload"
+        )
+
 
 def apply_face_blur(img_file):
     import cv2
     import numpy as np
-    import sys
-
-    # [1] 라이브러리 강제 로드 로직
-    try:
-        import mediapipe as mp
-        from mediapipe.python.solutions import face_detection as mp_face
-    except ImportError:
-        try:
-            from mediapipe.solutions import face_detection as mp_face
-        except:
-            st.error("🚨 라이브러리 로딩에 실패했습니다. requirements.txt를 다시 확인해주세요.")
-            img_file.seek(0)
-            return img_file.getvalue()
 
     try:
-        # 이미지 읽기
+        # 1. 이미지 읽기
         img_file.seek(0)
         file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
@@ -319,53 +378,90 @@ def apply_face_blur(img_file):
         
         h, w, _ = image.shape
 
-        # [2] 이미지 전처리 (어두운 얼굴 인식률 향상)
-        # 대비를 높여 측면이나 그늘진 얼굴 특징을 부각시킵니다.
+        # [2] 어두운 얼굴 인식률 향상 (CLAHE 전처리)
+        # 이미지를 밝고 선명하게 만들어 그늘진 얼굴 특징을 추출합니다.
         lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
         l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
         cl = clahe.apply(l)
-        enhanced_img = cv2.merge((cl,a,b))
-        enhanced_img = cv2.cvtColor(enhanced_img, cv2.COLOR_LAB2RGB) # 모델 입력용
+        enhanced_gray = cv2.merge((cl, a, b))
+        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_LAB2BGR)
+        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_BGR2GRAY) # OpenCV 감지용
 
-        all_detections = []
+        # [3] OpenCV 얼굴 인식기 로드
+        # Haar Cascade 방식 사용 (정면 및 측면 얼굴 대응)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
 
-        # [3] 초강력 이중 감지 (근거리 + 원거리 합집합)
-        # 감지 민감도를 0.3으로 낮추어 측면 얼굴도 최대한 잡습니다.
-        for model_type in [0, 1]: 
-            with mp_face.FaceDetection(model_selection=model_type, min_detection_confidence=0.3) as detector:
-                results = detector.process(enhanced_img)
-                if results.detections:
-                    all_detections.extend(results.detections)
+# [4] 초강력 이중 감지 (정면 + 측면 합집합) 및 이미지 회전 및 다중 검사 (0도, -20도, 20도)
+        # 기울어진 안전모 인물을 잡기 위한 핵심 로직입니다.
+        for angle in [0, -20, 20]:
+            if angle == 0:
+                rotated_img = image
+                matrix = None
+            else:
+                # 이미지 중심 기준 회전 행렬 생성
+                matrix = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
+                rotated_img = cv2.warpAffine(image, matrix, (w, h))
 
-        if all_detections:
-            for detection in all_detections:
-                bbox = detection.location_data.relative_bounding_box
+        # 정면(front): minNeighbors=5 (깐깐하게 감지하여 다리 오탐지 감소)
+        # 측면(profile): minNeighbors=3 (너그럽게 감지하여 옆모습 포착)
+        faces_front = face_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
+        faces_profile = profile_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=3, minSize=(30, 30))
+        
+        # 두 결과를 하나로 합침
+        all_faces = []
+        if len(faces_front) > 0: all_faces.extend(faces_front)
+        if len(faces_profile) > 0: all_faces.extend(faces_profile)
+
+        if len(all_faces) > 0:
+            for (x, y, rw, rh) in all_faces:
+                # --- [수정] 이미지 하단 10% 영역만 얼굴 제외 구역으로 설정 ---
+                # y + (rh / 2)는 감지된 박스의 중심점 높이입니다.
+                # h * 0.9 보다 크다는 것은 이미지의 맨 아래쪽 10% 지점에 위치한다는 뜻입니다.
+                if y + (rh / 2) > h * 0.9:
+                    continue
+
+
+                # [5] 얼굴 영역 20% 더 넓게 잡음 (Padding)
+                pad_w = int(rw * 0.2)
+                pad_h = int(rh * 0.2)
                 
-                # 좌표 계산 및 안전 범위 지정
-                x = int(bbox.xmin * w)
-                y = int(bbox.ymin * h)
-                rw = int(bbox.width * w)
-                rh = int(bbox.height * h)
-                
-                # 얼굴 영역을 실제보다 20% 더 넓게 잡음 (머리카락, 귀 보호)
-                padding_w = int(rw * 0.2)
-                padding_h = int(rh * 0.2)
-                
-                x_final = max(0, x - padding_w)
-                y_final = max(0, y - padding_h)
-                rw_final = min(w - x_final, rw + (padding_w * 2))
-                rh_final = min(h - y_final, rh + (padding_h * 2))
+                x_final = max(0, x - pad_w)
+                y_final = max(0, y - pad_h)
+                rw_final = min(w - x_final, rw + (pad_w * 2))
+                rh_final = min(h - y_final, rh + (pad_h * 2))
+
+# [얼굴부분 동그라미로 블러처리] if rw_final > 0 and rh_final > 0: 블록 내부를 교체
 
                 if rw_final > 0 and rh_final > 0:
+                    # 1. 얼굴 영역 ROI 추출
                     face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
                     
-                    # 더 강력한 블러 효과 (가우시안 + 모자이크 혼합 느낌)
-                    level = max(rw_final, rh_final) // 4
-                    if level % 2 == 0: level += 1
-                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = cv2.GaussianBlur(face_roi, (level, level), 0)
+                    # 2. 원형 마스크 생성
+                    # ROI와 같은 크기의 검은색 이미지 생성
+                    mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
+                    # 중심점과 반지름 계산
+                    center = (rw_final // 2, rh_final // 2)
+                    radius = min(rw_final, rh_final) // 2
+                    # 하얀색 꽉 찬 원 그리기
+                    cv2.circle(mask, center, radius, (255), -1)
 
-            st.toast(f"✅ {len(all_detections)}개 포인트 비식별화 완료")
+                    # 3. 강력한 블러 이미지 생성
+                    level = max(rw_final, rh_final) // 2 
+                    if level % 2 == 0: level += 1
+                    # 2중 블러로 더 강력하게
+                    blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
+                    blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
+
+                    # 4. 마스크를 이용해 합치기 (핵심)
+                    # 마스크가 하얀색(255)인 부분은 블러 이미지를, 아니면 원본 ROI를 사용
+                    # 마스크를 3채널(RGB)로 맞춰줘야 함
+                    mask_3ch = cv2.merge([mask, mask, mask])
+                    combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
+
+                    # 5. 원본 이미지에 다시 붙여넣기
+                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = combined_roi
 
         # 결과 반환
         _, buffer = cv2.imencode('.jpg', image)
@@ -375,6 +471,7 @@ def apply_face_blur(img_file):
         st.error(f"비식별화 프로세스 오류: {e}")
         img_file.seek(0)
         return img_file.getvalue()
+
 
 # --- [3단계] 전송 버튼 로직 내 수정 ---
 processed_img_final = None  # 처리된 이미지를 담을 변수
@@ -433,20 +530,47 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 
                 # 분석 데이터 준비
                 content = [prompt]
+                
+                # [수정] 이미지 로드 부분 (PIL import 위치 확인)
+                from PIL import Image 
+                
                 if img_file:
-                    from PIL import Image
                     content.append(Image.open(img_file))
                 
-                # 모델 호출 및 결과 처리
                 if processed_img_final:
                     content.append(Image.open(processed_img_final))
-                response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
-                res_data = json.loads(response.text.strip())
-                
-                # 결과 저장 및 리프레시
-                st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
-                st.success(f"✅ [{selected_facility}] 시설 분석 완료!")
-                st.rerun()
+
+                # [핵심 수정] 재시도 로직 추가 (API 한도 초과 방지)
+                import time
+                response = None
+                max_retries = 3  # 최대 3번까지 재시도
+
+                for attempt in range(max_retries):
+                    try:
+                        # 모델 호출
+                        response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
+                        break  # 성공하면 반복문 탈출!
+                    except Exception as e:
+                        # 429 에러(Quota)나 과부하 에러가 났을 때만 재시도
+                        if "429" in str(e) or "quota" in str(e).lower() or "503" in str(e):
+                            if attempt < max_retries - 1:
+                                time.sleep(2 * (attempt + 1))  # 2초, 4초... 점차 길게 대기
+                                st.toast(f"⏳ 사용량 조절 중... 재시도 {attempt+1}/{max_retries}")
+                                continue
+                            else:
+                                st.error("🚨 현재 AI 이용량이 많아 분석이 어렵습니다. 1분 뒤에 다시 시도해주세요.")
+                                st.stop() # 코드 실행 중단
+                        else:
+                            raise e # 다른 에러(코드 오류 등)는 바로 띄움
+
+                # 결과 처리 (성공했을 때만 실행)
+                if response:
+                    res_data = json.loads(response.text.strip())
+                    
+                    # 결과 저장 및 리프레시
+                    st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
+                    st.success(f"✅ [{selected_facility}] 시설 분석 완료!")
+                    st.rerun()
 
         except Exception as e:
             st.error(f"❌ 오류가 발생했습니다: {e}")
@@ -648,7 +772,7 @@ if dashboard_data is not None:
         if author_col in yearly_data.columns:
             m2.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
         else:
-            m2.metric("점검 시설 종류", f"{yearly_data['시설명'].nunique()} 곳")
+            m2.metric("점검결과 제출 시설", f"{yearly_data['시설명'].nunique()} 개 시설")
 
         # --- 색상 맵 설정 ---
         CATEGORY_COLOR_MAP = {
@@ -678,7 +802,17 @@ if dashboard_data is not None:
                         yearly_data, names=target_col_cat, hole=0.3,
                         color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
                     )
-                    # 파이 차트도 확대/축소 방지 적용
+                    
+                    # --- [추가 및 수정된 부분 시작] ---
+                    fig_pie.update_traces(
+                        textinfo='percent+value', 
+                        texttemplate='%{percent:.1%}<br>(%{value}건)', # 퍼센트(소수점 1자리)와 건수 표시
+                        insidetextorientation='horizontal', # 글자를 가로로 고정
+                        textfont_size=12 # 글자 크기 조절 (필요시)
+                    )
+                    # --- [추가 및 수정된 부분 끝] ---
+
+                    # 기존 레이아웃 설정
                     fig_pie.update_layout(
                         margin=dict(t=30, b=0, l=0, r=0), 
                         height=350,
@@ -688,13 +822,12 @@ if dashboard_data is not None:
                         dragmode=False
                     )
                     st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit", config={'displayModeBar': False})
-
         with g_col2:
             target_col_fac = "시설명" 
             if target_col_fac in yearly_data.columns:
                 st.write(f"**{target_col_fac}별 점검 건수**")
                 
-                # [중요] 데이터 집계 로직 (이 부분이 누락되어 NameError가 발생했었습니다)
+                # 데이터 집계
                 yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
                 fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
                 fac_counts.columns = [target_col_fac, '건수']
@@ -703,21 +836,22 @@ if dashboard_data is not None:
                     fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
                     color_discrete_map=FACILITY_COLOR_MAP
                 )
-
-                # --- [수치 표기 설정 추가] ---
+                
+                # --- [수치 표기 설정 추가 시작] ---
                 fig_bar.update_traces(
-                    texttemplate='%{y}건',      # 표시할 형식 (y축 값 + 건)
-                    textposition='outside',    # 막대 밖에 표시 ('inside'로 하면 안으로 들어감)
-                    cliponaxis=False           # 글자가 그래프 끝에서 잘리지 않도록 설정
+                    texttemplate='%{y}건',      # Y축 값 뒤에 '건' 추가
+                    textposition='outside',    # 막대 바깥쪽 상단에 표시
+                    textfont_size=12,          # 텍스트 크기 조절
+                    cliponaxis=False           # 그래프 경계에서 글자가 잘리지 않게 설정
                 )
-                # --------------------------
+                # --- [수치 표기 설정 추가 끝] ---
                 
                 # 확대/축소 방지 및 레이아웃 설정
                 fig_bar.update_xaxes(fixedrange=True)
                 fig_bar.update_yaxes(fixedrange=True)
                 
                 fig_bar.update_layout(
-                    margin=dict(t=30, b=0, l=0, r=0), 
+                    margin=dict(t=35, b=0, l=0, r=0), # 텍스트 표시를 위해 상단 마진(t)을 약간 늘림
                     height=350, 
                     showlegend=False,
                     xaxis_title=None, 
@@ -766,7 +900,4 @@ with footer_cols[1]:
 
 # 최하단 한 줄 강조
 st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
-
-
-
 
