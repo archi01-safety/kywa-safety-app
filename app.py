@@ -577,23 +577,46 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
-    st.markdown("### 📊 분석 결과")
+    st.markdown("### 📊 분석 결과 및 편집")
     
-    st.session_state.final_data = [] # 데이터 저장용 리스트 초기화
+    # 1. 편집을 위한 데이터프레임 준비
+    df = pd.DataFrame(st.session_state.analysis_results)
+    
+    # 2. 데이터 에디터 표시 (사용자가 여기서 수정)
+    st.info("💡 아래 표의 **'solution(감소대책)'** 칸을 클릭하여 내용을 수정할 수 있습니다.")
+    edited_df = st.data_editor(
+        df,
+        column_config={
+            "category": "분류",
+            "scenario": "위험상황",
+            "p": "빈도",
+            "s": "강도",
+            "score": "점수",
+            "grade": "등급",
+            "law": "관련근거",
+            "solution": st.column_config.TextColumn("감소대책 (편집 가능)", width="large")
+        },
+        use_container_width=True,
+        hide_index=True
+    )
 
-# 1. 스타일 정의 (요청하신 5단계 색상 반영)
+    # 수정된 데이터를 세션 상태에 반영
+    st.session_state.analysis_results = edited_df.to_dict('records')
+    st.session_state.final_data = [] # 최종 저장용 리스트 초기화
+
+    # 3. 스타일 정의 (디자인된 리포트 출력용)
     table_html = """
     <style>
-        .report-table { width:100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        .report-table { width:100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
         .report-table th { background-color: #f0f2f6; color: #31333F; padding: 10px; border: 1px solid #ddd; text-align: center; }
         .report-table td { padding: 10px; border: 1px solid #ddd; text-align: center; vertical-align: middle; }
         
         /* 등급별 배경색 설정 */
-        .grade-very-low, .grade-low { background-color: #ffffff; color: #31333F; } /* 흰색 */
-        .grade-medium { background-color: #ffff00; color: #000000; font-weight: bold; } /* 노란색 */
-        .grade-slightly-high { background-color: #ffcc00; color: #000000; font-weight: bold; } /* 주황색(짙은노랑) */
-        .grade-high { background-color: #ff9999; color: #000000; font-weight: bold; } /* 옅은 빨간색 */
-        .grade-very-high { background-color: #cc0000; color: #ffffff !important; font-weight: bold; } /* 어두운 빨간색 */
+        .grade-very-low, .grade-low { background-color: #ffffff; color: #31333F; }
+        .grade-medium { background-color: #ffff00; color: #000000; font-weight: bold; }
+        .grade-slightly-high { background-color: #ffcc00; color: #000000; font-weight: bold; }
+        .grade-high { background-color: #ff9999; color: #000000; font-weight: bold; }
+        .grade-very-high { background-color: #cc0000; color: #ffffff !important; font-weight: bold; }
         
         .text-left { text-align: left !important; }
     </style>
@@ -601,19 +624,19 @@ if st.session_state.analysis_results:
         <thead>
             <tr>
                 <th width="10%">분류</th>
-                <th width="30%">위험상황</th>
+                <th width="25%">위험상황</th>
                 <th width="5%">빈도</th>
                 <th width="5%">강도</th>
                 <th width="5%">점수</th>
                 <th width="10%">등급</th>
                 <th width="15%">관련근거</th>
-                <th width="20%">감소대책</th>
+                <th width="25%">감소대책 (수정반영)</th>
             </tr>
         </thead>
         <tbody>
     """
 
-    # 2. 데이터 반복문
+    # 4. 편집된 데이터를 바탕으로 HTML 행 생성
     for item in st.session_state.analysis_results:
         try:
             p = int(item.get('p', 0))
@@ -623,18 +646,18 @@ if st.session_state.analysis_results:
             
         score = p * s
         
-        # [수정] 등급 판정 및 스타일 클래스 매칭
+        # 등급 판정 및 스타일 클래스 매칭
         if score <= 3: 
             grade, grade_class = "매우 낮음", "grade-very-low"
         elif score <= 6: 
             grade, grade_class = "낮음", "grade-low"
-        elif score <= 9: # 8, 9점 포함
+        elif score <= 9: 
             grade, grade_class = "보통", "grade-medium"
         elif score <= 12: 
             grade, grade_class = "약간 높음", "grade-slightly-high"
-        elif score <= 16: # 15, 16점 포함
+        elif score <= 16: 
             grade, grade_class = "높음", "grade-high"
-        else: # 20점 이상
+        else: 
             grade, grade_class = "매우 높음", "grade-very-high"
         
         # 텍스트 내 줄바꿈 처리
@@ -648,20 +671,21 @@ if st.session_state.analysis_results:
         table_html += f'<td>{p}</td>'
         table_html += f'<td>{s}</td>'
         table_html += f'<td>{score}</td>'
-        table_html += f'<td class="{grade_class}">{grade}</td>' # 적용된 클래스
+        table_html += f'<td class="{grade_class}">{grade}</td>'
         table_html += f'<td>{item.get("law", "-")}</td>'
         table_html += f'<td class="text-left">{solution_text}</td>'
         table_html += f'</tr>'
         
-        # 세션 데이터 업데이트
+        # 최종 데이터 업데이트
         item['score'] = score
         item['grade'] = grade
         st.session_state.final_data.append(item)
 
     table_html += '</tbody></table>'
+    
+    # 최종 결과 표 출력
+    st.markdown("#### 📄 최종 리포트 프리뷰")
     st.markdown(table_html, unsafe_allow_html=True)
-
-
 # --- [3단계] 전송 버튼 로직 (타임스탬프 수정 버전) ---
 st.write("")
 if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
