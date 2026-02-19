@@ -565,7 +565,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                                 st.toast(f"⏳ 사용량 조절 중... 재시도 {attempt+1}/{max_retries}")
                                 continue
                             else:
-                                st.error("🚨 현재 AI 이용량이 많아 분석이 어렵습니다. 1분 뒤에 다시 시도해주세요.")
+                                st.error("🚨 현재 AI 이용량이 많아 분석이 어렵습니다. 5분 뒤에 다시 시도해주세요.")
                                 st.stop() # 코드 실행 중단
                         else:
                             raise e # 다른 에러(코드 오류 등)는 바로 띄움
