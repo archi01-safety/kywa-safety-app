@@ -577,7 +577,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
-    st.markdown("### 📋 AI 위험성평가 결과 (최종)")
+    st.markdown("### 📋 AI 위험성평가 결과")
     st.info("💡 **'감소대책'** 칸만 직접 수정이 가능합니다. 수정한 내용은 실시간으로 반영됩니다.")
 
     # 1. 데이터를 데이터프레임으로 변환
@@ -588,7 +588,7 @@ if st.session_state.analysis_results:
         df,
         column_config={
             "category": st.column_config.TextColumn("분류", disabled=True),
-            "scenario": st.column_config.TextColumn("위험상황", disabled=True, width="medium"),
+            "scenario": st.column_config.TextColumn("✅ 위험상황 (편집 가능)", help="현장에 맞게 내용을 수정하세요.", width="medium"),
             "p": st.column_config.NumberColumn("빈도", disabled=True, width="small"),
             "s": st.column_config.NumberColumn("강도", disabled=True, width="small"),
             "score": st.column_config.NumberColumn("점수", disabled=True, width="small"),
@@ -601,8 +601,8 @@ if st.session_state.analysis_results:
                 required=True
             )
         },
-        # 감소대책(solution)을 제외한 모든 컬럼 수정 금지
-        disabled=["category", "scenario", "p", "s", "score", "grade", "law"],
+        # 위험상황(scenario), 감소대책(solution)을 제외한 모든 컬럼 수정 금지
+        disabled=["category", "p", "s", "score", "grade", "law"],
         use_container_width=True,
         hide_index=True,
         key="final_editor"
