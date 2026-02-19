@@ -577,14 +577,13 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
-    st.markdown("### 📋 AI 분석 결과 및 실시간 보완")
-    st.info("💡 **'감소대책'** 칸만 직접 수정이 가능합니다. 수정 후 아래 저장/다운로드 버튼을 이용하세요.")
+    st.markdown("### 📋 AI 위험성평가 결과 (최종)")
+    st.info("💡 **'감소대책'** 칸만 직접 수정이 가능합니다. 수정한 내용은 실시간으로 반영됩니다.")
 
     # 1. 데이터를 데이터프레임으로 변환
     df = pd.DataFrame(st.session_state.analysis_results)
 
-    # 2. 데이터 에디터 설정
-    # disabled 파라미터에 수정하지 못하게 할 컬럼명을 리스트로 넣습니다.
+    # 2. 데이터 에디터 하나로 편집 + 프리뷰 통합
     edited_df = st.data_editor(
         df,
         column_config={
@@ -593,109 +592,28 @@ if st.session_state.analysis_results:
             "p": st.column_config.NumberColumn("빈도", disabled=True, width="small"),
             "s": st.column_config.NumberColumn("강도", disabled=True, width="small"),
             "score": st.column_config.NumberColumn("점수", disabled=True, width="small"),
-            "grade": st.column_config.TextColumn("등급", disabled=True),
+            "grade": st.column_config.TextColumn("등급", disabled=True), # 색상 태그는 없지만 깔끔함
             "law": st.column_config.TextColumn("관련근거", disabled=True, width="medium"),
             "solution": st.column_config.TextColumn(
                 "✅ 감소대책 (편집 가능)", 
-                help="이 칸을 더블클릭하여 내용을 수정하세요.",
+                help="현장에 맞게 내용을 수정하세요.",
                 width="large",
                 required=True
             )
         },
-        disabled=["category", "scenario", "p", "s", "score", "grade", "law"], # 감소대책 제외 모두 잠금
+        # 감소대책(solution)을 제외한 모든 컬럼 수정 금지
+        disabled=["category", "scenario", "p", "s", "score", "grade", "law"],
         use_container_width=True,
         hide_index=True,
-        key="editor" # 고유 키 설정
+        key="final_editor"
     )
 
-    # 3. 사용자가 편집한 내용을 즉시 세션 상태에 반영 (별도의 확인 버튼 없이도 연동됨)
+    # 3. 데이터 업데이트 (수정 즉시 반영)
     st.session_state.analysis_results = edited_df.to_dict('records')
     st.session_state.final_data = st.session_state.analysis_results
 
-    st.success("데이터가 실시간으로 반영되었습니다. 이제 아래 보고서 기능을 확인하세요.")
+    st.success("✅ 최종 검토가 완료되었습니다. 아래 버튼으로 보고서를 저장하세요.")
 
-    # 3. 스타일 정의 (디자인된 리포트 출력용)
-    table_html = """
-    <style>
-        .report-table { width:100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-        .report-table th { background-color: #f0f2f6; color: #31333F; padding: 10px; border: 1px solid #ddd; text-align: center; }
-        .report-table td { padding: 10px; border: 1px solid #ddd; text-align: center; vertical-align: middle; }
-        
-        /* 등급별 배경색 설정 */
-        .grade-very-low, .grade-low { background-color: #ffffff; color: #31333F; }
-        .grade-medium { background-color: #ffff00; color: #000000; font-weight: bold; }
-        .grade-slightly-high { background-color: #ffcc00; color: #000000; font-weight: bold; }
-        .grade-high { background-color: #ff9999; color: #000000; font-weight: bold; }
-        .grade-very-high { background-color: #cc0000; color: #ffffff !important; font-weight: bold; }
-        
-        .text-left { text-align: left !important; }
-    </style>
-    <table class="report-table">
-        <thead>
-            <tr>
-                <th width="10%">분류</th>
-                <th width="25%">위험상황</th>
-                <th width="5%">빈도</th>
-                <th width="5%">강도</th>
-                <th width="5%">점수</th>
-                <th width="10%">등급</th>
-                <th width="15%">관련근거</th>
-                <th width="25%">감소대책 (수정반영)</th>
-            </tr>
-        </thead>
-        <tbody>
-    """
-
-    # 4. 편집된 데이터를 바탕으로 HTML 행 생성
-    for item in st.session_state.analysis_results:
-        try:
-            p = int(item.get('p', 0))
-            s = int(item.get('s', 0))
-        except:
-            p, s = 0, 0
-            
-        score = p * s
-        
-        # 등급 판정 및 스타일 클래스 매칭
-        if score <= 3: 
-            grade, grade_class = "매우 낮음", "grade-very-low"
-        elif score <= 6: 
-            grade, grade_class = "낮음", "grade-low"
-        elif score <= 9: 
-            grade, grade_class = "보통", "grade-medium"
-        elif score <= 12: 
-            grade, grade_class = "약간 높음", "grade-slightly-high"
-        elif score <= 16: 
-            grade, grade_class = "높음", "grade-high"
-        else: 
-            grade, grade_class = "매우 높음", "grade-very-high"
-        
-        # 텍스트 내 줄바꿈 처리
-        scenario_text = str(item.get('scenario', '-')).replace('\n', '<br>')
-        solution_text = str(item.get('solution', '-')).replace('\n', '<br>')
-
-        # HTML 행 생성
-        table_html += f'<tr>'
-        table_html += f'<td>{item.get("category", "-")}</td>'
-        table_html += f'<td class="text-left">{scenario_text}</td>'
-        table_html += f'<td>{p}</td>'
-        table_html += f'<td>{s}</td>'
-        table_html += f'<td>{score}</td>'
-        table_html += f'<td class="{grade_class}">{grade}</td>'
-        table_html += f'<td>{item.get("law", "-")}</td>'
-        table_html += f'<td class="text-left">{solution_text}</td>'
-        table_html += f'</tr>'
-        
-        # 최종 데이터 업데이트
-        item['score'] = score
-        item['grade'] = grade
-        st.session_state.final_data.append(item)
-
-    table_html += '</tbody></table>'
-    
-    # 최종 결과 표 출력
-    st.markdown("#### 📄 최종 리포트 PREVIEW")
-    st.markdown(table_html, unsafe_allow_html=True)
 
 # --- [3단계] 전송 버튼 로직 (타임스탬프 수정 버전) ---
 st.write("")
