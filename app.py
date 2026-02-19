@@ -617,7 +617,7 @@ if st.session_state.analysis_results:
     st.session_state.analysis_results = edited_df.to_dict('records')
     st.session_state.final_data = st.session_state.analysis_results
 
-    st.success("✅ KYWA AI 위험성 분석이 완료되었습니다. 아래 '최종 전송 버튼'을 눌러주세요.")
+    st.success("✅ KYWA AI 위험성 분석이 완료되었습니다. 아래 **'최종 전송 버튼'**을 눌러주세요.")
 
 # --- [3단계] 전송 버튼 로직 (타임스탬프 수정 버전) ---
 st.write("")
