@@ -577,32 +577,42 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
-    st.markdown("### 📊 분석 결과 및 편집")
-    
-    # 1. 편집을 위한 데이터프레임 준비
+    st.markdown("### 📋 AI 분석 결과 및 실시간 보완")
+    st.info("💡 **'감소대책'** 칸만 직접 수정이 가능합니다. 수정 후 아래 저장/다운로드 버튼을 이용하세요.")
+
+    # 1. 데이터를 데이터프레임으로 변환
     df = pd.DataFrame(st.session_state.analysis_results)
-    
-    # 2. 데이터 에디터 표시 (사용자가 여기서 수정)
-    st.info("💡 아래 표의 **'solution(감소대책)'** 칸을 클릭하여 내용을 수정할 수 있습니다.")
+
+    # 2. 데이터 에디터 설정
+    # disabled 파라미터에 수정하지 못하게 할 컬럼명을 리스트로 넣습니다.
     edited_df = st.data_editor(
         df,
         column_config={
-            "category": "분류",
-            "scenario": "위험상황",
-            "p": "빈도",
-            "s": "강도",
-            "score": "점수",
-            "grade": "등급",
-            "law": "관련근거",
-            "solution": st.column_config.TextColumn("감소대책 (편집 가능)", width="large")
+            "category": st.column_config.TextColumn("분류", disabled=True),
+            "scenario": st.column_config.TextColumn("위험상황", disabled=True, width="medium"),
+            "p": st.column_config.NumberColumn("빈도", disabled=True, width="small"),
+            "s": st.column_config.NumberColumn("강도", disabled=True, width="small"),
+            "score": st.column_config.NumberColumn("점수", disabled=True, width="small"),
+            "grade": st.column_config.TextColumn("등급", disabled=True),
+            "law": st.column_config.TextColumn("관련근거", disabled=True, width="medium"),
+            "solution": st.column_config.TextColumn(
+                "✅ 감소대책 (편집 가능)", 
+                help="이 칸을 더블클릭하여 내용을 수정하세요.",
+                width="large",
+                required=True
+            )
         },
+        disabled=["category", "scenario", "p", "s", "score", "grade", "law"], # 감소대책 제외 모두 잠금
         use_container_width=True,
-        hide_index=True
+        hide_index=True,
+        key="editor" # 고유 키 설정
     )
 
-    # 수정된 데이터를 세션 상태에 반영
+    # 3. 사용자가 편집한 내용을 즉시 세션 상태에 반영 (별도의 확인 버튼 없이도 연동됨)
     st.session_state.analysis_results = edited_df.to_dict('records')
-    st.session_state.final_data = [] # 최종 저장용 리스트 초기화
+    st.session_state.final_data = st.session_state.analysis_results
+
+    st.success("데이터가 실시간으로 반영되었습니다. 이제 아래 보고서 기능을 확인하세요.")
 
     # 3. 스타일 정의 (디자인된 리포트 출력용)
     table_html = """
@@ -684,8 +694,9 @@ if st.session_state.analysis_results:
     table_html += '</tbody></table>'
     
     # 최종 결과 표 출력
-    st.markdown("#### 📄 최종 리포트 프리뷰")
+    st.markdown("#### 📄 최종 리포트 PREVIEW")
     st.markdown(table_html, unsafe_allow_html=True)
+
 # --- [3단계] 전송 버튼 로직 (타임스탬프 수정 버전) ---
 st.write("")
 if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
