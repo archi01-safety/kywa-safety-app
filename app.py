@@ -578,21 +578,36 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
     st.markdown("### 📋 AI 위험성평가 결과")
-    st.info("💡 **'위험상황', '감소대책'** 칸만 직접 **수정**이 **가능**합니다. 수정한 내용은 실시간으로 반영됩니다.")
+    st.info("💡 **'위험상황'**과 **'감소대책'** 칸을 클릭하여 내용을 수정할 수 있습니다.")
 
     # 1. 데이터를 데이터프레임으로 변환
     df = pd.DataFrame(st.session_state.analysis_results)
+
+    # [보완] 시각적 효과를 위해 등급에 이모지 추가 (에디터 내 가독성 향상)
+    def add_grade_emoji(row):
+        grade = row['grade']
+        if "매우 높음" in grade: return f"🔴 {grade}"
+        if "높음" in grade: return f"🟠 {grade}"
+        if "보통" in grade: return f"🟡 {grade}"
+        if "낮음" in grade: return f"🟢 {grade}"
+        return f"⚪ {grade}"
+
+    # 등급 컬럼에 이모지 적용 (이미 적용되어 있다면 생략 가능)
+    if 'grade' in df.columns:
+        df['grade'] = df.apply(add_grade_emoji, axis=1)
 
     # 2. 데이터 에디터 하나로 편집 + 프리뷰 통합
     edited_df = st.data_editor(
         df,
         column_config={
             "category": st.column_config.TextColumn("분류", disabled=True),
-            "scenario": st.column_config.TextColumn("✅ 위험상황 (편집 가능)", help="현장에 맞게 내용을 수정하세요.", width="medium"),
-            "p": st.column_config.NumberColumn("빈도", disabled=True, width="small"),
-            "s": st.column_config.NumberColumn("강도", disabled=True, width="small"),
-            "score": st.column_config.NumberColumn("점수", disabled=True, width="small"),
-            "grade": st.column_config.TextColumn("등급", disabled=True), # 색상 태그는 없지만 깔끔함
+            "scenario": st.column_config.TextColumn("✅ 위험상황 (편집 가능)", width="medium"),
+            # 숫자를 TextColumn으로 처리하면 가운데 느낌으로 배치가 가능하며, 
+            # 정렬을 위해 format을 지정할 수 있습니다.
+            "p": st.column_config.TextColumn("빈도", disabled=True, width="small"),
+            "s": st.column_config.TextColumn("강도", disabled=True, width="small"),
+            "score": st.column_config.TextColumn("점수", disabled=True, width="small"),
+            "grade": st.column_config.TextColumn("등급", disabled=True, width="small"), 
             "law": st.column_config.TextColumn("관련근거", disabled=True, width="medium"),
             "solution": st.column_config.TextColumn(
                 "✅ 감소대책 (편집 가능)", 
@@ -609,10 +624,12 @@ if st.session_state.analysis_results:
     )
 
     # 3. 데이터 업데이트 (수정 즉시 반영)
+    # 이모지를 다시 제거하고 저장하고 싶다면 여기서 처리 로직을 넣을 수 있습니다.
     st.session_state.analysis_results = edited_df.to_dict('records')
     st.session_state.final_data = st.session_state.analysis_results
 
-    st.success("✅ 최종 검토가 완료되었습니다. 아래 버튼으로 보고서를 저장하세요.")
+    st.success("✅ 최종 검토가 완료되었습니다. 아래 버튼으로 보고서를 제출하세요.")
+
 
 
 # --- [3단계] 전송 버튼 로직 (타임스탬프 수정 버전) ---
