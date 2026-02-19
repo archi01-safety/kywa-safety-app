@@ -578,7 +578,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
     st.markdown("### 📋 AI 위험성평가 결과")
-    st.info("💡 **'위험상황'**과 **'감소대책'** 칸을 클릭하여 내용을 수정할 수 있습니다.")
+    st.info("💡 **'위험상황'과 '감소대책'** 칸을 클릭하여 내용을 수정할 수 있습니다.")
 
     # 1. 데이터를 데이터프레임으로 변환
     df = pd.DataFrame(st.session_state.analysis_results)
