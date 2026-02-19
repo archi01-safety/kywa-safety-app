@@ -582,16 +582,17 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
         except Exception as e:
             st.error(f"❌ 오류가 발생했습니다: {e}")
 
+
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
     st.markdown("### 📋 AI 위험성평가 결과")
-    # 안내 문구 수정
-    st.info("💡 **'위험상황'과 '감소대책'** 칸을 클릭하여 내용을 직접 수정할 수 있습니다.")
+    st.info("💡 **'위험상황'**과 **'감소대책'** 칸을 클릭하여 직접 내용을 수정할 수 있습니다.")
 
     # 1. 데이터를 데이터프레임으로 변환
     df = pd.DataFrame(st.session_state.analysis_results)
 
     # 2. 데이터 에디터 설정
+    # 편집 즉시 edited_df에 반영됩니다.
     edited_df = st.data_editor(
         df,
         column_config={
@@ -613,80 +614,83 @@ if st.session_state.analysis_results:
                 required=True
             )
         },
-        # [핵심] 수정 금지할 컬럼 리스트 (여기서 scenario와 solution은 빠져야 합니다)
+        # 위험상황(scenario)과 감소대책(solution)만 제외하고 모두 잠금
         disabled=["category", "p", "s", "score", "grade", "law"],
         use_container_width=True,
         hide_index=True,
-        key="final_editor_v2" # 키 중복 방지를 위해 이름을 살짝 변경
+        key="final_editor_main" # 고유 키 유지
     )
 
-    # 3. 데이터 업데이트 (수정 즉시 반영)
-    st.session_state.analysis_results = edited_df.to_dict('records')
-    st.session_state.final_data = st.session_state.analysis_results
+    # [핵심] 수정된 데이터를 즉시 세션 상태에 업데이트
+    # 이렇게 해야 '전송' 버튼이나 '다운로드' 버튼 클릭 시 최신 수정본이 사용됩니다.
+    st.session_state.final_data = edited_df.to_dict('records')
 
+    # --- [3단계] 전송 버튼 로직 ---
+    st.write("")
+    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
+        if sheets_service is None or drive_service is None:
+            st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
+        elif not st.session_state.final_data:
+            st.error("⚠️ 전송할 데이터가 없습니다.")
+        else:
+            with st.spinner("🚀 KYWA AI 안전센터로 데이터를 전송 중입니다..."):
+                try:
+                    now_kst = datetime.datetime.now() + datetime.timedelta(hours=9)
+                    current_time = now_kst.strftime("%Y-%m-%d %H:%M:%S")
+                    timestamp_str = now_kst.strftime("%Y%m%d_%H%M%S")
 
-
-# --- [3단계] 전송 버튼 로직 (타임스탬프 수정 버전) ---
-st.write("")
-if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
-    if sheets_service is None or drive_service is None:
-        st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
-        st.stop()
-    
-    if not st.session_state.final_data:
-        st.error("⚠️ 전송할 데이터가 없습니다. 먼저 분석을 진행해 주세요.")
-    else:
-        with st.spinner("🚀 KYWA AI 안전센터로 데이터를 전송 중입니다..."):
-            try:
-                # [수정] 한국 시간(KST)으로 현재 시간 설정
-                now_kst = datetime.datetime.now() + datetime.timedelta(hours=9)
-                current_time = now_kst.strftime("%Y-%m-%d %H:%M:%S") # 시트 기록용 (2026-02-12 18:00:20)
-                timestamp_str = now_kst.strftime("%Y%m%d_%H%M%S")    # 파일 이름용 (20260212_180020)
-
-                # 1. 사진 업로드
-                photo_link = "사진 없음"
-                if processed_img_final: # img_file 대신 블러 처리된 변수 사용
-                    filename = f"{selected_facility}_{timestamp_str}.jpg"
-                    # 위에서 정의한 함수 이름으로 호출 (upload_photo_to_drive)
-                    photo_link = upload_photo_to_drive(processed_img_final, filename)
-                
-                # 2. 시트 데이터 준비 및 전송
-                success_count = 0
-                for row in st.session_state.final_data:
-                    # current_time 변수가 이제 한국 시간으로 전달됩니다.
-                    sheet_row = [
-                        current_time,                   # A열: 타임스탬프 (한국 시간)
-                        selected_facility,              # B열: 시설명
-                        selected_dept,                  # C열: 담당 부서
-                        row.get("category"),            # D열: 유해위험요인
-                        row.get("scenario"),            # E열: 위험상황
-                        row.get("grade"),               # F열: 위험등급
-                        row.get("solution"),            # G열: 감소대책
-                        row.get("law"),                  # H열: 관련근거
-                        photo_link                      # I열: 사진 기록
-                    ]
+                    photo_link = "사진 없음"
+                    if processed_img_final:
+                        filename = f"{selected_facility}_{timestamp_str}.jpg"
+                        photo_link = upload_photo_to_drive(processed_img_final, filename)
                     
-                    if append_row_to_sheet(sheet_row):
-                        success_count += 1
-                
-                if success_count > 0:
-                    st.success(f"✅ 데이터 {success_count}건이 KYWA AI 안전센터로 정상 제출되었습니다!")
-                    st.balloons()
-                    # (선택) 전송 후 데이터 초기화가 필요하다면 아래 주석 해제
-                    # st.session_state.final_data = None
-                    # st.session_state.analysis_results = None
-                    # st.rerun()
-                
-            except Exception as e:
-                st.error(f"❌ 전송 중 오류 발생: {e}")
+                    success_count = 0
+                    # st.session_state.final_data(수정본)를 순회하며 전송
+                    for row in st.session_state.final_data:
+                        sheet_row = [
+                            current_time,
+                            selected_facility,
+                            selected_dept,
+                            row.get("category"),
+                            row.get("scenario"), # 수정된 위험상황 반영
+                            row.get("grade"),
+                            row.get("solution"), # 수정된 감소대책 반영
+                            row.get("law"),
+                            photo_link
+                        ]
+                        if append_row_to_sheet(sheet_row):
+                            success_count += 1
+                    
+                    if success_count > 0:
+                        st.success(f"✅ 데이터 {success_count}건이 성공적으로 전송되었습니다!")
+                        st.balloons()
+                except Exception as e:
+                    st.error(f"❌ 전송 중 오류 발생: {e}")
 
-                
-    # 저장 버튼
+    # --- 저장 버튼 영역 (분석 직후 바로 나타나며, 클릭 시 사라짐 방지) ---
+    st.markdown("---")
     dl_col1, dl_col2 = st.columns(2)
-    with dl_col1:
-        st.download_button("📂 Word 저장", data=create_docx(st.session_state.final_data), file_name=f"KYWA_{selected_facility}.docx", use_container_width=True)
-    with dl_col2:
-        st.download_button("📊 Excel 저장", data=create_excel(st.session_state.final_data), file_name=f"KYWA_{selected_facility}.xlsx", use_container_width=True)
+    
+    # 수정된 데이터를 실시간으로 함수에 전달
+    if st.session_state.final_data:
+        with dl_col1:
+            st.download_button(
+                label="📂 Word 저장",
+                data=create_docx(st.session_state.final_data),
+                file_name=f"KYWA_{selected_facility}.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                use_container_width=True,
+                key="btn_word_download" # 클릭 시 사라짐 방지를 위한 고유 키
+            )
+        with dl_col2:
+            st.download_button(
+                label="📊 Excel 저장",
+                data=create_excel(st.session_state.final_data),
+                file_name=f"KYWA_{selected_facility}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="btn_excel_download" # 클릭 시 사라짐 방지를 위한 고유 키
+            )
 
 # --- [수정] 날짜 형식 오류를 해결한 데이터 로드 함수 ---
 def load_dashboard_data():
