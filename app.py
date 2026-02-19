@@ -579,7 +579,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
 if st.session_state.analysis_results:
     st.markdown("### 📋 AI 위험성평가 결과")
     # 안내 문구 수정
-    st.info("💡 **'위험상황'**과 **'감소대책'** 칸을 클릭하여 내용을 직접 수정할 수 있습니다.")
+    st.info("💡 **'위험상황'과 '감소대책'** 칸을 클릭하여 내용을 직접 수정할 수 있습니다.")
 
     # 1. 데이터를 데이터프레임으로 변환
     df = pd.DataFrame(st.session_state.analysis_results)
@@ -617,7 +617,7 @@ if st.session_state.analysis_results:
     st.session_state.analysis_results = edited_df.to_dict('records')
     st.session_state.final_data = st.session_state.analysis_results
 
-    st.success("✅ 검토 및 수정이 완료되었습니다. 아래에서 결과를 저장하거나 다운로드하세요.")
+    st.success("✅ KYWA AI 위험성 분석이 완료되었습니다. 아래 '최종 전송 버튼'을 눌러주세요.")
 
 # --- [3단계] 전송 버튼 로직 (타임스탬프 수정 버전) ---
 st.write("")
