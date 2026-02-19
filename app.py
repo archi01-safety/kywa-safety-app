@@ -759,7 +759,7 @@ if dashboard_data is not None:
         yearly_data = dashboard_data.copy()
 
     if yearly_data.empty:
-        st.warning("📅 2026년도로 기록된 데이터가 시트에 아직 없습니다. 첫 번째 데이터를 전송해 보세요!")
+        st.warning("📅 2026년도 데이터가 아직 없습니다. 데이터를 첫 번째로 전송해 보세요!")
     else:
         st.subheader("📊 실시간 점검 데이터 현황 (2026년)")
         
