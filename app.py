@@ -250,28 +250,37 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# [수정 포인트] 파일의 절대 경로를 계산하여 읽어옵니다.
+# [수정 포인트] 파일의 절대 경로를 계산하여 읽어오되, 실패 시 텍스트로 대체
+local_logo_url = ""
 try:
-    # 현재 실행 중인 app.py의 절대 경로를 찾아 그 옆의 로고 파일을 지정
     current_dir = os.path.dirname(os.path.abspath(__file__))
     logo_path = os.path.join(current_dir, "kywa_logo.png")
     
-    with open(logo_path, "rb") as image_file:
-        encoded_string = base64.b64encode(image_file.read()).decode()
-    local_logo_url = f"data:image/png;base64,{encoded_string}"
-except Exception as e:
-    # 에러 발생 시 로그에 출력 (사용자 화면엔 로고만 안 나옴)
+    if os.path.exists(logo_path):
+        with open(logo_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        local_logo_url = f"data:image/png;base64,{encoded_string}"
+except Exception:
     local_logo_url = ""
 
 header_col1, header_col2 = st.columns([1, 4])
 
 with header_col1:
-    # f-string으로 Base64 데이터를 안전하게 주입
-    st.markdown(f'''
-        <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
-            <img src="{local_logo_url}" width="300" class="logo-img">
-        </a>
-    ''', unsafe_allow_html=True)
+    if local_logo_url:
+        # 로고 이미지가 정상적으로 로드된 경우
+        st.markdown(f'''
+            <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
+                <img src="{local_logo_url}" width="300" class="logo-img">
+            </a>
+        ''', unsafe_allow_html=True)
+    else:
+        # 로고 이미지를 불러오지 못한 경우 (텍스트 링크로 대체)
+        st.markdown('''
+            <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank" 
+               style="text-decoration:none; color:#ff4b4b; font-weight:bold; font-size:24px; display:block; margin-top:10px;">
+               KYWA
+            </a>
+        ''', unsafe_allow_html=True)
 
 with header_col2:
     st.markdown("""
