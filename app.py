@@ -250,14 +250,18 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# 로컬 이미지를 Base64로 인코딩하여 HTML에 직접 주입할 수 있게 변환
+with open("kywa_logo.png", "rb") as image_file:
+    encoded_string = base64.b64encode(image_file.read()).decode()
+local_logo_url = f"data:image/png;base64,{encoded_string}"
+
 header_col1, header_col2 = st.columns([1, 4])
-raw_logo_url = "https://raw.githubusercontent.com/archi01-safety/kywa-safety-app/main/kywa_logo.png"
 
 with header_col1:
     # f-string을 쓰지 않고 직접 삽입하여 중괄호 오류 원천 차단
     st.markdown(f'''
         <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
-            <img src="{raw_logo_url}" width="300" class="logo-img">
+            <img src="{local_logo_url}" width="300" class="logo-img">
         </a>
     ''', unsafe_allow_html=True)
 
@@ -270,6 +274,7 @@ with header_col2:
     """, unsafe_allow_html=True)
 
 st.divider()
+
 
 # --- 5. 입력 섹션 ---
 col1, col2 = st.columns(2)
