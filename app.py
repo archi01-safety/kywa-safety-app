@@ -228,7 +228,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. 스타일 및 헤더 디자인 (오류 방지 중괄호 처리) ---
+# --- 4. 스타일 및 헤더 디자인 (안전 모드) ---
 st.markdown("""
     <style>
     /* 버튼 스타일 */
@@ -250,27 +250,30 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# [수정 포인트] 경로 인식 및 파일 로딩 로직 강화
+# 변수 초기화
 local_logo_url = None
+
+# 경로를 최대한 보수적으로 탐색 (에러 발생 시 앱이 멈추지 않도록 try-except 처리)
 try:
-    # 실행 중인 파일의 절대 경로를 기준으로 파일 탐색
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    logo_file_path = os.path.join(base_path, "kywa_logo.png")
+    # 1. 현재 파일의 위치 파악
+    current_path = os.path.dirname(os.path.abspath(__file__))
+    logo_file = os.path.join(current_path, "kywa_logo.png")
     
-    if os.path.exists(logo_file_path):
-        with open(logo_file_path, "rb") as f:
+    # 2. 파일이 실제로 존재할 때만 읽기 시도
+    if os.path.exists(logo_file):
+        with open(logo_file, "rb") as f:
             data = f.read()
-            # 파일 내용이 비어있지 않은지 확인
             if data:
                 encoded = base64.b64encode(data).decode()
                 local_logo_url = f"data:image/png;base64,{encoded}"
-except Exception:
-    local_logo_url = None
+except Exception as e:
+    # 서버 로그에만 에러를 남기고 앱은 계속 실행됨
+    print(f"Logo loading error: {e}")
 
 header_col1, header_col2 = st.columns([1, 4])
 
 with header_col1:
-    # local_logo_url이 유효한 경우에만 이미지 태그 생성
+    # 이미지가 성공적으로 로드되었을 때만 <img> 태그 사용
     if local_logo_url:
         st.markdown(f'''
             <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
@@ -278,10 +281,10 @@ with header_col1:
             </a>
         ''', unsafe_allow_html=True)
     else:
-        # 이미지 로딩 실패 시 텍스트 링크 노출 (깨진 이미지 방지)
+        # 실패 시 깨진 이미지 아이콘 대신 텍스트 링크 표시 (안전장치)
         st.markdown('''
             <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank" 
-               style="text-decoration:none; color:#ff4b4b; font-weight:bold; font-size:26px; display:block; margin-top:12px;">
+               style="text-decoration:none; color:#ff4b4b; font-weight:bold; font-size:24px; display:block; margin-top:10px;">
                KYWA
             </a>
         ''', unsafe_allow_html=True)
