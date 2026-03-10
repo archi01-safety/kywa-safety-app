@@ -250,34 +250,38 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# [수정 포인트] 파일의 절대 경로를 계산하여 읽어오되, 실패 시 텍스트로 대체
-local_logo_url = ""
+# [수정 포인트] 경로 인식 및 파일 로딩 로직 강화
+local_logo_url = None
 try:
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    logo_path = os.path.join(current_dir, "kywa_logo.png")
+    # 실행 중인 파일의 절대 경로를 기준으로 파일 탐색
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    logo_file_path = os.path.join(base_path, "kywa_logo.png")
     
-    if os.path.exists(logo_path):
-        with open(logo_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode()
-        local_logo_url = f"data:image/png;base64,{encoded_string}"
+    if os.path.exists(logo_file_path):
+        with open(logo_file_path, "rb") as f:
+            data = f.read()
+            # 파일 내용이 비어있지 않은지 확인
+            if data:
+                encoded = base64.b64encode(data).decode()
+                local_logo_url = f"data:image/png;base64,{encoded}"
 except Exception:
-    local_logo_url = ""
+    local_logo_url = None
 
 header_col1, header_col2 = st.columns([1, 4])
 
 with header_col1:
+    # local_logo_url이 유효한 경우에만 이미지 태그 생성
     if local_logo_url:
-        # 로고 이미지가 정상적으로 로드된 경우
         st.markdown(f'''
             <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
                 <img src="{local_logo_url}" width="300" class="logo-img">
             </a>
         ''', unsafe_allow_html=True)
     else:
-        # 로고 이미지를 불러오지 못한 경우 (텍스트 링크로 대체)
+        # 이미지 로딩 실패 시 텍스트 링크 노출 (깨진 이미지 방지)
         st.markdown('''
             <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank" 
-               style="text-decoration:none; color:#ff4b4b; font-weight:bold; font-size:24px; display:block; margin-top:10px;">
+               style="text-decoration:none; color:#ff4b4b; font-weight:bold; font-size:26px; display:block; margin-top:12px;">
                KYWA
             </a>
         ''', unsafe_allow_html=True)
