@@ -5,6 +5,7 @@ google-generativeai
 python-docx
 xlsxwriter
 openpyxl
-opencv-python-headless==4.10.0.84
+opencv-python-headless
 mediapipe
 streamlit-webrtc
+
