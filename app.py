@@ -250,19 +250,23 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# [수정된 부분] 절대 경로를 사용하여 파일 읽기
+# [수정 포인트] 파일의 절대 경로를 계산하여 읽어옵니다.
 try:
-    logo_path = os.path.join(os.path.dirname(__file__), "kywa_logo.png")
+    # 현재 실행 중인 app.py의 절대 경로를 찾아 그 옆의 로고 파일을 지정
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    logo_path = os.path.join(current_dir, "kywa_logo.png")
+    
     with open(logo_path, "rb") as image_file:
         encoded_string = base64.b64encode(image_file.read()).decode()
     local_logo_url = f"data:image/png;base64,{encoded_string}"
-except Exception:
-    local_logo_url = "" # 파일 로드 실패 시 빈 값 처리
+except Exception as e:
+    # 에러 발생 시 로그에 출력 (사용자 화면엔 로고만 안 나옴)
+    local_logo_url = ""
 
 header_col1, header_col2 = st.columns([1, 4])
 
 with header_col1:
-    # f-string을 사용하여 Base64 데이터를 HTML에 주입
+    # f-string으로 Base64 데이터를 안전하게 주입
     st.markdown(f'''
         <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
             <img src="{local_logo_url}" width="300" class="logo-img">
