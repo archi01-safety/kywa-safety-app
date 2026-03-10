@@ -5,6 +5,6 @@ google-generativeai
 python-docx
 xlsxwriter
 openpyxl
-mediapipe
 opencv-python-headless
+mediapipe
 streamlit-webrtc
