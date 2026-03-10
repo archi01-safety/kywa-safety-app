@@ -250,15 +250,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 로컬 이미지를 Base64로 인코딩하여 HTML에 직접 주입할 수 있게 변환
-with open("kywa_logo.png", "rb") as image_file:
-    encoded_string = base64.b64encode(image_file.read()).decode()
-local_logo_url = f"data:image/png;base64,{encoded_string}"
+# [수정된 부분] 절대 경로를 사용하여 파일 읽기
+try:
+    logo_path = os.path.join(os.path.dirname(__file__), "kywa_logo.png")
+    with open(logo_path, "rb") as image_file:
+        encoded_string = base64.b64encode(image_file.read()).decode()
+    local_logo_url = f"data:image/png;base64,{encoded_string}"
+except Exception:
+    local_logo_url = "" # 파일 로드 실패 시 빈 값 처리
 
 header_col1, header_col2 = st.columns([1, 4])
 
 with header_col1:
-    # f-string을 쓰지 않고 직접 삽입하여 중괄호 오류 원천 차단
+    # f-string을 사용하여 Base64 데이터를 HTML에 주입
     st.markdown(f'''
         <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
             <img src="{local_logo_url}" width="300" class="logo-img">
@@ -274,7 +278,6 @@ with header_col2:
     """, unsafe_allow_html=True)
 
 st.divider()
-
 
 # --- 5. 입력 섹션 ---
 col1, col2 = st.columns(2)
