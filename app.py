@@ -751,6 +751,7 @@ if dashboard_data is not None:
 
         # 2. 설비/전기/작업 (기술적/물리적 요인 - 노란색/갈색 계열)
             "작업 안전": "#FFA000",      # 호박색 (주의/작업)
+            "작업 특성": "#E64A19",      # 진한 주황 (인적 요인/작업 강도)
             "기계(설비)적 요인": "#795548", # 갈색 (기계/금속)
             "전기적 요인": "#FBC02D",    # 노란색 (전기/번개)
 
@@ -882,5 +883,6 @@ with footer_cols[1]:
 
 # 최하단 한 줄 강조
 st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
+
 
 
