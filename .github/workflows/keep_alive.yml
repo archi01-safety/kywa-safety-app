@@ -1,0 +1,12 @@
+name: Streamlit Keep Alive
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'  # 3시간마다 실행
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit App
+        run: curl -I https://kywa-safety-check.streamlit.app/
