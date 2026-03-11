@@ -94,17 +94,26 @@ else:
 # [수정 2] 파라미터 이름을 unsafe_allow_html=True 로 변경
 st.markdown("""
     <style>
-    /* 모든 텍스트가 현재 테마의 글자색을 따르도록 설정 */
+    /* 1. 상단 헤더 메뉴 및 푸터 제거 (추가됨) */
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    
+    /* 2. 상단 여백 조절 (추가됨) */
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 0rem;
+    }
+
+    /* 기존 코드 내용 유지 */
     html, body, [data-testid="stWidgetLabel"] p {
         color: var(--text-color);
     }
     
-    /* 모바일 환경에서 표(Table)나 컨테이너의 가독성 향상 */
     .stDataFrame {
         width: 100% !important;
     }
     
-    /* 이미지나 아이콘이 다크모드에서 너무 눈부시지 않게 살짝 조절 */
     img {
         max-width: 100%;
         filter: brightness(var(--image-brightness, 1));
