@@ -101,7 +101,7 @@ st.markdown("""
     
     /* 2. 상단 여백 조절 (추가됨) */
     .block-container {
-        padding-top: 2rem;
+        padding-top: 0rem;
         padding-bottom: 0rem;
     }
 
