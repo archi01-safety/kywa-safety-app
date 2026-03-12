@@ -2,11 +2,15 @@ name: Streamlit Keep Alive
 
 on:
   schedule:
-    - cron: '0 */3 * * *'  # 3시간마다 실행
+    # 3시간마다 실행 (유지)
+    - cron: '0 */3 * * *'
+  # (선택사항) 수동으로도 테스트해볼 수 있게 버튼을 활성화합니다.
+  workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
       - name: Ping Streamlit App
-        run: curl -I https://kywa-safety-check.streamlit.app/
+        run: |
+          curl -L -f -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" https://kywa-safety-check.streamlit.app/
