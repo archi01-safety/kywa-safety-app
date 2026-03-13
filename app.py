@@ -594,9 +594,13 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
                         response = client.models.generate_content(
                             model=model_name,
                             contents=content,
+
                             config={
-                                "response_mime_type": "application/json",
-                                "temperature": 0.0
+ 
+                               "response_mime_type": "application/json", # ✅ 반드시 언더바(_) 형식을 사용하세요!
+ 
+                               "temperature": 0.0
+
                             }
                         )
                         break  # 성공하면 반복문 탈출!
