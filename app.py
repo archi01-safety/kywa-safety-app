@@ -134,12 +134,19 @@ if "analysis_results" not in st.session_state:
 if "final_data" not in st.session_state:
     st.session_state.final_data = None
 
-# 3. 모델 설정 (Secrets에서 키를 안전하게 가져옴)
+# 3. 모델 및 클라이언트 설정 (최신 google-genai 방식)
 try:
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets["GEMINI_API_KEY"]
-        genai.configure(api_key=api_key, transport='rest')
-        model = genai.GenerativeModel('gemini-flash-latest')
+        
+        # 클라이언트 객체 생성 (기존 genai.configure 대체)
+        # 2026년 기준, 별도의 transport 설정 없이도 최적화된 통신을 지원합니다.
+        client = genai.Client(api_key=api_key)
+        
+        # 모델 이름 정의 (2026년 표준인 gemini-2.0-flash 권장, gemini-flash-latest 사용중임)
+        # 만약 기존 모델을 유지하고 싶다면 'gemini-1.5-flash' 등을 입력하세요.
+        model_name = "gemini-flash-latest" 
+        
     else:
         st.error("Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
         st.stop()
@@ -609,28 +616,43 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
                 if processed_img_final:
                     content.append(Image.open(processed_img_final))
 
-                # [핵심 수정] 재시도 로직 추가 (API 한도 초과 방지)
+# [핵심 수정] 재시도 로직 및 최신 라이브러리(google-genai) 적용
                 import time
                 response = None
                 max_retries = 3  # 최대 3번까지 재시도
 
                 for attempt in range(max_retries):
                     try:
-                        # 모델 호출
-                        response = model.generate_content(content, generation_config={"response_mime_type": "application/json", "temperature": 0.0})
+                        # 모델 호출: 최신 client.models.generate_content 방식
+                        # model_name은 위 설정에서 정의한 "gemini-2.0-flash" 사용
+                        response = client.models.generate_content(
+                            model=model_name,
+                            contents=content,
+                            config={
+                                "response_mime_type": "application/json",
+                                "temperature": 0.0
+                            }
+                        )
                         break  # 성공하면 반복문 탈출!
+                        
                     except Exception as e:
-                        # 429 에러(Quota)나 과부하 에러가 났을 때만 재시도
-                        if "429" in str(e) or "quota" in str(e).lower() or "503" in str(e):
+                        # 에러 메시지를 소문자로 변환하여 체크
+                        error_msg = str(e).lower()
+                        # 429(Quota), 503(Overloaded), Resource Exhausted 에러 발생 시 재시도
+                        if "429" in error_msg or "quota" in error_msg or "503" in error_msg or "resource_exhausted" in error_msg:
                             if attempt < max_retries - 1:
-                                time.sleep(2 * (attempt + 1))  # 2초, 4초... 점차 길게 대기
+                                wait_time = 2 * (attempt + 1)
+                                time.sleep(wait_time)  # 2초, 4초... 점차 길게 대기
                                 st.toast(f"⏳ 사용량 조절 중... 재시도 {attempt+1}/{max_retries}")
                                 continue
                             else:
-                                st.error("🚨 현재 AI 이용량이 많아 분석이 어렵습니다. 5분 뒤에 다시 시도해주세요.")
+                                st.error("🚨 현재 AI 이용량이 많아 분석이 어렵습니다. 잠시 후 다시 시도해주세요.")
                                 st.stop() # 코드 실행 중단
                         else:
-                            raise e # 다른 에러(코드 오류 등)는 바로 띄움
+                            # 다른 에러(코드 오류 등)는 바로 보고하고 중단
+                            st.error(f"❌ 분석 중 오류가 발생했습니다: {e}")
+                            st.stop()
+
 
                 # 결과 처리 (성공했을 때만 실행)
                 if response:
