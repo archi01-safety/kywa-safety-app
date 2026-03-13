@@ -24,6 +24,103 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
 
 
+def apply_face_blur(img_file):
+    """
+    Gemini API를 사용하여 얼굴 좌표를 탐지하고, 
+    OpenCV로 정교한 원형 블러를 적용하는 스마트 비식별화 함수
+    """
+    try:
+        # 1. 이미지 로드
+        img_file.seek(0)
+        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        if image is None: return img_file.getvalue()
+        
+        h, w, _ = image.shape
+
+        # 2. Gemini API를 이용한 얼굴 좌표 추출 (유료 API 활용)
+        # 이미지 데이터를 Gemini가 읽을 수 있는 형식으로 변환
+        img_file.seek(0)
+        pil_img = Image.open(img_file)
+        
+        # [PROMPT] 얼굴 좌표만 정확히 요청
+        prompt = """
+        이미지에서 모든 사람의 얼굴(머리 부분 전체) 위치를 찾아서 
+        [ymin, xmin, ymax, xmax] 좌표 리스트로 응답해줘. 
+        JSON 형식으로만 답해줘. 예: {"faces": [[100, 200, 300, 400]]}
+        """
+        
+        # Gemini 호출 (최신 라이브러리 방식)
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[prompt, pil_img],
+            config=genai.types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
+        
+        # 3. 좌표 데이터 파싱
+        try:
+            face_data = json.loads(response.text)
+            faces = face_data.get("faces", [])
+        except:
+            faces = [] # 실패 시 빈 리스트
+
+        # 4. 탐지된 좌표에 블러 적용
+        if not faces:
+            # 만약 Gemini가 못 찾았을 경우를 대비한 최소한의 수동 영역 (필요시)
+            return img_file.getvalue()
+
+        for box in faces:
+            # Gemini 좌표는 보통 0~1000 사이의 상대값으로 옵니다.
+            ymin, xmin, ymax, xmax = box
+            
+            # 절대 좌표 계산
+            left = int(xmin * w / 1000)
+            top = int(ymin * h / 1000)
+            right = int(xmax * w / 1000)
+            bottom = int(ymax * h / 1000)
+            
+            rw_final = right - left
+            rh_final = bottom - top
+            
+            if rw_final > 0 and rh_final > 0:
+                # 얼굴 영역 ROI 추출
+                face_roi = image[top:bottom, left:right]
+                
+                # 원형 마스크 생성
+                mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
+                center = (rw_final // 2, rh_final // 2)
+                radius = min(rw_final, rh_final) // 2
+                cv2.circle(mask, center, radius, (255), -1)
+
+                # 강력한 가우시안 블러 (2회 중첩)
+                level = max(rw_final, rh_final) // 2
+                if level % 2 == 0: level += 1
+                blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
+                blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
+
+                # 마스크 합성 및 원본 적용
+                mask_3ch = cv2.merge([mask, mask, mask])
+                combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
+                image[top:bottom, left:right] = combined_roi
+
+        # 5. 결과 인코딩 및 반환
+        _, buffer = cv2.imencode('.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 90])
+        return buffer.tobytes()
+
+def apply_face_blur(img_file):
+    try:
+        # (함수 내용들...)
+        return buffer.tobytes()
+    except Exception as e:
+        st.error(f"비식별화 프로세스 오류: {e}")
+        return img_file.getvalue()
+
+# 그 다음 세션 초기화가 옵니다.
+if "processed_img_data" not in st.session_state:
+    st.session_state.processed_img_data = None
+
 # --- [1단계] 구글 드라이브/시트 설정 (PEM 로드 집중 수정 버전) ---
 DRIVE_FOLDER_ID = "1K4hIEsAfX9iGsk9NX_4-4Z9bGXLNVzKC"
 SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q"
@@ -458,92 +555,6 @@ with col2:
             label_visibility="collapsed",
             key="integrated_photo_upload"
         )
-
-
-def apply_face_blur(img_file):
-    """
-    Gemini API를 사용하여 얼굴 좌표를 탐지하고, 
-    OpenCV로 정교한 원형 블러를 적용하는 스마트 비식별화 함수
-    """
-    try:
-        # 1. 이미지 로드
-        img_file.seek(0)
-        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        if image is None: return img_file.getvalue()
-        
-        h, w, _ = image.shape
-
-        # 2. Gemini API를 이용한 얼굴 좌표 추출 (유료 API 활용)
-        # 이미지 데이터를 Gemini가 읽을 수 있는 형식으로 변환
-        img_file.seek(0)
-        pil_img = Image.open(img_file)
-        
-        # [PROMPT] 얼굴 좌표만 정확히 요청
-        prompt = """
-        이미지에서 모든 사람의 얼굴(머리 부분 전체) 위치를 찾아서 
-        [ymin, xmin, ymax, xmax] 좌표 리스트로 응답해줘. 
-        JSON 형식으로만 답해줘. 예: {"faces": [[100, 200, 300, 400]]}
-        """
-        
-        # Gemini 호출 (최신 라이브러리 방식)
-        response = client.models.generate_content(
-            model=model_name,
-            contents=[prompt, pil_img],
-            config=genai.types.GenerateContentConfig(
-                response_mime_type="application/json"
-            )
-        )
-        
-        # 3. 좌표 데이터 파싱
-        try:
-            face_data = json.loads(response.text)
-            faces = face_data.get("faces", [])
-        except:
-            faces = [] # 실패 시 빈 리스트
-
-        # 4. 탐지된 좌표에 블러 적용
-        if not faces:
-            # 만약 Gemini가 못 찾았을 경우를 대비한 최소한의 수동 영역 (필요시)
-            return img_file.getvalue()
-
-        for box in faces:
-            # Gemini 좌표는 보통 0~1000 사이의 상대값으로 옵니다.
-            ymin, xmin, ymax, xmax = box
-            
-            # 절대 좌표 계산
-            left = int(xmin * w / 1000)
-            top = int(ymin * h / 1000)
-            right = int(xmax * w / 1000)
-            bottom = int(ymax * h / 1000)
-            
-            rw_final = right - left
-            rh_final = bottom - top
-            
-            if rw_final > 0 and rh_final > 0:
-                # 얼굴 영역 ROI 추출
-                face_roi = image[top:bottom, left:right]
-                
-                # 원형 마스크 생성
-                mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
-                center = (rw_final // 2, rh_final // 2)
-                radius = min(rw_final, rh_final) // 2
-                cv2.circle(mask, center, radius, (255), -1)
-
-                # 강력한 가우시안 블러 (2회 중첩)
-                level = max(rw_final, rh_final) // 2
-                if level % 2 == 0: level += 1
-                blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
-                blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
-
-                # 마스크 합성 및 원본 적용
-                mask_3ch = cv2.merge([mask, mask, mask])
-                combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
-                image[top:bottom, left:right] = combined_roi
-
-        # 5. 결과 인코딩 및 반환
-        _, buffer = cv2.imencode('.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 90])
-        return buffer.tobytes()
 
     except Exception as e:
         # 오류 발생 시 원본 반환하여 시스템 중단 방지
