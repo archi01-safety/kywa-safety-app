@@ -14,7 +14,7 @@ import base64
 import codecs
 import pandas as pd
 import numpy as np
-import cv2  # 비식별화의 핵심
+import cv2
 import plotly.express as px
 from PIL import Image
 from docx import Document
