@@ -145,7 +145,7 @@ try:
         
         # 모델 이름 정의 (2026년 표준인 gemini-2.0-flash 권장, gemini-flash-latest 사용중임)
         # 만약 기존 모델을 유지하고 싶다면 'gemini-1.5-flash' 등을 입력하세요.
-        model_name = "gemini-flash-latest" 
+        model_name = "gemini-1.5-flash" 
         
     else:
         st.error("Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
