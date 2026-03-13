@@ -1,10 +1,11 @@
 streamlit
 pandas
 plotly
-google-generativeai
+google-genai
 python-docx
 xlsxwriter
 openpyxl
 opencv-python-headless
 mediapipe
 streamlit-webrtc
+
