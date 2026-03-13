@@ -589,18 +589,13 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
 
                 for attempt in range(max_retries):
                     try:
-                        # 모델 호출: 최신 client.models.generate_content 방식
-                        # model_name은 위 설정에서 정의한 "gemini-2.0-flash" 사용
                         response = client.models.generate_content(
                             model=model_name,
                             contents=content,
-
+                            # config 부분을 변수 없이 직접 입력하여 오타를 방지합니다.
                             config={
- 
-                               "response_mime_type": "application/json", # ✅ 반드시 언더바(_) 형식을 사용하세요!
- 
-                               "temperature": 0.0
-
+                                "response_mime_type": "application/json", # ✅ 반드시 이 형식이어야 합니다.
+                                "temperature": 0.0
                             }
                         )
                         break  # 성공하면 반복문 탈출!
