@@ -414,27 +414,38 @@ def apply_face_blur(img_file):
     import cv2
     import numpy as np
     import json
-    # 최신 라이브러리에서 사용하는 타입 임포트 (함수 내부에서 수행)
     from google.genai import types 
     
     try:
-        # 1. 이미지 읽기
+        # 1. 이미지 읽기 및 초기 리사이징 (속도 향상의 핵심)
         img_file.seek(0)
-        img_bytes = img_file.read()
+        file_bytes_np = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes_np, cv2.IMREAD_COLOR)
+        if image is None: return img_file.getvalue()
         
-        # 2. Gemini에게 보낼 프롬프트
+        # [품질/속도 최적화] 웹용으로 적절한 최대 크기(1280px) 설정
+        h, w = image.shape[:2]
+        max_size = 1280
+        if max(h, w) > max_size:
+            scale = max_size / max(h, w)
+            image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+            h, w = image.shape[:2] # 리사이즈된 크기로 갱신
+
+        # 2. Gemini 전송을 위한 가벼운 JPEG 변환
+        _, img_encoded = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+        img_payload = img_encoded.tobytes()
+        
+        # 3. Gemini에게 머리 좌표 요청 (Object Detection)
         detect_prompt = """
         사진 속 모든 사람의 '머리(두부)' 영역을 찾아 JSON으로 출력해.
-        {"heads": [{"box_2d": [ymin, xmin, ymax, xmax]}]}
-        좌표는 0~1000 사이 값으로 줘.
+        - 안전모, 모자, 마스크를 쓴 사람도 포함.
+        - 결과는 반드시 이 형식만 준수: {"heads": [{"box_2d": [ymin, xmin, ymax, xmax]}]}
         """
         
-        # 🚨 [수정 포인트] 최신 google-genai는 바이너리 데이터를 
-        # types.Part.from_bytes를 사용해서 포장해야 합니다.
         response = client.models.generate_content(
             model=model_name,
             contents=[
-                types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
+                types.Part.from_bytes(data=img_payload, mime_type="image/jpeg"),
                 detect_prompt
             ],
             config={
@@ -443,61 +454,49 @@ def apply_face_blur(img_file):
             }
         )
         
-        # 3. OpenCV로 원본 이미지 열기
-        file_bytes_np = np.asarray(bytearray(img_bytes), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes_np, cv2.IMREAD_COLOR)
-        if image is None: return img_file.getvalue()
-        h, w, _ = image.shape
-
-        # 4. JSON에서 좌표 꺼내기
-        res_data = json.loads(response.text.strip())
+        # 4. JSON 좌표 파싱 및 블러 처리
+        # 마크다운 태그 제거 로직 포함 (더 안전하게)
+        clean_text = response.text.replace("```json", "").replace("```", "").strip()
+        res_data = json.loads(clean_text)
         heads = res_data.get("heads", [])
         
-        # 5. 찾은 좌표에 사용자님의 '원형 블러' 로직 적용
         for head in heads:
             box = head.get("box_2d")
             if not box or len(box) != 4: continue
             
-            # Gemini 좌표(0~1000)를 실제 픽셀(w, h)로 변환
-            ymin, xmin, ymax, xmax = box
-            y1 = int((ymin / 1000) * h)
-            x1 = int((xmin / 1000) * w)
-            y2 = int((ymax / 1000) * h)
-            x2 = int((xmax / 1000) * w)
+            # Gemini 상대 좌표(0~1000) -> 픽셀 좌표 변환
+            y1, x1 = int(box[0] * h / 1000), int(box[1] * w / 1000)
+            y2, x2 = int(box[2] * h / 1000), int(box[3] * w / 1000)
             
             rw, rh = x2 - x1, y2 - y1
             
-            # 하단 10% 제외 로직 (사용자님 기존 로직 유지)
+            # 하단 10% 제외 (사용자님 로직)
             if y1 + (rh / 2) > h * 0.9: continue
             
-            # 패딩(20% 확장) 로직
-            pad_w = int(rw * 0.2)
-            pad_h = int(rh * 0.2)
-            x_final = max(0, x1 - pad_w)
-            y_final = max(0, y1 - pad_h)
-            rw_final = min(w - x_final, rw + (pad_w * 2))
-            rh_final = min(h - y_final, rh + (pad_h * 2))
+            # 패딩(20% 확장)
+            pad_w, pad_h = int(rw * 0.2), int(rh * 0.2)
+            xf, yf = max(0, x1 - pad_w), max(0, y1 - pad_h)
+            wf, hf = min(w - xf, rw + (pad_w * 2)), min(h - yf, rh + (pad_h * 2))
             
-            # 원형 블러 처리 로직 (사용자님 기존 로직 완벽 이식)
-            if rw_final > 0 and rh_final > 0:
-                face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
-                mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
-                center = (rw_final // 2, rh_final // 2)
-                radius = min(rw_final, rh_final) // 2
-                cv2.circle(mask, center, radius, (255), -1)
+            # 5. 사용자님 표 '원형 블러' 이식
+            if wf > 0 and hf > 0:
+                roi = image[yf:yf+hf, xf:xf+wf]
+                mask = np.zeros((hf, wf), dtype=np.uint8)
+                cv2.circle(mask, (wf // 2, hf // 2), min(wf, hf) // 2, (255), -1)
                 
-                level = max(rw_final, rh_final) // 2 
-                if level % 2 == 0: level += 1
-                blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
-                blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
+                # 가우시안 블러 (2중 중첩으로 강력하게)
+                ksize = max(wf, hf) // 2
+                if ksize % 2 == 0: ksize += 1
+                blur = cv2.GaussianBlur(roi, (ksize, ksize), 0)
+                blur = cv2.GaussianBlur(blur, (ksize, ksize), 0)
                 
+                # 마스크 합성
                 mask_3ch = cv2.merge([mask, mask, mask])
-                combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
-                image[y_final:y_final+rh_final, x_final:x_final+rw_final] = combined_roi
+                image[yf:yf+hf, xf:xf+wf] = np.where(mask_3ch == 255, blur, roi)
 
-        # 6. 결과 반환
-        _, buffer = cv2.imencode('.jpg', image)
-        return buffer.tobytes()
+        # 6. 최종 결과 반환
+        _, final_buffer = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+        return final_buffer.tobytes()
 
     except Exception as e:
         st.error(f"비식별화 프로세스 오류: {e}")
