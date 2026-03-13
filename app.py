@@ -351,46 +351,60 @@ with col2:
         label_visibility="collapsed"
     )
 
-    # 분석에 사용할 최종 이미지 객체를 담을 변수 초기화
+    # 분석에 사용할 최종 이미지 객체 초기화
     processed_img_final = None
 
-    # [B] 사진 촬영/업로드 로직
+    # [B] 사진 촬영/업로드 로직 (에러 발생 지점 수정)
     if "📸" in source_option:
         st.info("📸 아래 박스를 클릭하면 [사진촬영] 또는 [사진업로드] 선택이 가능합니다.")
         
-        # 업로더 CSS (사용자님의 기존 CSS 그대로 적용)
-        st.markdown("""<style>...</style>""", unsafe_allow_html=True) # (기존 CSS 코드 생략)
+        # 업로더 전용 CSS (중복 정의 방지를 위해 한 번만 선언)
+        st.markdown("""
+            <style>
+                section[data-testid="stFileUploadDropzone"] div div span,
+                section[data-testid="stFileUploadDropzone"] small,
+                section[data-testid="stFileUploadDropzone"] button { display: none !important; }
+                section[data-testid="stFileUploadDropzone"]::before {
+                    content: "📸 사진 촬영 또는 선택하기";
+                    display: block !important;
+                    margin: 10px auto !important;
+                    padding: 10px 20px !important;
+                    background-color: #ff4b4b !important;
+                    color: white !important;
+                    border-radius: 8px !important;
+                    font-weight: bold !important;
+                    text-align: center !important;
+                    width: fit-content !important;
+                }
+            </style>
+        """, unsafe_allow_html=True)
 
         img_file = st.file_uploader(
             "사진 업로드 전용", 
             type=['png', 'jpg', 'jpeg'], 
             label_visibility="collapsed",
-            key="integrated_photo_upload"
+            key="integrated_photo_upload" # 이 키는 앱 전체에서 단 하나여야 합니다.
         )
 
         if img_file:
-            # 파일이 새로 올라왔거나 이름이 바뀐 경우에만 비식별화 딱 1번 실행
+            # 파일이 새로 올라온 경우에만 비식별화 실행
             if st.session_state.last_uploaded_file_name != img_file.name:
                 with st.spinner("🔒 [보안] 개인정보 비식별화 처리 중..."):
+                    # 새로 작성한 Gemini 기반 함수 호출
                     processed_bytes = apply_face_blur(img_file)
                     st.session_state.processed_img_data = processed_bytes
                     st.session_state.last_uploaded_file_name = img_file.name
             
-            # 처리된 결과 화면에 표시 (시설명을 바꿔도 여기서 이미지를 가져오므로 재실행 안 됨)
-            st.image(st.session_state.processed_img_data, caption="비식별 처리가 완료된 이미지")
-            
-            # [C] 최종 분석용 객체 생성 (분석 버튼 클릭 시 사용됨)
-            processed_img_final = io.BytesIO(st.session_state.processed_img_data)
-            processed_img_final.name = img_file.name
+            # 화면 표시
+            if st.session_state.processed_img_data:
+                st.image(st.session_state.processed_img_data, caption="비식별 처리가 완료된 이미지")
+                processed_img_final = io.BytesIO(st.session_state.processed_img_data)
+                processed_img_final.name = img_file.name
     else:
-        # '없음' 선택 시 세션 데이터 초기화
+        # '없음' 선택 시 세션 초기화
         st.session_state.processed_img_data = None
         st.session_state.last_uploaded_file_name = None
 
-    # [3] 조건문 실행
-    if "📸" in source_option:
-        st.info("📸 아래 박스를 클릭하면 [사진촬영] 또는 [사진업로드] 선택이 가능합니다.")
-        
        
 # 2. 업로더 한글화 CSS (보강된 버전)
         st.markdown("""
