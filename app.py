@@ -766,7 +766,7 @@ def load_dashboard_data():
             df['타임스탬프'] = df['타임스탬프'].str.replace('오전', 'AM').str.replace('오후', 'PM')
             
             # 2. 날짜 형식으로 변환 (format을 지정하지 않아도 치환 후에는 잘 작동합니다)
-            df['타임스탬프'] = pd.to_datetime(df['타임스탬프'], errors='coerce')
+            df['타임스탬프'] = pd.to_datetime(df['타임스탬프'], format='mixed', errors='coerce')
             
             # 3. 변환 실패한 데이터(NaT) 제거 (선택 사항)
             df = df.dropna(subset=['타임스탬프'])
