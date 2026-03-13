@@ -508,7 +508,7 @@ def apply_face_blur(img_file):
 processed_img_final = None  # 처리된 이미지를 담을 변수
 
 if img_file:
-    with st.spinner("🔒 개인정보 비식별화 처리 중..."):
+    with st.spinner("🔒 개인정보 비식별화 처리 중... 사람이 사진에 포함 된 경우 얼굴부분을 비식별화 처리합니다. 시간이 다소 소요될 수 있습니다."):
         # 원본 대신 블러 처리된 이미지 생성
         processed_img_bytes = apply_face_blur(img_file)
         # Bytes 데이터를 파일 객체처럼 변환 (io.BytesIO 사용)
