@@ -18,7 +18,8 @@ import cv2
 import plotly.express as px
 from PIL import Image
 from docx import Document
-import google.generativeai as genai
+import google.genai as genai  # 최신 라이브러리로 교체
+from PIL import Image, ImageFilter # 새로 넣음
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
