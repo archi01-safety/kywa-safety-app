@@ -454,7 +454,7 @@ def apply_face_blur(img_file):
                 
         except Exception as ai_err:
             # 3. [전략 B] AI 실패(쿼터 초과 등) 시 로컬 OpenCV 전환
-            st.warning("⚠️ AI 사용량 초과 혹은 오류로 로컬 엔진을 사용합니다.")
+            st.warning("⚠️ AI 비식별화 사용량 초과로 로컬 엔진을 사용하여 비식별화를 진행합니다.")
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             detected_faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(30, 30))
