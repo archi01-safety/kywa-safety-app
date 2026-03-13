@@ -317,6 +317,12 @@ with header_col2:
 st.divider()
 
 # --- 5. 입력 섹션 ---
+# [A] 세션 초기화 (파일이 바뀌었는지 감지하기 위함)
+if "processed_img_data" not in st.session_state:
+    st.session_state.processed_img_data = None
+if "last_uploaded_file_name" not in st.session_state:
+    st.session_state.last_uploaded_file_name = None
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -332,8 +338,6 @@ with col1:
 
 with col2:
     st.markdown("### **📸 사진 기록 방식**")
-    
-    # [1] 안내 문구
     st.markdown("""
         • **사진 방식 선택** <div style="font-size: 0.85rem; color: #808080; line-height: 1.5; margin-top: 5px;">
             🚫 얼굴(정면)을 업로드 하지 않도록 주의<br>
@@ -341,15 +345,48 @@ with col2:
         </div>
         """, unsafe_allow_html=True)
 
-    # [2] 변수 정의 (이 줄이 반드시 if문보다 위에 있어야 합니다)
     source_option = st.radio(
-        label="사진 방식 선택 레이블(숨김)", 
+        label="사진 방식 선택", 
         options=("📸 사진", "🚫 없음"), 
         horizontal=True,
         label_visibility="collapsed"
     )
 
-    img_file = None
+    # 분석에 사용할 최종 이미지 객체를 담을 변수 초기화
+    processed_img_final = None
+
+    # [B] 사진 촬영/업로드 로직
+    if "📸" in source_option:
+        st.info("📸 아래 박스를 클릭하면 [사진촬영] 또는 [사진업로드] 선택이 가능합니다.")
+        
+        # 업로더 CSS (사용자님의 기존 CSS 그대로 적용)
+        st.markdown("""<style>...</style>""", unsafe_allow_html=True) # (기존 CSS 코드 생략)
+
+        img_file = st.file_uploader(
+            "사진 업로드 전용", 
+            type=['png', 'jpg', 'jpeg'], 
+            label_visibility="collapsed",
+            key="integrated_photo_upload"
+        )
+
+        if img_file:
+            # 파일이 새로 올라왔거나 이름이 바뀐 경우에만 비식별화 딱 1번 실행
+            if st.session_state.last_uploaded_file_name != img_file.name:
+                with st.spinner("🔒 [보안] 개인정보 비식별화 처리 중..."):
+                    processed_bytes = apply_face_blur(img_file)
+                    st.session_state.processed_img_data = processed_bytes
+                    st.session_state.last_uploaded_file_name = img_file.name
+            
+            # 처리된 결과 화면에 표시 (시설명을 바꿔도 여기서 이미지를 가져오므로 재실행 안 됨)
+            st.image(st.session_state.processed_img_data, caption="비식별 처리가 완료된 이미지")
+            
+            # [C] 최종 분석용 객체 생성 (분석 버튼 클릭 시 사용됨)
+            processed_img_final = io.BytesIO(st.session_state.processed_img_data)
+            processed_img_final.name = img_file.name
+    else:
+        # '없음' 선택 시 세션 데이터 초기화
+        st.session_state.processed_img_data = None
+        st.session_state.last_uploaded_file_name = None
 
     # [3] 조건문 실행
     if "📸" in source_option:
