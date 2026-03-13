@@ -137,22 +137,31 @@ if "final_data" not in st.session_state:
 # 3. 모델 및 클라이언트 설정 (최신 google-genai 방식)
 try:
     if "GEMINI_API_KEY" in st.secrets:
-        api_key = st.secrets["GEMINI_API_KEY"]
+        api_key = st.secrets.get("GEMINI_API_KEY")
         
-        # 클라이언트 객체 생성 (기존 genai.configure 대체)
-        # 2026년 기준, 별도의 transport 설정 없이도 최적화된 통신을 지원합니다.
+        # 클라이언트 객체 생성 (최신 SDK 방식)
+        # 2026년 표준: 별도 경로 없이 api_key만 전달
+        from google import genai
         client = genai.Client(api_key=api_key)
         
-        # 모델 이름 정의 (2026년 표준인 gemini-2.0-flash 권장, gemini-flash-latest 사용중임)
-        # 만약 기존 모델을 유지하고 싶다면 'gemini-1.5-flash' 등을 입력하세요.
+        # [핵심 수정] 모델 이름 정의
+        # 404 에러 방지를 위해 가장 표준적인 ID인 'gemini-1.5-flash'를 사용합니다.
+        # gemini-flash-latest 를 사용할때는 정상적으로 작동하였으나 할당량 제한이 있음.
+        # 만약 이 이름으로도 404가 난다면 'gemini-1.5-flash-002'를 시도해 보세요.
         model_name = "gemini-1.5-flash" 
         
     else:
-        st.error("Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
+        st.error("🔑 Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다. 설정 후 다시 실행해 주세요.")
         st.stop()
 except Exception as e:
-    st.error(f"API 설정 오류가 발생했습니다: {e}")
+    # 404 에러가 발생할 경우를 대비한 친절한 안내 추가
+    if "404" in str(e):
+        st.error(f"❌ 모델을 찾을 수 없습니다('{model_name}'). 모델 ID를 다시 확인해 주세요.")
+    else:
+        st.error(f"⚠️ API 설정 중 오류가 발생했습니다: {e}")
     st.stop()
+
+
 
 # --- 도구 함수 (Word/Excel 생성) ---
 def create_docx(data):
