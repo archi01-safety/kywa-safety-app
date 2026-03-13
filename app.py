@@ -149,6 +149,10 @@ try:
         # gemini-flash-latest 를 사용할때는 정상적으로 작동하였으나 할당량 제한이 있음.
         # 만약 이 이름으로도 404가 난다면 'gemini-1.5-flash-002'를 시도해 보세요.
         model_name = "gemini-1.5-flash"
+
+# 사용 가능한 모델 목록 출력 (디버깅용)
+for m in client.models.list():
+    st.write(f"사용 가능 모델: {m.name}")
         
     else:
         st.error("🔑 Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다. 설정 후 다시 실행해 주세요.")
