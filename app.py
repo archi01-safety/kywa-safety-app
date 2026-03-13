@@ -142,13 +142,13 @@ try:
         # 클라이언트 객체 생성 (최신 SDK 방식)
         # 2026년 표준: 별도 경로 없이 api_key만 전달
         from google import genai
-        client = genai.Client(api_key=api_key)
+        client = genai.Client(api_key=api_key, http_options={'api_version': 'v1'})
         
         # [핵심 수정] 모델 이름 정의
         # 404 에러 방지를 위해 가장 표준적인 ID인 'gemini-1.5-flash'를 사용합니다.
         # gemini-flash-latest 를 사용할때는 정상적으로 작동하였으나 할당량 제한이 있음.
         # 만약 이 이름으로도 404가 난다면 'gemini-1.5-flash-002'를 시도해 보세요.
-        model_name = "models/gemini-1.5-flash"
+        model_name = "gemini-1.5-flash"
         
     else:
         st.error("🔑 Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다. 설정 후 다시 실행해 주세요.")
