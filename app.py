@@ -413,97 +413,69 @@ with col2:
 def apply_face_blur(img_file):
     import cv2
     import numpy as np
-    import json
     import streamlit as st
-    from google.genai import types 
-    
+
     try:
-        # 1. 이미지 로드 및 초기화
+        # 1. 이미지 읽기
         img_file.seek(0)
         file_bytes_np = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes_np, cv2.IMREAD_COLOR)
         if image is None: return img_file.getvalue()
-        
+
+        # 2. 성능을 위한 리사이징 (CPU 부하 감소)
         h, w = image.shape[:2]
-        # 리사이징: 웹 최적화 (긴 축 기준 1280px)
         max_size = 1280
         if max(h, w) > max_size:
             scale = max_size / max(h, w)
             image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
             h, w = image.shape[:2]
 
-        heads = []
+        # 3. 로컬 OpenCV 엔진 설정 (정면 얼굴 인식)
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
-        # 2. [전략 A] Gemini AI 시도
-        try:
-            _, img_encoded = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 85])
-            response = client.models.generate_content(
-                model=model_name,
-                contents=[
-                    types.Part.from_bytes(data=img_encoded.tobytes(), mime_type="image/jpeg"),
-                    "사진 속 모든 사람의 '머리(두부)' 영역을 찾아 JSON으로만 출력: {\"heads\": [{\"box_2d\": [ymin, xmin, ymax, xmax]}]}"
-                ],
-                config={"response_mime_type": "application/json", "temperature": 0.0}
-            )
-            
-            # JSON 클리닝 및 파싱
-            clean_text = response.text.replace("```json", "").replace("```", "").strip()
-            heads = json.loads(clean_text).get("heads", [])
-            if heads:
-                st.toast("✨ AI 정밀 비식별화 완료")
-                
-        except Exception as ai_err:
-            # 3. [전략 B] AI 실패(쿼터 초과 등) 시 로컬 OpenCV 전환
-            st.warning("⚠️ AI 비식별화 사용량 초과로 로컬 엔진을 사용하여 비식별화를 진행합니다.")
-            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            detected_faces = face_cascade.detectMultiScale(gray, 1.1, 5, minSize=(30, 30))
-            
-            # OpenCV 좌표를 AI 좌표계(0~1000)로 통일
-            for (fx, fy, fw, fh) in detected_faces:
-                heads.append({
-                    "box_2d": [int(fy*1000/h), int(fx*1000/w), int((fy+fh)*1000/h), int((fx+fw)*1000/w)]
-                })
+        # 인식 파라미터 최적화
+        faces = face_cascade.detectMultiScale(
+            gray, 
+            scaleFactor=1.1, 
+            minNeighbors=5, 
+            minSize=(30, 30)
+        )
 
-        # 4. 공통 비식별화 처리 (원형 블러)
-        for head in heads:
-            box = head.get("box_2d")
-            if not box or len(box) != 4: continue
-            
-            # 좌표 변환
-            y1, x1, y2, x2 = [int(box[i] * [h, w, h, w][i] / 1000) for i in range(4)]
-            rw, rh = x2 - x1, y2 - y1
-            
-            # 하단 10% 제외 (자막/로고 오탐지 방지)
-            if y1 + (rh / 2) > h * 0.9: continue 
-            
-            # 패딩(20%) 및 영역 확정
-            pad_w, pad_h = int(rw * 0.2), int(rh * 0.2)
-            xf, yf = max(0, x1 - pad_w), max(0, y1 - pad_h)
-            wf, hf = min(w - xf, rw + (pad_w * 2)), min(h - yf, rh + (pad_h * 2))
-            
+        # 4. 블러 처리 로직
+        for (x, y, fw, fh) in faces:
+            # 하단 10% 영역(로고 등) 오판정 방지
+            if y + (fh / 2) > h * 0.9: continue
+
+            # 사용자님 요청: 패딩 20% 확장
+            pad_w, pad_h = int(fw * 0.2), int(fh * 0.2)
+            xf, yf = max(0, x - pad_w), max(0, y - pad_h)
+            wf, hf = min(w - xf, fw + (pad_w * 2)), min(h - yf, fh + (pad_h * 2))
+
             if wf > 0 and hf > 0:
                 roi = image[yf:yf+hf, xf:xf+wf]
+                
+                # 원형 마스크 생성
                 mask = np.zeros((hf, wf), dtype=np.uint8)
                 cv2.circle(mask, (wf // 2, hf // 2), min(wf, hf) // 2, (255), -1)
                 
-                # 가우시안 블러 강도 설정
+                # 강력한 2중 가우시안 블러
                 ksize = max(wf, hf) // 2
                 if ksize % 2 == 0: ksize += 1
                 blur = cv2.GaussianBlur(roi, (ksize, ksize), 0)
                 blur = cv2.GaussianBlur(blur, (ksize, ksize), 0)
                 
-                # 마스크를 이용한 합성
+                # 합성
                 mask_3ch = cv2.merge([mask, mask, mask])
                 image[yf:yf+hf, xf:xf+wf] = np.where(mask_3ch == 255, blur, roi)
 
-        # 5. 결과 반환
-        _, final_buffer = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
-        return final_buffer.tobytes()
+        # 5. 최종 이미지 반환
+        _, buffer = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+        st.toast("✅ 로컬 비식별화 처리가 완료되었습니다.")
+        return buffer.tobytes()
 
     except Exception as e:
-        st.error(f"비식별화 프로세스 전체 오류: {e}")
-        img_file.seek(0)
+        # 오류 발생 시 원본 이미지라도 반환하여 흐름 유지
         return img_file.getvalue()
 
 
