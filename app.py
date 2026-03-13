@@ -492,12 +492,17 @@ def apply_face_blur(img_file):
                     # 하얀색 꽉 찬 원 그리기
                     cv2.circle(mask, center, radius, (255), -1)
 
-                    # 3. 강력한 블러 이미지 생성
-                    level = max(rw_final, rh_final) // 2 
+                    # 3. 블러 이미지 생성 (강도 조절 버전)
+                    # 약하게 조절하기 위해 얼굴 크기의 1/4 수준으로 변경 (숫자가 커질수록 더 흐려집니다)
+                    level = max(rw_final, rh_final) // 4
+                    
+                    # 블러 최소값 설정 (너무 작으면 효과가 없으므로 최소 15 유지)
+                    if level < 15: level = 15
+                    # GaussianBlur 커널 사이즈는 반드시 홀수여야 함
                     if level % 2 == 0: level += 1
-                    # 2중 블러로 더 강력하게
+                    
+                    # 2중 블러를 제거하고 1회만 적용하여 투명도를 높임
                     blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
-                    blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
 
                     # 4. 마스크를 이용해 합치기 (핵심)
                     # 마스크가 하얀색(255)인 부분은 블러 이미지를, 아니면 원본 ROI를 사용
