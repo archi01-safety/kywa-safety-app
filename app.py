@@ -413,102 +413,86 @@ with col2:
 def apply_face_blur(img_file):
     import cv2
     import numpy as np
-
+    import json
+    
     try:
-        # 1. 이미지 읽기
+        # 1. 이미지 읽기 및 바이너리 변환
         img_file.seek(0)
-        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        if image is None: return img_file.getvalue()
+        img_bytes = img_file.read()
         
+        # 2. Gemini에게 머리 좌표 찾아달라고 요청 (Object Detection)
+        detect_prompt = """
+        다음 사진에서 사람의 '머리(두부)' 영역을 모두 찾아서 Bounding Box 좌표를 JSON 형식으로만 출력해.
+        - 안전모(Helmet), 모자, 마스크, 고글을 쓴 사람도 모두 포함해.
+        - 정면, 측면, 뒷모습 모두 찾아.
+        - 결과는 오직 아래 JSON 형식으로만 줘. 마크다운(` ```json `)은 쓰지 마.
+        {"heads": [{"box_2d": [ymin, xmin, ymax, xmax]}]}
+        """
+        
+        # Gemini 호출 (좌표 추출용 모델: gemini-2.0-flash 추천)
+        # client 객체는 상단에서 정의한 것을 그대로 사용합니다.
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[
+                {"mime_type": "image/jpeg", "data": img_bytes},
+                detect_prompt
+            ],
+            config={"response_mime_type": "application/json", "temperature": 0.0}
+        )
+        
+        # 3. OpenCV로 원본 이미지 열기
+        file_bytes_np = np.asarray(bytearray(img_bytes), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes_np, cv2.IMREAD_COLOR)
+        if image is None: return img_file.getvalue()
         h, w, _ = image.shape
 
-        # [2] 어두운 얼굴 인식률 향상 (CLAHE 전처리)
-        # 이미지를 밝고 선명하게 만들어 그늘진 얼굴 특징을 추출합니다.
-        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-        cl = clahe.apply(l)
-        enhanced_gray = cv2.merge((cl, a, b))
-        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_LAB2BGR)
-        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_BGR2GRAY) # OpenCV 감지용
-
-        # [3] OpenCV 얼굴 인식기 로드
-        # Haar Cascade 방식 사용 (정면 및 측면 얼굴 대응)
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
-
-# [4] 초강력 이중 감지 (정면 + 측면 합집합) 및 이미지 회전 및 다중 검사 (0도, -20도, 20도)
-        # 기울어진 안전모 인물을 잡기 위한 핵심 로직입니다.
-        for angle in [0, -20, 20]:
-            if angle == 0:
-                rotated_img = image
-                matrix = None
-            else:
-                # 이미지 중심 기준 회전 행렬 생성
-                matrix = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
-                rotated_img = cv2.warpAffine(image, matrix, (w, h))
-
-        # 정면(front): minNeighbors=5 (깐깐하게 감지하여 다리 오탐지 감소)
-        # 측면(profile): minNeighbors=3 (너그럽게 감지하여 옆모습 포착)
-        faces_front = face_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
-        faces_profile = profile_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=3, minSize=(30, 30))
+        # 4. JSON에서 좌표 꺼내기
+        res_data = json.loads(response.text.strip())
+        heads = res_data.get("heads", [])
         
-        # 두 결과를 하나로 합침
-        all_faces = []
-        if len(faces_front) > 0: all_faces.extend(faces_front)
-        if len(faces_profile) > 0: all_faces.extend(faces_profile)
-
-        if len(all_faces) > 0:
-            for (x, y, rw, rh) in all_faces:
-                # --- [수정] 이미지 하단 10% 영역만 얼굴 제외 구역으로 설정 ---
-                # y + (rh / 2)는 감지된 박스의 중심점 높이입니다.
-                # h * 0.9 보다 크다는 것은 이미지의 맨 아래쪽 10% 지점에 위치한다는 뜻입니다.
-                if y + (rh / 2) > h * 0.9:
-                    continue
-
-
-                # [5] 얼굴 영역 20% 더 넓게 잡음 (Padding)
-                pad_w = int(rw * 0.2)
-                pad_h = int(rh * 0.2)
+        # 5. 찾은 좌표에 사용자님의 '원형 블러' 로직 적용
+        for head in heads:
+            box = head.get("box_2d")
+            if not box or len(box) != 4: continue
+            
+            # Gemini 좌표(0~1000)를 실제 픽셀(w, h)로 변환
+            ymin, xmin, ymax, xmax = box
+            y1 = int((ymin / 1000) * h)
+            x1 = int((xmin / 1000) * w)
+            y2 = int((ymax / 1000) * h)
+            x2 = int((xmax / 1000) * w)
+            
+            rw, rh = x2 - x1, y2 - y1
+            
+            # 하단 10% 제외 로직 (사용자님 기존 로직 유지)
+            if y1 + (rh / 2) > h * 0.9: continue
+            
+            # 패딩(20% 확장) 로직
+            pad_w = int(rw * 0.2)
+            pad_h = int(rh * 0.2)
+            x_final = max(0, x1 - pad_w)
+            y_final = max(0, y1 - pad_h)
+            rw_final = min(w - x_final, rw + (pad_w * 2))
+            rh_final = min(h - y_final, rh + (pad_h * 2))
+            
+            # 원형 블러 처리 로직 (사용자님 기존 로직 완벽 이식)
+            if rw_final > 0 and rh_final > 0:
+                face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
+                mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
+                center = (rw_final // 2, rh_final // 2)
+                radius = min(rw_final, rh_final) // 2
+                cv2.circle(mask, center, radius, (255), -1)
                 
-                x_final = max(0, x - pad_w)
-                y_final = max(0, y - pad_h)
-                rw_final = min(w - x_final, rw + (pad_w * 2))
-                rh_final = min(h - y_final, rh + (pad_h * 2))
+                level = max(rw_final, rh_final) // 2 
+                if level % 2 == 0: level += 1
+                blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
+                blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
+                
+                mask_3ch = cv2.merge([mask, mask, mask])
+                combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
+                image[y_final:y_final+rh_final, x_final:x_final+rw_final] = combined_roi
 
-# [얼굴부분 동그라미로 블러처리] if rw_final > 0 and rh_final > 0: 블록 내부를 교체
-
-                if rw_final > 0 and rh_final > 0:
-                    # 1. 얼굴 영역 ROI 추출
-                    face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
-                    
-                    # 2. 원형 마스크 생성
-                    # ROI와 같은 크기의 검은색 이미지 생성
-                    mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
-                    # 중심점과 반지름 계산
-                    center = (rw_final // 2, rh_final // 2)
-                    radius = min(rw_final, rh_final) // 2
-                    # 하얀색 꽉 찬 원 그리기
-                    cv2.circle(mask, center, radius, (255), -1)
-
-                    # 3. 강력한 블러 이미지 생성
-                    level = max(rw_final, rh_final) // 2 
-                    if level % 2 == 0: level += 1
-                    # 2중 블러로 더 강력하게
-                    blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
-                    blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
-
-                    # 4. 마스크를 이용해 합치기 (핵심)
-                    # 마스크가 하얀색(255)인 부분은 블러 이미지를, 아니면 원본 ROI를 사용
-                    # 마스크를 3채널(RGB)로 맞춰줘야 함
-                    mask_3ch = cv2.merge([mask, mask, mask])
-                    combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
-
-                    # 5. 원본 이미지에 다시 붙여넣기
-                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = combined_roi
-
-        # 결과 반환
+        # 6. 결과 반환
         _, buffer = cv2.imencode('.jpg', image)
         return buffer.tobytes()
 
