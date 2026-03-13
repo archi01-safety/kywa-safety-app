@@ -523,7 +523,7 @@ if img_file:
         processed_img_final.name = img_file.name
 
 # --- 6. AI 분석 실행 ---
-if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
+if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
     if not user_description.strip() and not img_file:
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
@@ -677,7 +677,7 @@ if st.session_state.analysis_results:
         },
         # 위험상황(scenario)과 감소대책(solution)만 제외하고 모두 잠금
         disabled=["category", "p", "s", "score", "grade", "law"],
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         key="final_editor_main" # 고유 키 유지
     )
@@ -688,7 +688,7 @@ if st.session_state.analysis_results:
 
     # --- [3단계] 전송 버튼 로직 ---
     st.write("")
-    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
+    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", width="stretch"):
         if sheets_service is None or drive_service is None:
             st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
         elif not st.session_state.final_data:
@@ -740,7 +740,7 @@ if st.session_state.analysis_results:
                 data=create_docx(st.session_state.final_data),
                 file_name=f"KYWA_{selected_facility}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True,
+                width="stretch",
                 key="btn_word_download" # 클릭 시 사라짐 방지를 위한 고유 키
             )
         with dl_col2:
@@ -749,7 +749,7 @@ if st.session_state.analysis_results:
                 data=create_excel(st.session_state.final_data),
                 file_name=f"KYWA_{selected_facility}.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
+                width="stretch",
                 key="btn_excel_download" # 클릭 시 사라짐 방지를 위한 고유 키
             )
 
@@ -865,7 +865,7 @@ if dashboard_data is not None:
                         font=dict(color=None),
                         dragmode=False
                     )
-                    st.plotly_chart(fig_pie, use_container_width=True, theme="streamlit", config={'displayModeBar': False})
+                    st.plotly_chart(fig_pie, width="stretch", theme="streamlit", config={'displayModeBar': False})
         with g_col2:
             target_col_fac = "시설명" 
             if target_col_fac in yearly_data.columns:
@@ -908,7 +908,7 @@ if dashboard_data is not None:
                 
                 st.plotly_chart(
                     fig_bar, 
-                    use_container_width=True, 
+                    width="stretch", 
                     theme="streamlit",
                     config={'displayModeBar': False}
                 )
