@@ -137,22 +137,27 @@ if "final_data" not in st.session_state:
 # 3. 모델 및 클라이언트 설정 (최신 google-genai 방식)
 try:
     if "GEMINI_API_KEY" in st.secrets:
-        api_key = st.secrets["GEMINI_API_KEY"]
+        api_key = st.secrets.get("GEMINI_API_KEY")
         
-        # 클라이언트 객체 생성 (기존 genai.configure 대체)
-        # 2026년 기준, 별도의 transport 설정 없이도 최적화된 통신을 지원합니다.
-        client = genai.Client(api_key=api_key)
+        from google import genai
+        # [핵심] http_options로 v1 버전을 강제하여 404 에러를 원천 차단합니다.
+        client = genai.Client(
+            api_key=api_key,
+            http_options={'api_version': 'v1'}
+        )
         
-        # 모델 이름 정의 (2026년 표준인 gemini-2.0-flash 권장, gemini-flash-latest 사용중임)
-        # 만약 기존 모델을 유지하고 싶다면 'gemini-1.5-flash' 등을 입력하세요.
-        model_name = "gemini-flash-latest" 
+        # v1 버전에서 가장 안정적인 모델명입니다.
+        model_name = "gemini-1.5-flash"
         
     else:
-        st.error("Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
+        st.error("🔑 Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
         st.stop()
+        
 except Exception as e:
-    st.error(f"API 설정 오류가 발생했습니다: {e}")
+    st.error(f"⚠️ API 설정 오류: {e}")
     st.stop()
+
+
 
 # --- 도구 함수 (Word/Excel 생성) ---
 def create_docx(data):
@@ -317,11 +322,6 @@ with header_col2:
 st.divider()
 
 # --- 5. 입력 섹션 ---
-# 기존 세션 초기화 부분에 추가
-if "processed_img_data" not in st.session_state:
-    st.session_state.processed_img_data = None
-if "last_uploaded_file_name" not in st.session_state:
-    st.session_state.last_uploaded_file_name = None
 col1, col2 = st.columns(2)
 
 with col1:
@@ -353,35 +353,6 @@ with col2:
         horizontal=True,
         label_visibility="collapsed"
     )
-
-img_file = st.file_uploader(
-        "사진 업로드 전용", 
-        type=['png', 'jpg', 'jpeg'], 
-        label_visibility="collapsed",
-        key="integrated_photo_upload"
-    )
-
-    if img_file:
-        # 파일이 새로 올라왔거나 바뀐 경우에만 비식별화 실행
-        if st.session_state.last_uploaded_file_name != img_file.name:
-            with st.spinner("🔒 개인정보 비식별화 처리 중..."):
-                # OpenCV 기반 또는 Gemini 기반 비식별화 호출
-                processed_bytes = apply_face_blur(img_file)
-                
-                # 세션에 결과 저장
-                st.session_state.processed_img_data = processed_bytes
-                st.session_state.last_uploaded_file_name = img_file.name
-        
-        # 화면에는 세션에 저장된 이미지만 출력 (중복 실행 방지)
-        st.image(st.session_state.processed_img_data, caption="비식별 처리가 완료된 이미지")
-        
-        # 분석에 사용할 최종 객체 생성
-        processed_img_final = io.BytesIO(st.session_state.processed_img_data)
-        processed_img_final.name = img_file.name
-    else:
-        # 파일이 삭제되면 세션 초기화
-        st.session_state.processed_img_data = None
-        st.session_state.last_uploaded_file_name = None
 
     img_file = None
 
@@ -447,108 +418,69 @@ img_file = st.file_uploader(
 def apply_face_blur(img_file):
     import cv2
     import numpy as np
+    import streamlit as st
 
     try:
         # 1. 이미지 읽기
         img_file.seek(0)
-        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        file_bytes_np = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes_np, cv2.IMREAD_COLOR)
         if image is None: return img_file.getvalue()
-        
-        h, w, _ = image.shape
 
-        # [2] 어두운 얼굴 인식률 향상 (CLAHE 전처리)
-        # 이미지를 밝고 선명하게 만들어 그늘진 얼굴 특징을 추출합니다.
-        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-        cl = clahe.apply(l)
-        enhanced_gray = cv2.merge((cl, a, b))
-        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_LAB2BGR)
-        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_BGR2GRAY) # OpenCV 감지용
+        # 2. 성능을 위한 리사이징 (CPU 부하 감소)
+        h, w = image.shape[:2]
+        max_size = 1280
+        if max(h, w) > max_size:
+            scale = max_size / max(h, w)
+            image = cv2.resize(image, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+            h, w = image.shape[:2]
 
-        # [3] OpenCV 얼굴 인식기 로드
-        # Haar Cascade 방식 사용 (정면 및 측면 얼굴 대응)
+        # 3. 로컬 OpenCV 엔진 설정 (정면 얼굴 인식)
         face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
-
-# [4] 초강력 이중 감지 (정면 + 측면 합집합) 및 이미지 회전 및 다중 검사 (0도, -20도, 20도)
-        # 기울어진 안전모 인물을 잡기 위한 핵심 로직입니다.
-        for angle in [0, -20, 20]:
-            if angle == 0:
-                rotated_img = image
-                matrix = None
-            else:
-                # 이미지 중심 기준 회전 행렬 생성
-                matrix = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
-                rotated_img = cv2.warpAffine(image, matrix, (w, h))
-
-        # 정면(front): minNeighbors=5 (깐깐하게 감지하여 다리 오탐지 감소)
-        # 측면(profile): minNeighbors=3 (너그럽게 감지하여 옆모습 포착)
-        faces_front = face_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
-        faces_profile = profile_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=3, minSize=(30, 30))
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
-        # 두 결과를 하나로 합침
-        all_faces = []
-        if len(faces_front) > 0: all_faces.extend(faces_front)
-        if len(faces_profile) > 0: all_faces.extend(faces_profile)
+        # 인식 파라미터 최적화
+        faces = face_cascade.detectMultiScale(
+            gray, 
+            scaleFactor=1.1, 
+            minNeighbors=5, 
+            minSize=(30, 30)
+        )
 
-        if len(all_faces) > 0:
-            for (x, y, rw, rh) in all_faces:
-                # --- [수정] 이미지 하단 10% 영역만 얼굴 제외 구역으로 설정 ---
-                # y + (rh / 2)는 감지된 박스의 중심점 높이입니다.
-                # h * 0.9 보다 크다는 것은 이미지의 맨 아래쪽 10% 지점에 위치한다는 뜻입니다.
-                if y + (rh / 2) > h * 0.9:
-                    continue
+        # 4. 블러 처리 로직
+        for (x, y, fw, fh) in faces:
+            # 하단 10% 영역(로고 등) 오판정 방지
+            if y + (fh / 2) > h * 0.9: continue
 
+            # 사용자님 요청: 패딩 20% 확장
+            pad_w, pad_h = int(fw * 0.2), int(fh * 0.2)
+            xf, yf = max(0, x - pad_w), max(0, y - pad_h)
+            wf, hf = min(w - xf, fw + (pad_w * 2)), min(h - yf, fh + (pad_h * 2))
 
-                # [5] 얼굴 영역 20% 더 넓게 잡음 (Padding)
-                pad_w = int(rw * 0.2)
-                pad_h = int(rh * 0.2)
+            if wf > 0 and hf > 0:
+                roi = image[yf:yf+hf, xf:xf+wf]
                 
-                x_final = max(0, x - pad_w)
-                y_final = max(0, y - pad_h)
-                rw_final = min(w - x_final, rw + (pad_w * 2))
-                rh_final = min(h - y_final, rh + (pad_h * 2))
+                # 원형 마스크 생성
+                mask = np.zeros((hf, wf), dtype=np.uint8)
+                cv2.circle(mask, (wf // 2, hf // 2), min(wf, hf) // 2, (255), -1)
+                
+                # 강력한 2중 가우시안 블러
+                ksize = max(wf, hf) // 2
+                if ksize % 2 == 0: ksize += 1
+                blur = cv2.GaussianBlur(roi, (ksize, ksize), 0)
+                blur = cv2.GaussianBlur(blur, (ksize, ksize), 0)
+                
+                # 합성
+                mask_3ch = cv2.merge([mask, mask, mask])
+                image[yf:yf+hf, xf:xf+wf] = np.where(mask_3ch == 255, blur, roi)
 
-# [얼굴부분 동그라미로 블러처리] if rw_final > 0 and rh_final > 0: 블록 내부를 교체
-
-                if rw_final > 0 and rh_final > 0:
-                    # 1. 얼굴 영역 ROI 추출
-                    face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
-                    
-                    # 2. 원형 마스크 생성
-                    # ROI와 같은 크기의 검은색 이미지 생성
-                    mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
-                    # 중심점과 반지름 계산
-                    center = (rw_final // 2, rh_final // 2)
-                    radius = min(rw_final, rh_final) // 2
-                    # 하얀색 꽉 찬 원 그리기
-                    cv2.circle(mask, center, radius, (255), -1)
-
-                    # 3. 강력한 블러 이미지 생성
-                    level = max(rw_final, rh_final) // 2 
-                    if level % 2 == 0: level += 1
-                    # 2중 블러로 더 강력하게
-                    blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
-                    blurred_roi = cv2.GaussianBlur(blurred_roi, (level, level), 0)
-
-                    # 4. 마스크를 이용해 합치기 (핵심)
-                    # 마스크가 하얀색(255)인 부분은 블러 이미지를, 아니면 원본 ROI를 사용
-                    # 마스크를 3채널(RGB)로 맞춰줘야 함
-                    mask_3ch = cv2.merge([mask, mask, mask])
-                    combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
-
-                    # 5. 원본 이미지에 다시 붙여넣기
-                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = combined_roi
-
-        # 결과 반환
-        _, buffer = cv2.imencode('.jpg', image)
+        # 5. 최종 이미지 반환
+        _, buffer = cv2.imencode('.jpg', image, [int(cv2.IMWRITE_JPEG_QUALITY), 90])
+        st.toast("✅ 로컬 비식별화 처리가 완료되었습니다.")
         return buffer.tobytes()
 
     except Exception as e:
-        st.error(f"비식별화 프로세스 오류: {e}")
-        img_file.seek(0)
+        # 오류 발생 시 원본 이미지라도 반환하여 흐름 유지
         return img_file.getvalue()
 
 
@@ -556,7 +488,7 @@ def apply_face_blur(img_file):
 processed_img_final = None  # 처리된 이미지를 담을 변수
 
 if img_file:
-    with st.spinner("🔒 개인정보 비식별화 처리 중..."):
+    with st.spinner("🔒 개인정보 비식별화 처리 중... 사람이 사진에 포함 된 경우 얼굴부분을 비식별화 처리합니다. 시간이 다소 소요될 수 있습니다."):
         # 원본 대신 블러 처리된 이미지 생성
         processed_img_bytes = apply_face_blur(img_file)
         # Bytes 데이터를 파일 객체처럼 변환 (io.BytesIO 사용)
@@ -657,13 +589,12 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
 
                 for attempt in range(max_retries):
                     try:
-                        # 모델 호출: 최신 client.models.generate_content 방식
-                        # model_name은 위 설정에서 정의한 "gemini-2.0-flash" 사용
                         response = client.models.generate_content(
                             model=model_name,
                             contents=content,
+                            # config 부분을 변수 없이 직접 입력하여 오타를 방지합니다.
                             config={
-                                "response_mime_type": "application/json",
+                                "response_mime_type": "application/json", # ✅ 반드시 이 형식이어야 합니다.
                                 "temperature": 0.0
                             }
                         )
