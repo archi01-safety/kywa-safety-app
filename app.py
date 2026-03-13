@@ -414,30 +414,33 @@ def apply_face_blur(img_file):
     import cv2
     import numpy as np
     import json
+    # 최신 라이브러리에서 사용하는 타입 임포트 (함수 내부에서 수행)
+    from google.genai import types 
     
     try:
-        # 1. 이미지 읽기 및 바이너리 변환
+        # 1. 이미지 읽기
         img_file.seek(0)
         img_bytes = img_file.read()
         
-        # 2. Gemini에게 머리 좌표 찾아달라고 요청 (Object Detection)
+        # 2. Gemini에게 보낼 프롬프트
         detect_prompt = """
-        다음 사진에서 사람의 '머리(두부)' 영역을 모두 찾아서 Bounding Box 좌표를 JSON 형식으로만 출력해.
-        - 안전모(Helmet), 모자, 마스크, 고글을 쓴 사람도 모두 포함해.
-        - 정면, 측면, 뒷모습 모두 찾아.
-        - 결과는 오직 아래 JSON 형식으로만 줘. 마크다운(` ```json `)은 쓰지 마.
+        사진 속 모든 사람의 '머리(두부)' 영역을 찾아 JSON으로 출력해.
         {"heads": [{"box_2d": [ymin, xmin, ymax, xmax]}]}
+        좌표는 0~1000 사이 값으로 줘.
         """
         
-        # Gemini 호출 (좌표 추출용 모델: gemini-2.0-flash 추천)
-        # client 객체는 상단에서 정의한 것을 그대로 사용합니다.
+        # 🚨 [수정 포인트] 최신 google-genai는 바이너리 데이터를 
+        # types.Part.from_bytes를 사용해서 포장해야 합니다.
         response = client.models.generate_content(
             model=model_name,
             contents=[
-                {"mime_type": "image/jpeg", "data": img_bytes},
+                types.Part.from_bytes(data=img_bytes, mime_type="image/jpeg"),
                 detect_prompt
             ],
-            config={"response_mime_type": "application/json", "temperature": 0.0}
+            config={
+                "response_mime_type": "application/json", 
+                "temperature": 0.0
+            }
         )
         
         # 3. OpenCV로 원본 이미지 열기
