@@ -139,30 +139,22 @@ try:
     if "GEMINI_API_KEY" in st.secrets:
         api_key = st.secrets.get("GEMINI_API_KEY")
         
-        # 클라이언트 객체 생성 (최신 SDK 방식)
-        # 2026년 표준: 별도 경로 없이 api_key만 전달
         from google import genai
-        client = genai.Client(api_key=api_key, http_options={'api_version': 'v1'})
+        # [핵심] http_options로 v1 버전을 강제하여 404 에러를 원천 차단합니다.
+        client = genai.Client(
+            api_key=api_key,
+            http_options={'api_version': 'v1'}
+        )
         
-        # [핵심 수정] 모델 이름 정의
-        # 404 에러 방지를 위해 가장 표준적인 ID인 'gemini-1.5-flash'를 사용합니다.
-        # gemini-flash-latest 를 사용할때는 정상적으로 작동하였으나 할당량 제한이 있음.
-        # 만약 이 이름으로도 404가 난다면 'gemini-1.5-flash-002'를 시도해 보세요.
+        # v1 버전에서 가장 안정적인 모델명입니다.
         model_name = "gemini-1.5-flash"
-
-# 사용 가능한 모델 목록 출력 (디버깅용)
-for m in client.models.list():
-    st.write(f"사용 가능 모델: {m.name}")
         
     else:
-        st.error("🔑 Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다. 설정 후 다시 실행해 주세요.")
+        st.error("🔑 Secrets에 'GEMINI_API_KEY'가 설정되지 않았습니다.")
         st.stop()
+        
 except Exception as e:
-    # 404 에러가 발생할 경우를 대비한 친절한 안내 추가
-    if "404" in str(e):
-        st.error(f"❌ 모델을 찾을 수 없습니다('{model_name}'). 모델 ID를 다시 확인해 주세요.")
-    else:
-        st.error(f"⚠️ API 설정 중 오류가 발생했습니다: {e}")
+    st.error(f"⚠️ API 설정 오류: {e}")
     st.stop()
 
 
