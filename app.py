@@ -494,23 +494,16 @@ def apply_face_blur_ai(img_file):
 
 # --- 분석 시작 버튼 부분 (핵심 로직 통합) ---
 
-if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
+if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
     if not user_description.strip() and not img_file:
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
         try:
             with st.spinner(f"✨ KYWA AI가 [{selected_facility}] 시설의 데이터를 분석 중입니다...🔍"):
+                # 1. 여기서 무조건 변수를 먼저 만듭니다 (중요!)
+                content = []
                 
-                # 1단계: 사진이 있다면 즉시 비식별화 처리
-                analysis_image = None
-                if img_file:
-                    # 저희가 위에서 정의한 AI 비식별화 함수 호출
-                    # 이 시점에 딱 한 번만 실행됩니다.
-                    processed_bytes = apply_face_blur_ai(img_file)
-                    # 비식별화된 바이트 데이터를 Gemini가 읽을 수 있는 PIL 이미지로 변환
-                    analysis_image = Image.open(io.BytesIO(processed_bytes))
-
-                # 2단계: 분석 프롬프트 구성
+                # 2단계: 분석 프롬프트 구성 (문구 수정 없음)
                 prompt = f"""
                 당신은 한국청소년활동진흥원(KYWA)의 안전관리 전문가입니다.
                 
@@ -575,13 +568,17 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
                 - 모든 문장은 명사형 종결.
                 - 반드시 다음 JSON 형식을 엄수하세요: 키는 category, scenario, p, s, score, grade, law, solution 이며 리스트 [] 안에 담아 출력하세요.
                 """
+
+                # [필수 추가] 생성한 프롬프트를 리스트에 담습니다.
                 content.append(prompt_main)
 
+                # 1단계: 사진이 있다면 즉시 비식별화 처리
                 if img_file:
-                    # AI 비식별화 함수 호출 (버튼 클릭 시점에만 실행됨)
+                    # 저희가 위에서 정의한 AI 비식별화 함수 호출
                     processed_bytes = apply_face_blur_ai(img_file)
-                    # 비식별화된 이미지를 Gemini 분석용으로 추가
+                    # 비식별화된 바이트 데이터를 Gemini가 읽을 수 있는 PIL 이미지로 변환
                     analysis_image = Image.open(io.BytesIO(processed_bytes))
+                    # 사진도 리스트에 담습니다.
                     content.append(analysis_image)
 
                 # [2단계] 재시도 로직 및 최신 라이브러리 호출
@@ -618,18 +615,25 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
                             st.error(f"❌ 분석 중 오류가 발생했습니다: {e}")
                             st.stop()
 
-                # [3단계] 결과 처리 및 세션 저장
+                # 3단계: Gemini API 호출 (최신 라이브러리 방식)
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=content, # 이제 content가 프롬프트와 사진을 모두 포함합니다.
+                    config={
+                        "response_mime_type": "application/json",
+                        "temperature": 0.0
+                    }
+                )
+
+                # 4단계: 결과 처리
                 if response:
                     res_data = json.loads(response.text.strip())
-                    
-                    # 결과 저장 및 리프레시
                     st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
                     st.success(f"✅ [{selected_facility}] 시설 분석 완료!")
                     st.rerun()
 
         except Exception as e:
             st.error(f"❌ 최종 처리 중 오류가 발생했습니다: {e}")
-
 
 # --- 7. 결과 표시 및 데이터 처리 ---
 if st.session_state.analysis_results:
