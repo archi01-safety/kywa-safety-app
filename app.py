@@ -410,116 +410,73 @@ with col2:
         )
 
 
-def apply_face_blur(img_file):
-    import cv2
-    import numpy as np
-
+def apply_face_blur_ai(img_file):
+    """
+    Gemini AI로 얼굴 좌표를 정밀 탐지하고 OpenCV로 블러링합니다.
+    """
     try:
-        # 1. 이미지 읽기
+        # 1. 이미지 읽기 및 변환
         img_file.seek(0)
         file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         if image is None: return img_file.getvalue()
         
         h, w, _ = image.shape
+        pil_img = Image.open(io.BytesIO(img_file.getvalue()))
 
-        # [2] 어두운 얼굴 인식률 향상 (CLAHE 전처리)
-        # 이미지를 밝고 선명하게 만들어 그늘진 얼굴 특징을 추출합니다.
-        lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-        cl = clahe.apply(l)
-        enhanced_gray = cv2.merge((cl, a, b))
-        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_LAB2BGR)
-        enhanced_gray = cv2.cvtColor(enhanced_gray, cv2.COLOR_BGR2GRAY) # OpenCV 감지용
-
-        # [3] OpenCV 얼굴 인식기 로드
-        # Haar Cascade 방식 사용 (정면 및 측면 얼굴 대응)
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        profile_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_profileface.xml')
-
-# [4] 초강력 이중 감지 (정면 + 측면 합집합) 및 이미지 회전 및 다중 검사 (0도, -20도, 20도)
-        # 기울어진 안전모 인물을 잡기 위한 핵심 로직입니다.
-        for angle in [0, -20, 20]:
-            if angle == 0:
-                rotated_img = image
-                matrix = None
-            else:
-                # 이미지 중심 기준 회전 행렬 생성
-                matrix = cv2.getRotationMatrix2D((w/2, h/2), angle, 1.0)
-                rotated_img = cv2.warpAffine(image, matrix, (w, h))
-
-        # 정면(front): minNeighbors=5 (깐깐하게 감지하여 다리 오탐지 감소)
-        # 측면(profile): minNeighbors=3 (너그럽게 감지하여 옆모습 포착)
-        faces_front = face_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=5, minSize=(30, 30))
-        faces_profile = profile_cascade.detectMultiScale(enhanced_gray, scaleFactor=1.05, minNeighbors=3, minSize=(30, 30))
+        # 2. Gemini AI에게 얼굴 좌표 요청 (JSON 형식)
+        # prompt에 '얼굴이 없다면 빈 리스트를 반환해'라고 명시하여 오류 방지
+        prompt = """
+        이미지에서 모든 사람의 얼굴(머리 전체) 위치를 찾아서 
+        [ymin, xmin, ymax, xmax] 좌표 리스트로 응답해줘. 
+        만약 얼굴이 전혀 없다면 {"faces": []} 라고 답해줘.
+        JSON 형식: {"faces": [[ymin, xmin, ymax, xmax], ...]}
+        """
         
-        # 두 결과를 하나로 합침
-        all_faces = []
-        if len(faces_front) > 0: all_faces.extend(faces_front)
-        if len(faces_profile) > 0: all_faces.extend(faces_profile)
+        response = client.models.generate_content(
+            model=model_name,
+            contents=[prompt, pil_img],
+            config=genai.types.GenerateContentConfig(
+                response_mime_type="application/json"
+            )
+        )
 
-        if len(all_faces) > 0:
-            for (x, y, rw, rh) in all_faces:
-                # --- [수정] 이미지 하단 10% 영역만 얼굴 제외 구역으로 설정 ---
-                # y + (rh / 2)는 감지된 박스의 중심점 높이입니다.
-                # h * 0.9 보다 크다는 것은 이미지의 맨 아래쪽 10% 지점에 위치한다는 뜻입니다.
-                if y + (rh / 2) > h * 0.9:
-                    continue
+        # 3. 좌표 파싱 및 블러 처리
+        face_data = json.loads(response.text)
+        faces = face_data.get("faces", [])
 
+        if not faces:
+            return img_file.getvalue() # 얼굴이 없으면 원본 반환
 
-                # [5] 얼굴 영역 20% 더 넓게 잡음 (Padding)
-                pad_w = int(rw * 0.2)
-                pad_h = int(rh * 0.2)
-                
-                x_final = max(0, x - pad_w)
-                y_final = max(0, y - pad_h)
-                rw_final = min(w - x_final, rw + (pad_w * 2))
-                rh_final = min(h - y_final, rh + (pad_h * 2))
+        for box in faces:
+            ymin, xmin, ymax, xmax = box
+            # 상대 좌표를 절대 좌표로 변환 (0~1000 -> 실제 픽셀)
+            left, top = int(xmin * w / 1000), int(ymin * h / 1000)
+            right, bottom = int(xmax * w / 1000), int(ymax * h / 1000)
+            
+            rw, rh = right - left, bottom - top
+            if rw <= 0 or rh <= 0: continue
 
-# [얼굴부분 동그라미로 블러처리] if rw_final > 0 and rh_final > 0: 블록 내부를 교체
+            # ROI 추출 및 블러 적용
+            face_roi = image[top:bottom, left:right]
+            
+            # 원형 마스크 생성 (사용자님의 기존 블러 로직 활용)
+            mask = np.zeros((rh, rw), dtype=np.uint8)
+            cv2.circle(mask, (rw // 2, rh // 2), min(rw, rh) // 2, (255), -1)
+            
+            # 블러 강도 설정 (level=21 정도가 적당함)
+            level = 21
+            blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
+            
+            mask_3ch = cv2.merge([mask, mask, mask])
+            image[top:bottom, left:right] = np.where(mask_3ch == 255, blurred_roi, face_roi)
 
-                if rw_final > 0 and rh_final > 0:
-                    # 1. 얼굴 영역 ROI 추출
-                    face_roi = image[y_final:y_final+rh_final, x_final:x_final+rw_final]
-                    
-                    # 2. 원형 마스크 생성
-                    # ROI와 같은 크기의 검은색 이미지 생성
-                    mask = np.zeros((rh_final, rw_final), dtype=np.uint8)
-                    # 중심점과 반지름 계산
-                    center = (rw_final // 2, rh_final // 2)
-                    radius = min(rw_final, rh_final) // 2
-                    # 하얀색 꽉 찬 원 그리기
-                    cv2.circle(mask, center, radius, (255), -1)
-
-                    # 3. 블러 이미지 생성 (강도 조절 버전)
-                    # 약하게 조절하기 위해 얼굴 크기의 1/4 수준으로 변경 (숫자가 커질수록 더 흐려집니다)
-                    level = max(rw_final, rh_final) // 4
-                    
-                    # 블러 최소값 설정 (너무 작으면 효과가 없으므로 최소 15 유지)
-                    if level < 15: level = 15
-                    # GaussianBlur 커널 사이즈는 반드시 홀수여야 함
-                    if level % 2 == 0: level += 1
-                    
-                    # 2중 블러를 제거하고 1회만 적용하여 투명도를 높임
-                    blurred_roi = cv2.GaussianBlur(face_roi, (level, level), 0)
-
-                    # 4. 마스크를 이용해 합치기 (핵심)
-                    # 마스크가 하얀색(255)인 부분은 블러 이미지를, 아니면 원본 ROI를 사용
-                    # 마스크를 3채널(RGB)로 맞춰줘야 함
-                    mask_3ch = cv2.merge([mask, mask, mask])
-                    combined_roi = np.where(mask_3ch == 255, blurred_roi, face_roi)
-
-                    # 5. 원본 이미지에 다시 붙여넣기
-                    image[y_final:y_final+rh_final, x_final:x_final+rw_final] = combined_roi
-
-        # 결과 반환
-        _, buffer = cv2.imencode('.jpg', image)
+        # 4. 결과 인코딩
+        _, buffer = cv2.imencode('.jpg', image, [cv2.IMWRITE_JPEG_QUALITY, 90])
         return buffer.tobytes()
 
     except Exception as e:
-        st.error(f"비식별화 프로세스 오류: {e}")
-        img_file.seek(0)
+        st.error(f"AI 비식별화 중 오류 발생: {e}")
         return img_file.getvalue()
 
 
@@ -536,14 +493,33 @@ if img_file:
         processed_img_final.name = img_file.name
 
 # --- 6. AI 분석 실행 ---
+
+# [1] 사진 업로드 섹션 (여기서는 업로드만 하고 분석은 하지 않음)
+img_file = st.file_uploader("사진 업로드", type=['jpg', 'png', 'jpeg'], key="safe_upload")
+
+if img_file:
+    # 사용자에게 업로드 확인용 미리보기만 제공 (속도 최적화)
+    st.image(img_file, caption="업로드된 원본 사진 (분석 시 자동으로 비식별 처리됩니다)", width=300)
+
+# --- 분석 시작 버튼 부분 (핵심 로직 통합) ---
+
 if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
-    if not user_description.strip() and not img_file:
+if not user_description.strip() and not img_file:
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
         try:
             with st.spinner(f"✨ KYWA AI가 [{selected_facility}] 시설의 데이터를 분석 중입니다...🔍"):
                 
-                # 모든 지침을 하나의 prompt 문자열 안에 포함시킵니다.
+                # 1단계: 사진이 있다면 즉시 비식별화 처리
+                analysis_image = None
+                if img_file:
+                    # 저희가 위에서 정의한 AI 비식별화 함수 호출
+                    # 이 시점에 딱 한 번만 실행됩니다.
+                    processed_bytes = apply_face_blur_ai(img_file)
+                    # 비식별화된 바이트 데이터를 Gemini가 읽을 수 있는 PIL 이미지로 변환
+                    analysis_image = Image.open(io.BytesIO(processed_bytes))
+
+                # 2단계: 분석 프롬프트 구성
                 prompt = f"""
                 당신은 한국청소년활동진흥원(KYWA)의 안전관리 전문가입니다.
                 
@@ -607,29 +583,23 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
                 - 8점부터는 '허용 불가능한 수준'의 사안으로 판단하므로 경미한 사항은 최대 6점을 기준으로 함.
                 - 모든 문장은 명사형 종결.
                 - 반드시 다음 JSON 형식을 엄수하세요: 키는 category, scenario, p, s, score, grade, law, solution 이며 리스트 [] 안에 담아 출력하세요.
-                """
+                """content.append(prompt_main)
 
-                # 분석 데이터 준비
-                content = [prompt]
-                
-                # [수정] 이미지 로드 부분 (PIL import 위치 확인)
-                from PIL import Image 
-                
                 if img_file:
-                    content.append(Image.open(img_file))
-                
-                if processed_img_final:
-                    content.append(Image.open(processed_img_final))
+                    # AI 비식별화 함수 호출 (버튼 클릭 시점에만 실행됨)
+                    processed_bytes = apply_face_blur_ai(img_file)
+                    # 비식별화된 이미지를 Gemini 분석용으로 추가
+                    analysis_image = Image.open(io.BytesIO(processed_bytes))
+                    content.append(analysis_image)
 
-# [핵심 수정] 재시도 로직 및 최신 라이브러리(google-genai) 적용
+                # [2단계] 재시도 로직 및 최신 라이브러리 호출
                 import time
                 response = None
-                max_retries = 3  # 최대 3번까지 재시도
+                max_retries = 3
 
                 for attempt in range(max_retries):
                     try:
-                        # 모델 호출: 최신 client.models.generate_content 방식
-                        # model_name은 위 설정에서 정의한 "gemini-2.0-flash" 사용
+                        # 최신 client.models.generate_content 방식 적용
                         response = client.models.generate_content(
                             model=model_name,
                             contents=content,
@@ -638,28 +608,25 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
                                 "temperature": 0.0
                             }
                         )
-                        break  # 성공하면 반복문 탈출!
+                        break  # 성공 시 탈출
                         
                     except Exception as e:
-                        # 에러 메시지를 소문자로 변환하여 체크
                         error_msg = str(e).lower()
-                        # 429(Quota), 503(Overloaded), Resource Exhausted 에러 발생 시 재시도
-                        if "429" in error_msg or "quota" in error_msg or "503" in error_msg or "resource_exhausted" in error_msg:
+                        # 사용량 초과 및 서버 과부하 에러 시 재시도
+                        if any(x in error_msg for x in ["429", "quota", "503", "resource_exhausted"]):
                             if attempt < max_retries - 1:
                                 wait_time = 2 * (attempt + 1)
-                                time.sleep(wait_time)  # 2초, 4초... 점차 길게 대기
+                                time.sleep(wait_time)
                                 st.toast(f"⏳ 사용량 조절 중... 재시도 {attempt+1}/{max_retries}")
                                 continue
                             else:
                                 st.error("🚨 현재 AI 이용량이 많아 분석이 어렵습니다. 잠시 후 다시 시도해주세요.")
-                                st.stop() # 코드 실행 중단
+                                st.stop()
                         else:
-                            # 다른 에러(코드 오류 등)는 바로 보고하고 중단
                             st.error(f"❌ 분석 중 오류가 발생했습니다: {e}")
                             st.stop()
 
-
-                # 결과 처리 (성공했을 때만 실행)
+                # [3단계] 결과 처리 및 세션 저장
                 if response:
                     res_data = json.loads(response.text.strip())
                     
@@ -669,7 +636,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
                     st.rerun()
 
         except Exception as e:
-            st.error(f"❌ 오류가 발생했습니다: {e}")
+            st.error(f"❌ 최종 처리 중 오류가 발생했습니다: {e}")
 
 
 # --- 7. 결과 표시 및 데이터 처리 ---
