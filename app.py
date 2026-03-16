@@ -356,59 +356,67 @@ with col2:
         st.info("📸 아래 박스를 클릭하면 [사진촬영] 또는 [사진업로드] 선택이 가능합니다.")
         
        
-# 2. 업로더 한글화 CSS (보강된 버전)
-        st.markdown("""
-            <style>
-                /* 1. 원래 있던 텍스트들 숨기기 */
-                section[data-testid="stFileUploadDropzone"] div div span,
-                section[data-testid="stFileUploadDropzone"] small,
-                section[data-testid="stFileUploadDropzone"] button {
-                    display: none !important;
-                }
+# 1. 업로더 한글화 CSS (디자인 적용)
+st.markdown("""
+    <style>
+        /* 원래 있던 영어 텍스트 숨기기 */
+        section[data-testid="stFileUploadDropzone"] div div span,
+        section[data-testid="stFileUploadDropzone"] small,
+        section[data-testid="stFileUploadDropzone"] button {
+            display: none !important;
+        }
 
-                /* 2. 상단에 새로운 안내 문구 추가 */
-                section[data-testid="stFileUploadDropzone"] div div::before {
-                    content: "여기에 사진을 끌어다 놓으세요";
-                    display: block !important;
-                    font-size: 0.9rem !important;
-                    color: #808080 !important;
-                    margin-bottom: 10px !important;
-                }
+        /* 상단 안내 문구 */
+        section[data-testid="stFileUploadDropzone"] div div::before {
+            content: "여기에 사진을 끌어다 놓으세요";
+            display: block !important;
+            font-size: 0.9rem !important;
+            color: #808080 !important;
+            margin-bottom: 10px !important;
+        }
 
-                /* 3. 버튼처럼 보이는 가짜 버튼 생성 */
-                section[data-testid="stFileUploadDropzone"]::before {
-                    content: "📸 사진 촬영 또는 선택하기";
-                    display: block !important;
-                    margin: 10px auto !important;
-                    padding: 10px 20px !important;
-                    background-color: #ff4b4b !important; /* 배경색을 빨간색으로 */
-                    color: white !important; /* 글자를 흰색으로 */
-                    border-radius: 8px !important;
-                    cursor: pointer !important;
-                    font-weight: bold !important;
-                    text-align: center !important;
-                    width: fit-content !important;
-                }
+        /* 빨간색 촬영/선택 버튼 */
+        section[data-testid="stFileUploadDropzone"]::before {
+            content: "📸 사진 촬영 또는 선택하기";
+            display: block !important;
+            margin: 10px auto !important;
+            padding: 10px 20px !important;
+            background-color: #ff4b4b !important;
+            color: white !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            width: fit-content !important;
+        }
 
-                /* 4. 하단에 용량 제한 문구 추가 */
-                section[data-testid="stFileUploadDropzone"] div div::after {
-                    content: "파일당 최대 200MB • PNG, JPG, JPEG";
-                    display: block !important;
-                    font-size: 0.75rem !important;
-                    color: #a0a0a0 !important;
-                    margin-top: 5px !important;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-        
-        # 3. 통합된 업로더 실행
-        img_file = st.file_uploader(
-            "사진 업로드 전용", 
-            type=['png', 'jpg', 'jpeg'], 
-            label_visibility="collapsed",
-            key="integrated_photo_upload"
-        )
+        /* 하단 용량 제한 문구 */
+        section[data-testid="stFileUploadDropzone"] div div::after {
+            content: "파일당 최대 200MB • PNG, JPG, JPEG";
+            display: block !important;
+            font-size: 0.75rem !important;
+            color: #a0a0a0 !important;
+            margin-top: 5px !important;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
+# 2. 통합된 업로더 (변수명을 img_file로 통일하여 분석 버튼과 연결)
+img_file = st.file_uploader(
+    "사진 업로드 전용", 
+    type=['png', 'jpg', 'jpeg'], 
+    label_visibility="collapsed",
+    key="safe_upload" # 분석 버튼 로직에서 사용하는 key와 맞춰주는 것이 좋습니다.
+)
+
+# 3. 사진 업로드 시 미리보기 (분석 시작 전 확인용)
+if img_file:
+    # 간격 조절을 위한 컬럼 활용 (선택사항)
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.image(img_file, caption="업로드된 원본 사진", width=300)
+    with col2:
+        st.info("💡 사진이 성공적으로 등록되었습니다. 아래 '분석 시작' 버튼을 누르면 AI 비식별화 후 분석이 시작됩니다.")
 
 def apply_face_blur_ai(img_file):
     """
@@ -482,12 +490,6 @@ def apply_face_blur_ai(img_file):
 
 # --- 6. AI 분석 실행 ---
 
-# [1] 사진 업로드 섹션 (여기서는 업로드만 하고 분석은 하지 않음)
-img_file = st.file_uploader("사진 업로드", type=['jpg', 'png', 'jpeg'], key="safe_upload")
-
-if img_file:
-    # 사용자에게 업로드 확인용 미리보기만 제공 (속도 최적화)
-    st.image(img_file, caption="업로드된 원본 사진 (분석 시 자동으로 비식별 처리됩니다)", width=300)
 
 # --- 분석 시작 버튼 부분 (핵심 로직 통합) ---
 
