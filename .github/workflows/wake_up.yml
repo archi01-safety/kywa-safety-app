@@ -22,7 +22,7 @@ jobs:
               browser = p.chromium.launch()
               page = browser.new_page()
               page.goto('https://kywa-safety-check.streamlit.app/')
-              page.wait_for_timeout(10000) # 10초 대기 (로딩 완료용)
+              page.wait_for_timeout(50000) # 50초 대기 (로딩 완료용)
               print('Successfully poked the app with a real browser!')
               browser.close()
           "
