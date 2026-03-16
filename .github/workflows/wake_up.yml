@@ -1,0 +1,28 @@
+name: Wake Up App with Browser
+on:
+  schedule:
+    - cron: '0 */4 * * *' # 4시간마다 (너무 자주 하면 차단됨)
+jobs:
+  wake-up:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with: { python-version: '3.9' }
+      - name: Install Playwright
+        run: |
+          pip install playwright
+          playwright install chromium
+      - name: Run Wake Up Script
+        run: |
+          python -c "
+          from playwright.sync_api import sync_playwright
+          with sync_playwright() as p:
+              browser = p.chromium.launch()
+              page = browser.new_page()
+              page.goto('https://kywa-safety-check.streamlit.app/')
+              page.wait_for_timeout(10000) # 10초 대기 (로딩 완료용)
+              print('Successfully poked the app with a real browser!')
+              browser.close()
+          "
