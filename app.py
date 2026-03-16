@@ -583,7 +583,8 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
                 - 8점부터는 '허용 불가능한 수준'의 사안으로 판단하므로 경미한 사항은 최대 6점을 기준으로 함.
                 - 모든 문장은 명사형 종결.
                 - 반드시 다음 JSON 형식을 엄수하세요: 키는 category, scenario, p, s, score, grade, law, solution 이며 리스트 [] 안에 담아 출력하세요.
-                """content.append(prompt_main)
+                """
+                content.append(prompt_main)
 
                 if img_file:
                     # AI 비식별화 함수 호출 (버튼 클릭 시점에만 실행됨)
