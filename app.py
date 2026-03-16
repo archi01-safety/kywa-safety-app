@@ -504,7 +504,7 @@ if img_file:
 # --- 분석 시작 버튼 부분 (핵심 로직 통합) ---
 
 if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
-if not user_description.strip() and not img_file:
+    if not user_description.strip() and not img_file:
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
         try:
