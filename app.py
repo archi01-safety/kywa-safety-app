@@ -570,7 +570,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                 """
 
                 # [필수 추가] 생성한 프롬프트를 리스트에 담습니다.
-                content.append(prompt_main)
+                content.append(prompt)
 
                 # 1단계: 사진이 있다면 즉시 비식별화 처리
                 if img_file:
