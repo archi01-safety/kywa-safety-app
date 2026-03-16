@@ -480,19 +480,11 @@ def apply_face_blur_ai(img_file):
         return img_file.getvalue()
 
 
-# --- [3단계] 전송 버튼 로직 내 수정 ---
-processed_img_final = None  # 처리된 이미지를 담을 변수
-
-if img_file:
-    with st.spinner("🔒 개인정보 비식별화 처리 중..."):
-        # 원본 대신 블러 처리된 이미지 생성
-        processed_img_bytes = apply_face_blur(img_file)
-        # Bytes 데이터를 파일 객체처럼 변환 (io.BytesIO 사용)
-        processed_img_final = io.BytesIO(processed_img_bytes)
-        # 파일 이름을 식별하기 위해 name 속성 부여
-        processed_img_final.name = img_file.name
-
 # --- 6. AI 분석 실행 ---
+
+def apply_face_blur_ai(img_file):
+    # Gemini AI를 이용한 비식별화 로직...
+    # (반드시 분석 버튼보다 위쪽에 정의되어 있어야 함)
 
 # [1] 사진 업로드 섹션 (여기서는 업로드만 하고 분석은 하지 않음)
 img_file = st.file_uploader("사진 업로드", type=['jpg', 'png', 'jpeg'], key="safe_upload")
