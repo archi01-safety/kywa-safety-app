@@ -409,14 +409,15 @@ img_file = st.file_uploader(
     key="safe_upload" # 분석 버튼 로직에서 사용하는 key와 맞춰주는 것이 좋습니다.
 )
 
-# 3. 사진 업로드 시 미리보기 (분석 시작 전 확인용)
+# 3. 사진 업로드 시 미리보기 및 안내 문구 (요청하신 우측 컬럼 배치)
 if img_file:
-    # 간격 조절을 위한 컬럼 활용 (선택사항)
-    col1, col2 = st.columns([1, 2])
-    with col1:
+    col_preview, col_info = st.columns([1, 1.5]) # 왼쪽 미리보기, 오른쪽 문구
+    with col_preview:
         st.image(img_file, caption="업로드된 원본 사진", width=300)
-    with col2:
-        st.info("💡 사진이 성공적으로 등록되었습니다. 아래 '분석 시작' 버튼을 누르면 AI 비식별화 후 분석이 시작됩니다.")
+    with col_info:
+        st.write("") # 상단 여백
+        st.success("✅ 사진이 성공적으로 등록되었습니다.")
+        st.info("💡 아래 '분석 시작' 버튼을 누르면 AI가 얼굴을 비식별화 후 분석을 시작합니다.")
 
 def apply_face_blur_ai(img_file):
     """
