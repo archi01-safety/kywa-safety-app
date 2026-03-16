@@ -8,4 +8,5 @@ openpyxl
 opencv-python-headless
 mediapipe
 streamlit-webrtc
-
+google-api-python-client  # <--- [필수] 이거를 추가해야 24라인 에러가 사라집니다.
+google-auth               # <--- [필수] 구글 인증을 위해 함께 필요합니다.
