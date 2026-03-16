@@ -625,10 +625,19 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                     }
                 )
 
-                # 4단계: 결과 처리
+                # --- 분석 완료 처리 부분 (기존 코드 하단) ---
                 if response:
                     res_data = json.loads(response.text.strip())
                     st.session_state.analysis_results = res_data if isinstance(res_data, list) else [res_data]
+    
+                    # ✅ 분석에 사용된 비식별 이미지를 전송용으로 세션에 저장
+                    if img_file:
+                        # analysis_image를 바이트로 변환하여 저장
+                        img_byte_arr = io.BytesIO()
+                        analysis_image.save(img_byte_arr, format='JPEG')
+                        st.session_state.final_secure_image = img_byte_arr.getvalue()
+    
+                    # 성공 메시지와 리런은 반드시 'if response:' 블록 안에 있어야 합니다.
                     st.success(f"✅ [{selected_facility}] 시설 분석 완료!")
                     st.rerun()
 
@@ -677,12 +686,12 @@ if st.session_state.analysis_results:
     # 이렇게 해야 '전송' 버튼이나 '다운로드' 버튼 클릭 시 최신 수정본이 사용됩니다.
     st.session_state.final_data = edited_df.to_dict('records')
 
-    # --- [3단계] 전송 버튼 로직 ---
+# --- [3단계] 전송 버튼 로직 ---
     st.write("")
-    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", width="stretch"):
+    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
         if sheets_service is None or drive_service is None:
             st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
-        elif not st.session_state.final_data:
+        elif not st.session_state.get("final_data"):
             st.error("⚠️ 전송할 데이터가 없습니다.")
         else:
             with st.spinner("🚀 KYWA AI 안전센터로 데이터를 전송 중입니다..."):
@@ -692,9 +701,16 @@ if st.session_state.analysis_results:
                     timestamp_str = now_kst.strftime("%Y%m%d_%H%M%S")
 
                     photo_link = "사진 없음"
-                    if processed_img_final:
+                    
+                    # ✅ [수정] 분석 시 저장했던 세션 내 비식별 이미지를 확인
+                    if "final_secure_image" in st.session_state and st.session_state.final_secure_image:
                         filename = f"{selected_facility}_{timestamp_str}.jpg"
-                        photo_link = upload_photo_to_drive(processed_img_final, filename)
+                        
+                        # 바이트 데이터를 다시 파일 객체로 변환하여 업로드
+                        secure_photo_file = io.BytesIO(st.session_state.final_secure_image)
+                        secure_photo_file.name = filename
+                        
+                        photo_link = upload_photo_to_drive(secure_photo_file, filename)
                     
                     success_count = 0
                     # st.session_state.final_data(수정본)를 순회하며 전송
@@ -716,6 +732,9 @@ if st.session_state.analysis_results:
                     if success_count > 0:
                         st.success(f"✅ 데이터 {success_count}건이 성공적으로 전송되었습니다!")
                         st.balloons()
+                        # 전송 후 데이터 초기화 (중복 전송 방지 - 선택 사항)
+                        # st.session_state.final_data = None
+                        
                 except Exception as e:
                     st.error(f"❌ 전송 중 오류 발생: {e}")
 
