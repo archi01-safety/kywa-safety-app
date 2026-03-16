@@ -482,10 +482,6 @@ def apply_face_blur_ai(img_file):
 
 # --- 6. AI 분석 실행 ---
 
-def apply_face_blur_ai(img_file):
-    # Gemini AI를 이용한 비식별화 로직...
-    # (반드시 분석 버튼보다 위쪽에 정의되어 있어야 함)
-
 # [1] 사진 업로드 섹션 (여기서는 업로드만 하고 분석은 하지 않음)
 img_file = st.file_uploader("사진 업로드", type=['jpg', 'png', 'jpeg'], key="safe_upload")
 
