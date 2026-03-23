@@ -653,7 +653,6 @@ if st.session_state.analysis_results:
     df = pd.DataFrame(st.session_state.analysis_results)
 
     # 2. 데이터 에디터 설정
-    # 편집 즉시 edited_df에 반영됩니다.
     edited_df = st.data_editor(
         df,
         column_config={
@@ -675,68 +674,69 @@ if st.session_state.analysis_results:
                 required=True
             )
         },
-        # 위험상황(scenario)과 감소대책(solution)만 제외하고 모두 잠금
         disabled=["category", "p", "s", "score", "grade", "law"],
         width="stretch",
         hide_index=True,
-        key="final_editor_main" # 고유 키 유지
+        key="final_editor_main"
     )
 
-    # [핵심] 수정된 데이터를 즉시 세션 상태에 업데이트
-    # 이렇게 해야 '전송' 버튼이나 '다운로드' 버튼 클릭 시 최신 수정본이 사용됩니다.
+    # 수정된 데이터를 즉시 세션 상태에 업데이트
     st.session_state.final_data = edited_df.to_dict('records')
 
-# --- [3단계] 전송 버튼 로직 ---
+    # --- [3단계] 전송 버튼 로직 ---
     st.write("")
     if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
         if sheets_service is None or drive_service is None:
-            st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
+            st.error(⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
         elif not st.session_state.get("final_data"):
             st.error("⚠️ 전송할 데이터가 없습니다.")
         else:
             with st.spinner("🚀 KYWA AI 안전센터로 데이터를 전송 중입니다..."):
                 try:
+                    # 한국 시간 설정
                     now_kst = datetime.datetime.now() + datetime.timedelta(hours=9)
                     current_time = now_kst.strftime("%Y-%m-%d %H:%M:%S")
                     timestamp_str = now_kst.strftime("%Y%m%d_%H%M%S")
 
                     photo_link = "사진 없음"
                     
-                    # ✅ [수정] 분석 시 저장했던 세션 내 비식별 이미지를 확인
+                    # 비식별 이미지 확인 및 드라이브 업로드
                     if "final_secure_image" in st.session_state and st.session_state.final_secure_image:
                         filename = f"{selected_facility}_{timestamp_str}.jpg"
-                        
-                        # 바이트 데이터를 다시 파일 객체로 변환하여 업로드
                         secure_photo_file = io.BytesIO(st.session_state.final_secure_image)
                         secure_photo_file.name = filename
-                        
                         photo_link = upload_photo_to_drive(secure_photo_file, filename)
                     
                     success_count = 0
-                    # st.session_state.final_data(수정본)를 순회하며 전송
+                    # 구글 시트 컬럼 순서에 맞춰 리스트 재구성
                     for row in st.session_state.final_data:
                         sheet_row = [
-                            current_time,
-                            selected_facility,
-                            selected_dept,
-                            row.get("category"),
-                            row.get("scenario"), # 수정된 위험상황 반영
-                            row.get("grade"),
-                            row.get("solution"), # 수정된 감소대책 반영
-                            row.get("law"),
-                            photo_link
+                            current_time,           # 타임스탬프
+                            selected_facility,      # 시설명
+                            selected_dept,          # 담당 부서
+                            row.get("category"),    # 유해위험요인(분류)
+                            row.get("scenario"),    # 위험상황
+                            row.get("p"),           # 빈도
+                            row.get("s"),           # 강도
+                            row.get("score"),       # 점수
+                            row.get("grade"),       # 위험등급
+                            row.get("solution"),    # 감소대책
+                            row.get("law"),         # 관련근거
+                            photo_link              # 사진 기록
                         ]
+                        
                         if append_row_to_sheet(sheet_row):
                             success_count += 1
                     
                     if success_count > 0:
                         st.success(f"✅ 데이터 {success_count}건이 성공적으로 전송되었습니다!")
                         st.balloons()
-                        # 전송 후 데이터 초기화 (중복 전송 방지 - 선택 사항)
-                        # st.session_state.final_data = None
+                        # 전송 후 데이터 초기화 (필요 시 주석 해제)
+                        # st.session_state.analysis_results = None
                         
                 except Exception as e:
                     st.error(f"❌ 전송 중 오류 발생: {e}")
+
 
     # --- 저장 버튼 영역 (분석 직후 바로 나타나며, 클릭 시 사라짐 방지) ---
     st.markdown("---")
