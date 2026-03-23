@@ -160,6 +160,7 @@ def create_docx(data):
     doc.add_heading('KYWA AI 위험성평가 결과 보고서', 0)
     for item in data:
         doc.add_paragraph(f"분류: {item.get('category')}")
+        doc.add_paragraph(f"장소: {item.get('location')}")
         doc.add_paragraph(f"상황: {item.get('scenario')}")
         doc.add_paragraph(f"등급: {item.get('grade')} (점수: {item.get('score')})")
         doc.add_paragraph(f"대책: {item.get('solution')}")
@@ -512,6 +513,13 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                 - 담당부서: {selected_dept}
                 - 현장 상황: {user_description}
 
+                [장소 특정 규칙 - 중요]
+                1. location(장소) 필드는 [상황 설명 입력]에 적힌 내용 중에서 추출하십시오. 
+                   - 예: 사용자가 "본관 2층 테라스 난간 흔들림"이라고 적었다면 -> '본관 3층 복도'
+                   - 예: 사용자가 "생활관 계단 논슬립 불량"이라고 적었다면 -> '생활관 계단'
+                   - 예: 사용자가 "정문 앞 보도블럭 들뜸"이라고 적었다면 -> '정문 앞'
+                3. 만약 상황 설명에 장소 정보가 전혀 없다면, 사진의 시각적 특징을 보고 추론하십시오. (예: '기계실', '화장실', '계단' 등)
+
                 [관련 근거(law) 작성 규칙 - 중요]
                 1. 법적 근거는 반드시 기술적 안전 기준이 명시된 현행 법령만 사용하십시오.
                 2. 권장 법령: 산업안전보건법, 산업안전보건기준에 관한 규칙, 시특법, 소방법, 전기안전관리법 등.
@@ -566,7 +574,7 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                 - 매우 낮음(1~3점), 낮음(4~6점), 보통(8점), 높음(9~12점), 매우 높음(16~20점)
                 - 8점부터는 '허용 불가능한 수준'의 사안으로 판단하므로 경미한 사항은 최대 6점을 기준으로 함.
                 - 모든 문장은 명사형 종결.
-                - 반드시 다음 JSON 형식을 엄수하세요: 키는 category, scenario, p, s, score, grade, law, solution 이며 리스트 [] 안에 담아 출력하세요.
+                - 반드시 다음 JSON 형식을 엄수하세요: 키는 category, location, scenario, p, s, score, grade, law, solution 이며 리스트 [] 안에 담아 출력하세요.
                 """
 
                 # [필수 추가] 생성한 프롬프트를 리스트에 담습니다.
@@ -657,6 +665,7 @@ if st.session_state.analysis_results:
         df,
         column_config={
             "category": st.column_config.TextColumn("분류", disabled=True),
+            "location": st.column_config.TextColumn("📍장소(편집 가능)", width="midium"), # 추가된 부분
             "scenario": st.column_config.TextColumn(
                 "✅ 위험상황 (편집 가능)", 
                 help="현장 상황에 맞춰 내용을 수정하세요.",
@@ -714,6 +723,7 @@ if st.session_state.analysis_results:
                             current_time,           # 타임스탬프
                             selected_facility,      # 시설명
                             selected_dept,          # 담당 부서
+                            row.get("location"),    # 장소
                             row.get("category"),    # 유해위험요인(분류)
                             row.get("scenario"),    # 위험상황
                             row.get("p"),           # 빈도
