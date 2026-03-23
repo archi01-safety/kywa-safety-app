@@ -888,10 +888,19 @@ if dashboard_data is not None:
                         insidetextorientation='horizontal',
                         textfont_size=11
                     )
-                    fig_loc.update_layout(
-                        margin=dict(t=30, b=0, l=0, r=0), height=350,
+                    fig_pie.update_layout(
+                        margin=dict(t=30, b=80, l=0, r=0), # 하단 범례 공간 확보를 위해 b(bottom) 늘림
+                        height=450, # 범례가 아래로 가므로 전체 높이를 약간 키움
                         showlegend=True,
-                        legend=dict(orientation="h", yanchor="bottom", y=-0.5), # 범례를 아래로
+                        legend=dict(
+                            orientation="h",      # 가로 방향 범례
+                            yanchor="top",        # 범례의 상단을 기준으로 배치
+                            y=-0.1,               # 그래프 아래로 충분히 내림 (값 조절 가능)
+                            xanchor="center",     # 가로 중앙 정렬
+                            x=0.5,
+                            font=dict(size=10),   # 범례 글자 크기 축소
+                            itemwidth=30          # 범례 아이템 간격 조절
+                        ),
                         paper_bgcolor='rgba(0,0,0,0)',
                         dragmode=False
                     )
@@ -916,9 +925,18 @@ if dashboard_data is not None:
                         textfont_size=11
                     )
                     fig_pie.update_layout(
-                        margin=dict(t=30, b=0, l=0, r=0), height=350,
+                        margin=dict(t=30, b=80, l=0, r=0), # 하단 범례 공간 확보를 위해 b(bottom) 늘림
+                        height=450, # 범례가 아래로 가므로 전체 높이를 약간 키움
                         showlegend=True,
-                        legend=dict(orientation="h", yanchor="bottom", y=-0.5), # 범례를 아래로
+                        legend=dict(
+                            orientation="h",      # 가로 방향 범례
+                            yanchor="top",        # 범례의 상단을 기준으로 배치
+                            y=-0.1,               # 그래프 아래로 충분히 내림 (값 조절 가능)
+                            xanchor="center",     # 가로 중앙 정렬
+                            x=0.5,
+                            font=dict(size=10),   # 범례 글자 크기 축소
+                            itemwidth=30          # 범례 아이템 간격 조절
+                        ),
                         paper_bgcolor='rgba(0,0,0,0)',
                         dragmode=False
                     )
