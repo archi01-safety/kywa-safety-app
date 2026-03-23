@@ -870,8 +870,8 @@ if dashboard_data is not None:
         g_col1, g_col2 = st.columns(2)
 
         with g_col1:
-            if len(yearly_data.columns) >= 4:
-                target_col_cat = yearly_data.columns[3] 
+            if len(yearly_data.columns) >= 5:
+                target_col_cat = yearly_data.columns[4] 
                 st.write(f"**{target_col_cat} 현황**")
                 if not yearly_data[target_col_cat].dropna().empty:
                     yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
