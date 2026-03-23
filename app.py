@@ -687,7 +687,7 @@ if st.session_state.analysis_results:
     st.write("")
     if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
         if sheets_service is None or drive_service is None:
-            st.error(⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
+            st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
         elif not st.session_state.get("final_data"):
             st.error("⚠️ 전송할 데이터가 없습니다.")
         else:
