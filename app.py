@@ -866,13 +866,42 @@ if dashboard_data is not None:
             "미래": "#92B06A", "생태": "#5F7161"
         }
 
-        # --- 4. 그래프 시각화 영역 ---
-        g_col1, g_col2 = st.columns(2)
 
+# --- 4. 그래프 시각화 영역 (3단 구성으로 변경) ---
+        g_col1, g_col2, g_col3 = st.columns(3)
+
+        # [1단] 장소 현황 (D컬럼 - Index 3)
         with g_col1:
+            if len(yearly_data.columns) >= 4:
+                target_col_loc = yearly_data.columns[3] 
+                st.write(f"**📍 {target_col_loc} 현황**")
+                if not yearly_data[target_col_loc].dropna().empty:
+                    yearly_data[target_col_loc] = yearly_data[target_col_loc].astype(str).str.strip()
+                    
+                    fig_loc = px.pie(
+                        yearly_data, names=target_col_loc, hole=0.3,
+                        color_discrete_sequence=px.colors.qualitative.Pastel
+                    )
+                    fig_loc.update_traces(
+                        textinfo='percent+value', 
+                        texttemplate='%{percent:.0%}<br>(%{value}건)',
+                        insidetextorientation='horizontal',
+                        textfont_size=11
+                    )
+                    fig_loc.update_layout(
+                        margin=dict(t=30, b=0, l=0, r=0), height=350,
+                        showlegend=True,
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.5), # 범례를 아래로
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        dragmode=False
+                    )
+                    st.plotly_chart(fig_loc, use_container_width=True, config={'displayModeBar': False})
+
+        # [2단] 유해위험요인 현황 (E컬럼 - Index 4)
+        with g_col2:
             if len(yearly_data.columns) >= 5:
                 target_col_cat = yearly_data.columns[4] 
-                st.write(f"**{target_col_cat} 현황**")
+                st.write(f"**⚠️ {target_col_cat} 현황**")
                 if not yearly_data[target_col_cat].dropna().empty:
                     yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
                     
@@ -880,32 +909,26 @@ if dashboard_data is not None:
                         yearly_data, names=target_col_cat, hole=0.3,
                         color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
                     )
-                    
-                    # --- [추가 및 수정된 부분 시작] ---
                     fig_pie.update_traces(
                         textinfo='percent+value', 
-                        texttemplate='%{percent:.1%}<br>(%{value}건)', # 퍼센트(소수점 1자리)와 건수 표시
-                        insidetextorientation='horizontal', # 글자를 가로로 고정
-                        textfont_size=12 # 글자 크기 조절 (필요시)
+                        texttemplate='%{percent:.0%}<br>(%{value}건)',
+                        insidetextorientation='horizontal',
+                        textfont_size=11
                     )
-                    # --- [추가 및 수정된 부분 끝] ---
-
-                    # 기존 레이아웃 설정
                     fig_pie.update_layout(
-                        margin=dict(t=30, b=0, l=0, r=0), 
-                        height=350,
+                        margin=dict(t=30, b=0, l=0, r=0), height=350,
+                        showlegend=True,
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.5), # 범례를 아래로
                         paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        font=dict(color=None),
                         dragmode=False
                     )
-                    st.plotly_chart(fig_pie, width="stretch", theme="streamlit", config={'displayModeBar': False})
-        with g_col2:
+                    st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
+
+        # [3단] 시설별 점검 건수
+        with g_col3:
             target_col_fac = "시설명" 
             if target_col_fac in yearly_data.columns:
-                st.write(f"**{target_col_fac}별 점검 건수**")
-                
-                # 데이터 집계
+                st.write(f"**🏢 {target_col_fac}별 건수**")
                 yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
                 fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
                 fac_counts.columns = [target_col_fac, '건수']
@@ -914,38 +937,21 @@ if dashboard_data is not None:
                     fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
                     color_discrete_map=FACILITY_COLOR_MAP
                 )
-                
-                # --- [수치 표기 설정 추가 시작] ---
                 fig_bar.update_traces(
-                    texttemplate='%{y}건',      # Y축 값 뒤에 '건' 추가
-                    textposition='outside',    # 막대 바깥쪽 상단에 표시
-                    textfont_size=12,          # 텍스트 크기 조절
-                    cliponaxis=False           # 그래프 경계에서 글자가 잘리지 않게 설정
+                    texttemplate='%{y}건', 
+                    textposition='outside',
+                    textfont_size=11
                 )
-                # --- [수치 표기 설정 추가 끝] ---
-                
-                # 확대/축소 방지 및 레이아웃 설정
-                fig_bar.update_xaxes(fixedrange=True)
-                fig_bar.update_yaxes(fixedrange=True)
-                
                 fig_bar.update_layout(
-                    margin=dict(t=35, b=0, l=0, r=0), # 텍스트 표시를 위해 상단 마진(t)을 약간 늘림
-                    height=350, 
+                    margin=dict(t=35, b=0, l=0, r=0), height=350, 
                     showlegend=False,
-                    xaxis_title=None, 
-                    yaxis_title="점검 건수",
+                    xaxis_title=None, yaxis_title=None,
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
-                    font=dict(color=None),
                     dragmode=False 
                 )
-                
-                st.plotly_chart(
-                    fig_bar, 
-                    width="stretch", 
-                    theme="streamlit",
-                    config={'displayModeBar': False}
-                )
+                st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+
 
 # --- 푸터(Footer) 섹션 ---
 st.write("") # 간격 확보
