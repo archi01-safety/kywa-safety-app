@@ -5,7 +5,6 @@ google-genai
 python-docx
 xlsxwriter
 openpyxl
-opencv-python-headless
 mediapipe
 streamlit-webrtc
 google-api-python-client  # <--- [필수] 이거를 추가해야 24라인 에러가 사라집니다.
