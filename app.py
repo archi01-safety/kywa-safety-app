@@ -56,7 +56,8 @@ def upload_to_drive(file_name, file_content, mime_type):
         file = drive_service.files().create(
             body=file_metadata,
             media_body=media,
-            fields='id, webViewLink'
+            fields='id',
+            supportsAllDrives=True,  # 👈 이 옵션이 반드시 True여야 공유 드라이브에 저장됩니다.
         ).execute()
         
         # 업로드된 파일의 링크 반환
