@@ -5,6 +5,7 @@ google-genai
 python-docx
 xlsxwriter
 openpyxl
+opencv-contrib-python-headless
 mediapipe
 streamlit-webrtc
 google-api-python-client
