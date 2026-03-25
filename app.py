@@ -26,7 +26,7 @@ from googleapiclient.http import MediaIoBaseUpload
 
 
 # --- [1단계] 구글 드라이브/시트 설정 (PEM 로드 집중 수정 버전) ---
-DRIVE_FOLDER_ID = "13RYVnDB7rrqLQYzB5Wa9WdWr0CHjm_MW"
+DRIVE_FOLDER_ID = "1NSIdLKvPPaUmnxTXHw8YUhYUlLxGrp7a"
 SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q"
 
 # --- [추가] 실제 구글 드라이브에 파일을 업로드하는 함수 ---
