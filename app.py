@@ -728,11 +728,15 @@ if st.session_state.analysis_results:
                     # 비식별 이미지 확인 및 드라이브 업로드
                     if "final_secure_image" in st.session_state and st.session_state.final_secure_image:
                         filename = f"{selected_facility}_{timestamp_str}.jpg"
-                        secure_photo_file = io.BytesIO(st.session_state.final_secure_image)
-                        secure_photo_file.name = filename
-                        photo_link = upload_photo_to_drive(secure_photo_file, filename)
+                        # 앱스 스크립트 대신, 1단계에서 만든 서비스 계정 업로드 함수를 직접 호출합니다.
+                        photo_link = upload_to_drive(
+                            file_name=filename, 
+                            file_content=st.session_state.final_secure_image, 
+                            mime_type='image/jpeg'
+                        )
                     
                     success_count = 0
+
                     # 구글 시트 컬럼 순서에 맞춰 리스트 재구성
                     for row in st.session_state.final_data:
                         sheet_row = [
