@@ -506,7 +506,7 @@ def apply_face_blur_ai(img_file):
 
 # --- 분석 시작 버튼 부분 (핵심 로직 통합) ---
 
-if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
+if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
     if not user_description.strip() and not img_file:
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
@@ -719,7 +719,7 @@ if st.session_state.analysis_results:
 
     # --- [3단계] 전송 버튼 로직 ---
     st.write("")
-    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
+    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", width="stretch"):
         if sheets_service is None or drive_service is None:
             st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
         elif not st.session_state.get("final_data"):
@@ -919,7 +919,7 @@ if dashboard_data is not None:
                         paper_bgcolor='rgba(0,0,0,0)',
                         dragmode=False
                     )
-                    st.plotly_chart(fig_loc, use_container_width=True, config={'displayModeBar': False})
+                    st.plotly_chart(fig_loc, width="stretch", config={'displayModeBar': False})
 
         # [2단] 유해위험요인 현황 (E컬럼 - Index 4)
         with g_col2:
@@ -955,7 +955,7 @@ if dashboard_data is not None:
                         paper_bgcolor='rgba(0,0,0,0)',
                         dragmode=False
                     )
-                    st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
+                    st.plotly_chart(fig_pie, width="stretch", config={'displayModeBar': False})
 
         # [3단] 시설별 점검 건수
         with g_col3:
@@ -983,7 +983,7 @@ if dashboard_data is not None:
                     plot_bgcolor='rgba(0,0,0,0)',
                     dragmode=False 
                 )
-                st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+                st.plotly_chart(fig_bar, width="stretch", config={'displayModeBar': False})
 
 # --- 푸터(Footer) 섹션 ---
 st.write("") # 간격 확보
