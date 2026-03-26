@@ -135,8 +135,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # 1. 환경 설정 및 보안 우회 (필요한 경우)
-os.environ['PYTHONHTTPSVERIFY'] = '0'
-ssl._create_default_https_context = ssl._create_unverified_context
+
 
 # 2. 페이지 설정 및 세션 초기화
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
