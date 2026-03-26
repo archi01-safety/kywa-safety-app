@@ -32,44 +32,56 @@ SPREADSHEET_ID = "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q"
 # --- [추가] 실제 구글 드라이브에 파일을 업로드하는 함수 ---
 def upload_to_drive(file_name, file_content, mime_type):
     """
-    구글 드라이브의 특정 폴더로 파일을 업로드합니다.
+    구글 드라이브의 특정 폴더로 파일을 업로드하고, 
+    공유 가능한 링크(webViewLink)를 반환합니다.
     """
     if drive_service is None:
         st.error("구글 드라이브 서비스가 연결되지 않았습니다.")
         return None
     
     try:
-        # 파일 메타데이터 설정 (이름과 저장될 폴더 지정)
+        # 1. 파일 메타데이터 설정
         file_metadata = {
             'name': file_name,
-            'parents': [DRIVE_FOLDER_ID]  # 이전에 설정하신 폴더 ID가 여기 쓰입니다.
+            'parents': [DRIVE_FOLDER_ID]
         }
         
-        # 파일 콘텐츠 준비
+        # 2. 파일 콘텐츠 준비
         media = MediaIoBaseUpload(
             io.BytesIO(file_content), 
             mimetype=mime_type, 
             resumable=True
         )
         
-        # 드라이브에 파일 생성
+        # 3. 드라이브에 파일 생성 (fields에 webViewLink를 요청하는 것이 핵심!)
         file = drive_service.files().create(
             body=file_metadata,
             media_body=media,
-            fields='id',
+            fields='id, webViewLink', # 👈 여기를 수정해야 시트에 링크가 찍힙니다.
             supportsAllDrives=True,
             supportsTeamDrives=True
         ).execute()
         
-        # 업로드된 파일의 링크 반환
+        file_id = file.get('id')
+        
+        # 4. 파일 권한 설정 (이 코드가 있어야 워크스페이스 계정에서 사진이 바로 보입니다)
+        user_permission = {
+            'type': 'anyone',
+            'role': 'reader',
+        }
+        drive_service.permissions().create(
+            fileId=file_id,
+            body=user_permission,
+            supportsAllDrives=True,
+            supportsTeamDrives=True
+        ).execute()
+        
+        # 5. 생성된 파일의 공유 링크 반환
         return file.get('webViewLink')
         
     except Exception as e:
         st.error(f"구글 드라이브 업로드 중 에러 발생: {e}")
         return None
-
-drive_service = None
-sheets_service = None
 
 if "gcp_service_account" in st.secrets:
     try:
@@ -80,7 +92,7 @@ if "gcp_service_account" in st.secrets:
             creds_dict = dict(creds_info)
             creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
             
-            SCOPES = ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/spreadsheets']
+            SCOPES = ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/spreadsheets']
             creds = service_account.Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
             
             drive_service = build('drive', 'v3', credentials=creds)
