@@ -5,24 +5,22 @@ st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide"
 
 # [2] 필수 라이브러리 임포트
 import os
-import ssl
-import json
-import requests
 import io
 import datetime
-import base64
-import codecs
+import json
 import pandas as pd
 import numpy as np
 import cv2
 import plotly.express as px
-from PIL import Image
+from PIL import Image, ImageFilter
 from docx import Document
-import google.genai as genai  # 최신 라이브러리로 교체
-from PIL import Image, ImageFilter # 새로 넣음
+
+# Google 관련 최신 라이브러리
+import google.genai as genai
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
+
 
 
 # --- [1단계] 구글 드라이브/시트 설정 (PEM 로드 집중 수정 버전) ---
