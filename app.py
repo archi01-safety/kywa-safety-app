@@ -5,22 +5,24 @@ st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide"
 
 # [2] 필수 라이브러리 임포트
 import os
+import ssl
+import json
+import requests
 import io
 import datetime
-import json
+import base64
+import codecs
 import pandas as pd
 import numpy as np
 import cv2
 import plotly.express as px
-from PIL import Image, ImageFilter
+from PIL import Image
 from docx import Document
-
-# Google 관련 최신 라이브러리
-import google.genai as genai
+import google.genai as genai  # 최신 라이브러리로 교체
+from PIL import Image, ImageFilter # 새로 넣음
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload
-
 
 
 # --- [1단계] 구글 드라이브/시트 설정 (PEM 로드 집중 수정 버전) ---
@@ -135,7 +137,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # 1. 환경 설정 및 보안 우회 (필요한 경우)
-
+os.environ['PYTHONHTTPSVERIFY'] = '0'
+ssl._create_default_https_context = ssl._create_unverified_context
 
 # 2. 페이지 설정 및 세션 초기화
 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
@@ -335,7 +338,7 @@ with col1:
     st.markdown("### **🏢 점검 대상 정보**")
     selected_facility = st.radio("• 시설명 선택 (필수)", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], horizontal=True)
     
-    dept_list = ["활동부", "협력부", "근로자대표", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "자회사"]
+    dept_list = ["활동부", "협력부", "근로자대표", "청소년성장지원부", "지도인력양성부", "지도인력개발부", "청렴감사실", "기획혁신부", "인재경영부", "홍보전략부", "안전경영부", "재무회계부", "디지털정보부", "자회사"]
     selected_dept = st.selectbox("• 담당 부서 선택 (필수)", dept_list)
     
     st.markdown("### **📝 현장 상황 설명**")
@@ -506,7 +509,7 @@ def apply_face_blur_ai(img_file):
 
 # --- 분석 시작 버튼 부분 (핵심 로직 통합) ---
 
-if st.button("🚀 KYWA AI 위험요인 분석 시작", width="stretch"):
+if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True):
     if not user_description.strip() and not img_file:
         st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
     else:
@@ -719,7 +722,7 @@ if st.session_state.analysis_results:
 
     # --- [3단계] 전송 버튼 로직 ---
     st.write("")
-    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", width="stretch"):
+    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True):
         if sheets_service is None or drive_service is None:
             st.error("⚠️ GCP 인증에 실패하여 데이터를 전송할 수 없습니다. 관리자에게 문의하세요.")
         elif not st.session_state.get("final_data"):
@@ -881,11 +884,48 @@ if dashboard_data is not None:
             "미래": "#92B06A", "생태": "#5F7161"
         }
 
-# --- 4. 그래프 시각화 영역 (2단 구성으로 변경) ---
-        g_col1, g_col2 = st.columns(2)
+# --- 4. 그래프 시각화 영역 (3단 구성으로 변경) ---
+        g_col1, g_col2, g_col3 = st.columns(3)
 
-        # [1단] 유해위험요인 현황 (E컬럼 - Index 4)
+        # [1단] 장소 현황 (D컬럼 - Index 3)
         with g_col1:
+            if len(yearly_data.columns) >= 4:
+                target_col_loc = yearly_data.columns[3] 
+                st.write(f"**📍 {target_col_loc} 현황**")
+                if not yearly_data[target_col_loc].dropna().empty:
+                    yearly_data[target_col_loc] = yearly_data[target_col_loc].astype(str).str.strip()
+                    
+                    fig_loc = px.pie(
+                        yearly_data, names=target_col_loc, hole=0.3,
+                        color_discrete_sequence=px.colors.qualitative.Pastel
+                    )
+                    fig_loc.update_traces(
+                        textinfo='percent+value', 
+                        texttemplate='%{percent:.0%}<br>(%{value}건)',
+                        insidetextorientation='horizontal',
+                        textfont_size=11
+                    )
+                    # 🔴 [수정됨] fig_pie -> fig_loc 으로 변경
+                    fig_loc.update_layout(
+                        margin=dict(t=30, b=80, l=0, r=0), 
+                        height=450, 
+                        showlegend=True,
+                        legend=dict(
+                            orientation="h",      
+                            yanchor="top",        
+                            y=-0.1,               
+                            xanchor="center",     
+                            x=0.5,
+                            font=dict(size=10),   
+                            itemwidth=30          
+                        ),
+                        paper_bgcolor='rgba(0,0,0,0)',
+                        dragmode=False
+                    )
+                    st.plotly_chart(fig_loc, use_container_width=True, config={'displayModeBar': False})
+
+        # [2단] 유해위험요인 현황 (E컬럼 - Index 4)
+        with g_col2:
             if len(yearly_data.columns) >= 5:
                 target_col_cat = yearly_data.columns[4] 
                 st.write(f"**⚠️ {target_col_cat} 현황**")
@@ -918,10 +958,10 @@ if dashboard_data is not None:
                         paper_bgcolor='rgba(0,0,0,0)',
                         dragmode=False
                     )
-                    st.plotly_chart(fig_pie, width="stretch", config={'displayModeBar': False})
+                    st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
 
-        # [2단] 시설별 점검 건수
-        with g_col2:
+        # [3단] 시설별 점검 건수
+        with g_col3:
             target_col_fac = "시설명" 
             if target_col_fac in yearly_data.columns:
                 st.write(f"**🏢 {target_col_fac}별 건수**")
@@ -939,14 +979,14 @@ if dashboard_data is not None:
                     textfont_size=11
                 )
                 fig_bar.update_layout(
-                    margin=dict(t=35, b=0, l=0, r=0), height=450, # 높이를 1단과 동일하게 450으로 맞춤 
+                    margin=dict(t=35, b=0, l=0, r=0), height=450, # 높이를 1, 2단과 동일하게 450으로 맞춤 
                     showlegend=False,
                     xaxis_title=None, yaxis_title=None,
                     paper_bgcolor='rgba(0,0,0,0)',
                     plot_bgcolor='rgba(0,0,0,0)',
                     dragmode=False 
                 )
-                st.plotly_chart(fig_bar, width="stretch", config={'displayModeBar': False})
+                st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
 
 # --- 푸터(Footer) 섹션 ---
 st.write("") # 간격 확보
