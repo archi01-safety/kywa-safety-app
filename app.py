@@ -331,8 +331,8 @@ with header_col2:
 
 st.divider()
 
-# --- 5. 입력 섹션 ---
-col1, col2 = st.columns(2)
+# --- [1] UI 레이아웃 설정 (페이지 상단 어딘가에 이미 있을 것입니다) ---
+col1, col2 = st.columns([1, 1]) 
 
 with col1:
     st.markdown("### **🏢 점검 대상 정보**")
@@ -345,33 +345,7 @@ with col1:
     placeholder_text = "<예  시>\n1. 본관 2층 테라스 난간 흔들림\n2. 정문 보도블록 파손으로 넘어질 위험\n  (자세히 작성할수록 정확한 결과가 나옵니다.)"
     user_description = st.text_area("• 상황 설명 입력 (권장)", placeholder=placeholder_text, height=150)
 
-with col2:
-    st.markdown("### **📸 사진 기록 방식**")
-    
-    # [1] 안내 문구
-    st.markdown("""
-        • **사진 방식 선택** <div style="font-size: 0.85rem; color: #808080; line-height: 1.5; margin-top: 5px;">
-            🚫 얼굴(정면)을 업로드 하지 않도록 주의<br>
-            🚫 개인정보 및 주요자료가 포함되지 않도록 주의
-        </div>
-        """, unsafe_allow_html=True)
-
-    # [2] 변수 정의 (이 줄이 반드시 if문보다 위에 있어야 합니다)
-    source_option = st.radio(
-        label="사진 방식 선택 레이블(숨김)", 
-        options=("📸 사진", "🚫 없음"), 
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-
-    img_file = None
-
-    # [3] 조건문 실행
-    if "📸" in source_option:
-        st.info("📸 아래 박스를 클릭하면 [사진촬영] 또는 [사진업로드] 선택이 가능합니다.")
-        
-       
-# 1. 업로더 한글화 CSS (디자인 적용)
+# --- [2] 사진 업로더 전용 CSS (한 번만 선언, 위치 상관없음) ---
 st.markdown("""
     <style>
         /* 원래 있던 영어 텍스트 숨기기 */
@@ -416,24 +390,45 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. 통합된 업로더 (변수명을 img_file로 통일하여 분석 버튼과 연결)
-img_file = st.file_uploader(
-    "사진 업로드 전용", 
-    type=['png', 'jpg', 'jpeg'], 
-    label_visibility="collapsed",
-    key="safe_upload" # 분석 버튼 로직에서 사용하는 key와 맞춰주는 것이 좋습니다.
-)
+# --- [3] 오른쪽 컬럼(col2) 내용 구성 ---
+with col2:
+    st.markdown("### **📸 사진 기록 방식**")
+    
+    # 안내 문구
+    st.markdown("""
+        • **사진 방식 선택** <div style="font-size: 0.85rem; color: #808080; line-height: 1.5; margin-top: 5px;">
+            🚫 얼굴(정면)을 업로드 하지 않도록 주의<br>
+            🚫 개인정보 및 주요자료가 포함되지 않도록 주의
+        </div>
+        """, unsafe_allow_html=True)
 
-# 3. 사진 업로드 시 미리보기 및 안내 문구 (요청하신 우측 컬럼 배치)
-if img_file:
-    col_preview, col_info = st.columns([1, 1.5]) # 왼쪽 미리보기, 오른쪽 문구
-    with col_preview:
-        st.image(img_file, caption="업로드된 원본 사진", width=300)
-    with col_info:
-        st.write("") # 상단 여백
-        st.success("✅ 사진이 성공적으로 등록되었습니다.")
-        st.info("💡 아래 '분석 시작' 버튼을 누르면 AI가 얼굴을 비식별화 후 분석을 시작합니다.")
+    # 변수 정의 및 라디오 버튼
+    source_option = st.radio(
+        label="사진 방식 선택 레이블(숨김)", 
+        options=("📸 사진", "🚫 없음"), 
+        horizontal=True,
+        label_visibility="collapsed"
+    )
 
+    img_file = None # 초기화
+
+    # 조건문 실행: 반드시 with col2 안에 들여쓰기가 되어야 합니다.
+    if "📸" in source_option:
+        st.info("📸 아래 박스를 클릭하면 [사진촬영] 또는 [사진업로드] 선택이 가능합니다.")
+        
+        # 통합된 업로더 (이 부분이 col2 안으로 들어왔습니다)
+        img_file = st.file_uploader(
+            "사진 업로드 전용", 
+            type=['png', 'jpg', 'jpeg'], 
+            label_visibility="collapsed",
+            key="safe_upload"
+        )
+
+        # 사진 업로드 시 미리보기 및 안내 (col2 내부에서 다시 컬럼 분할 가능)
+        if img_file:
+            st.image(img_file, caption="업로드된 원본 사진", use_container_width=True)
+            st.success("✅ 사진이 성공적으로 등록되었습니다.")
+            st.info("💡 아래 '분석 시작' 버튼을 누르면 AI가 비식별화 후 분석을 시작합니다.")
 def apply_face_blur_ai(img_file):
     """
     Gemini AI로 얼굴 좌표를 정밀 탐지하고 OpenCV로 블러링합니다.
