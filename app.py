@@ -426,18 +426,11 @@ with col2:
 
         # 사진 업로드 시 미리보기 및 안내
         if img_file:
-            # 1. 파일 포인터를 처음으로 되돌림 (가장 중요)
-            img_file.seek(0)
-            
-            # 2. PIL 이미지로 열기
+            # --- 회전 보정 코드 추가 ---
             raw_img = Image.open(img_file)
-            
-            # 3. EXIF 정보를 바탕으로 물리적 회전 보정
             fixed_img = ImageOps.exif_transpose(raw_img)
-            
-            # 4. 미리보기에 'img_file'이 아닌 'fixed_img'(보정된 객체)를 직접 전달
-            st.image(fixed_img, caption="회전 보정 완료 (정상 방향)", use_container_width=True)
-            
+            st.image(fixed_img, caption="업로드된 사진 (회전 보정 완료)", use_container_width=True)
+            # --------------------------
             st.success("✅ 사진이 성공적으로 등록되었습니다.")
             st.info("💡 아래 '분석 시작' 버튼을 누르면 AI가 비식별화 후 분석을 시작합니다.")
 
