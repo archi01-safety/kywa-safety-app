@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 import cv2
 import plotly.express as px
-from PIL import Image, ImageOps
+from PIL import Image
 from docx import Document
 import google.genai as genai  # 최신 라이브러리로 교체
 from PIL import Image, ImageFilter # 새로 넣음
@@ -424,34 +424,27 @@ with col2:
             key="safe_upload"
         )
 
-        # 사진 업로드 시 미리보기 및 안내
+        # 사진 업로드 시 미리보기 및 안내 (col2 내부에서 다시 컬럼 분할 가능)
         if img_file:
-            # --- 회전 보정 코드 추가 ---
-            raw_img = Image.open(img_file)
-            fixed_img = ImageOps.exif_transpose(raw_img)
-            st.image(fixed_img, caption="업로드된 사진 (회전 보정 완료)", use_container_width=True)
-            # --------------------------
+            st.image(img_file, caption="업로드된 원본 사진", use_container_width=True)
             st.success("✅ 사진이 성공적으로 등록되었습니다.")
             st.info("💡 아래 '분석 시작' 버튼을 누르면 AI가 비식별화 후 분석을 시작합니다.")
-
 def apply_face_blur_ai(img_file):
     """
     Gemini AI로 얼굴 좌표를 정밀 탐지하고 OpenCV로 블러링합니다.
     """
     try:
-        # 1. 이미지 읽기 및 회전 보정 (핵심 수정 구간)
+        # 1. 이미지 읽기 및 변환
         img_file.seek(0)
-        pil_img = Image.open(img_file)
-        pil_img = ImageOps.exif_transpose(pil_img) # 사진을 똑바로 세움
-
-        # OpenCV 처리를 위해 보정된 PIL 이미지를 numpy 배열로 변환
-        image = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
-        
+        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         if image is None: return img_file.getvalue()
         
         h, w, _ = image.shape
+        pil_img = Image.open(io.BytesIO(img_file.getvalue()))
 
-        # 2. Gemini AI에게 얼굴 좌표 요청 (보정된 pil_img 사용)
+        # 2. Gemini AI에게 얼굴 좌표 요청 (JSON 형식)
+        # prompt에 '얼굴이 없다면 빈 리스트를 반환해'라고 명시하여 오류 방지
         prompt = """
         이미지에서 모든 사람의 얼굴(머리 전체) 위치를 찾아서 
         [ymin, xmin, ymax, xmax] 좌표 리스트로 응답해줘. 
@@ -461,7 +454,7 @@ def apply_face_blur_ai(img_file):
         
         response = client.models.generate_content(
             model=model_name,
-            contents=[prompt, pil_img], # 똑바로 선 이미지 전달
+            contents=[prompt, pil_img],
             config=genai.types.GenerateContentConfig(
                 response_mime_type="application/json"
             )
