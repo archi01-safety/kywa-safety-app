@@ -103,6 +103,22 @@ if "gcp_service_account" in st.secrets:
 else:
     st.error("Secrets 설정에서 'gcp_service_account'를 찾을 수 없습니다.")
 
+# --- [추가] 이미지 압축 함수 ---
+def compress_image(uploaded_file):
+    """
+    업로드된 이미지의 해상도를 최대 1280px로 조정하고
+    화질을 80%로 압축하여 대역폭 및 API 처리 속도를 최적화합니다.
+    """
+    image = Image.open(uploaded_file)
+    # 1. 최대 해상도를 1280px 수준으로 리사이징 (비율 유지)
+    image.thumbnail((1280, 1280))
+    
+    # 2. JPEG 파일로 압축하여 바이트로 변환
+    buffer = io.BytesIO()
+    image.convert("RGB").save(buffer, format="JPEG", quality=80) # 화질 80%로 압축
+    buffer.seek(0)
+    return buffer.getvalue() # 바이트 값 자체를 반환
+
 # (이후 기존의 CSS 설정 및 나머지 코드를 이어 붙이시면 됩니다.)
 # 주의: 아래쪽에 있는 st.set_page_config(page_title="KYWA AI 위험성평가 시스템", ...) 코드는 삭제하세요.
 
@@ -432,19 +448,28 @@ with col2:
 def apply_face_blur_ai(img_file):
     """
     Gemini AI로 얼굴 좌표를 정밀 탐지하고 OpenCV로 블러링합니다.
+    압축된 이미지를 사용하여 속도를 최적화합니다.
     """
     try:
-        # 1. 이미지 읽기 및 변환
+        # 1. [속도 최적화] 원본 이미지를 1280px, 화질 80%로 선제 압축
         img_file.seek(0)
-        file_bytes = np.asarray(bytearray(img_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        if image is None: return img_file.getvalue()
+        compressed_bytes = compress_image(img_file)
         
+        # 2. 압축된 바이트 데이터를 OpenCV 이미지 객체로 변환
+        file_bytes = np.asarray(bytearray(compressed_bytes), dtype=np.uint8)
+        image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+        
+        # 변환 실패 시 안전하게 압축된 바이트 원본 반환 (앱 크래시 방지)
+        if image is None: 
+            return compressed_bytes 
+        
+        # 압축된 이미지의 해상도 정보 추출
         h, w, _ = image.shape
-        pil_img = Image.open(io.BytesIO(img_file.getvalue()))
+        
+        # Gemini API 전송을 위해 PIL 이미지 객체도 압축본 기반으로 생성
+        pil_img = Image.open(io.BytesIO(compressed_bytes))
 
-        # 2. Gemini AI에게 얼굴 좌표 요청 (JSON 형식)
-        # prompt에 '얼굴이 없다면 빈 리스트를 반환해'라고 명시하여 오류 방지
+        # 3. Gemini AI에게 얼굴 좌표 요청 (JSON 형식)
         prompt = """
         이미지에서 모든 사람의 얼굴(머리 전체) 위치를 찾아서 
         [ymin, xmin, ymax, xmax] 좌표 리스트로 응답해줘. 
