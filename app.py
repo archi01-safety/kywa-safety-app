@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 import cv2
 import plotly.express as px
+import urllib.parse
 from PIL import Image
 from docx import Document
 import google.genai as genai  # 최신 라이브러리로 교체
@@ -739,6 +740,71 @@ if st.session_state.analysis_results:
 
     # 수정된 데이터를 즉시 세션 상태에 업데이트
     st.session_state.final_data = edited_df.to_dict('records')
+
+# ------------------------------------------------------------------
+    # 💡 [신규 추가] KOSHA GUIDE (자율 안전보건가이드) 연동 섹션
+    # ------------------------------------------------------------------
+    st.write("")
+    with st.expander("📚 **관련 KOSHA GUIDE (자율 안전보건가이드) 조회 및 다운로드**", expanded=True):
+        st.caption("※ 산업안전보건공단 Open API 연동: 법적 최소 기준 외에 현장에 바로 적용 가능한 자율 기술지침 원문 제공")
+        
+        # 데이터프레임에서 관련근거(law) 또는 위험상황(scenario)의 키워드 추출
+        search_kw = ""
+        if not edited_df.empty:
+            # 예: 첫 번째 행의 'category'나 'scenario' 단어를 키워드로 활용
+            raw_cat = edited_df.iloc[0].get('category', '')
+            search_kw = raw_cat.split()[0] if raw_cat else "안전"
+
+        if search_kw:
+            guides = search_kosha_guide(search_kw)
+            if guides:
+                st.success(f"키워드 **' {search_kw} '** 관련 코샤가이드 {len(guides)}건이 검색되었습니다.")
+                for g in guides:
+                    rule_nm = g.get('ruleNm', '기술지침 가이드')
+                    rule_no = g.get('ruleNo', '')
+                    down_url = g.get('downUrl', '')
+
+                    c1, c2 = st.columns([3, 1])
+                    with c1:
+                        st.markdown(f"• **[{rule_no}]** {rule_nm}")
+                    with c2:
+                        if down_url:
+                            st.link_button("📥 지침 다운로드", down_url, use_container_width=True)
+                        else:
+                            st.caption("링크 없음")
+            else:
+                st.info(f"키워드 '{search_kw}'에 대한 별도 KOSHA GUIDE 검색 결과가 없거나 준비 중입니다.")
+    # ------------------------------------------------------------------
+
+
+# --- 도구 함수 (Word/Excel 생성 및 API 연동) ---
+def search_kosha_guide(search_keyword):
+    """KOSHA GUIDE API를 호출하여 관련 지침 목록을 가져오는 함수"""
+    import urllib.parse
+    service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
+    endpoint = "https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
+    
+    params = {
+        'serviceKey': urllib.parse.unquote(service_key),
+        'pageNo': '1',
+        'numOfRows': '3',        # 상위 3개 연관 지침 검색
+        '_type': 'json',
+        'searchWrd': search_keyword
+    }
+    
+    try:
+        res = requests.get(endpoint, params=params, timeout=3)
+        if res.status_code == 200:
+            data = res.json()
+            items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
+            if isinstance(items, dict):
+                items = [items]
+            return items
+        return []
+    except Exception:
+        return []
+
+
 
     # --- [3단계] 전송 버튼 로직 ---
     st.write("")
