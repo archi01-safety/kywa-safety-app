@@ -848,26 +848,6 @@ if st.session_state.analysis_results:
     st.markdown("---")
     dl_col1, dl_col2 = st.columns(2)
     
-    # 수정된 데이터를 실시간으로 함수에 전달
-    if st.session_state.final_data:
-        with dl_col1:
-            st.download_button(
-                label="📂 Word 저장",
-                data=create_docx(st.session_state.final_data),
-                file_name=f"KYWA_{selected_facility}.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                width="stretch",
-                key="btn_word_download" # 클릭 시 사라짐 방지를 위한 고유 키
-            )
-        with dl_col2:
-            st.download_button(
-                label="📊 Excel 저장",
-                data=create_excel(st.session_state.final_data),
-                file_name=f"KYWA_{selected_facility}.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                width="stretch",
-                key="btn_excel_download" # 클릭 시 사라짐 방지를 위한 고유 키
-            )
 
 # --- [수정] 날짜 형식 오류를 해결한 데이터 로드 함수 ---
 def load_dashboard_data():
