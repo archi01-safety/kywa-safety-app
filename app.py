@@ -185,27 +185,34 @@ except Exception as e:
     st.error(f"API 설정 오류가 발생했습니다: {e}")
     st.stop()
 
-# --- 도구 함수 (Word/Excel 생성) ---
-def create_docx(data):
-    doc = Document()
-    doc.add_heading('KYWA AI 위험성평가 결과 보고서', 0)
-    for item in data:
-        doc.add_paragraph(f"분류: {item.get('category')}")
-        doc.add_paragraph(f"장소: {item.get('location')}")
-        doc.add_paragraph(f"상황: {item.get('scenario')}")
-        doc.add_paragraph(f"등급: {item.get('grade')} (점수: {item.get('score')})")
-        doc.add_paragraph(f"대책: {item.get('solution')}")
-        doc.add_paragraph("-" * 20)
-    bio = io.BytesIO()
-    doc.save(bio)
-    return bio.getvalue()
 
-def create_excel(data):
-    df = pd.DataFrame(data)
-    bio = io.BytesIO()
-    with pd.ExcelWriter(bio, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Sheet1')
-    return bio.getvalue()
+# --- 도구 함수 (Word/Excel 생성 및 API 연동) ---
+def search_kosha_guide(search_keyword):
+    """KOSHA GUIDE API를 호출하여 관련 지침 목록을 가져오는 함수"""
+    import urllib.parse
+    service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
+    endpoint = "https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
+    
+    params = {
+        'serviceKey': urllib.parse.unquote(service_key),
+        'pageNo': '1',
+        'numOfRows': '3',        # 상위 3개 연관 지침 검색
+        '_type': 'json',
+        'searchWrd': search_keyword
+    }
+    
+    try:
+        res = requests.get(endpoint, params=params, timeout=3)
+        if res.status_code == 200:
+            data = res.json()
+            items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
+            if isinstance(items, dict):
+                items = [items]
+            return items
+        return []
+    except Exception:
+        return []
+
 
 
 
@@ -775,35 +782,6 @@ if st.session_state.analysis_results:
             else:
                 st.info(f"키워드 '{search_kw}'에 대한 별도 KOSHA GUIDE 검색 결과가 없거나 준비 중입니다.")
     # ------------------------------------------------------------------
-
-
-# --- 도구 함수 (Word/Excel 생성 및 API 연동) ---
-def search_kosha_guide(search_keyword):
-    """KOSHA GUIDE API를 호출하여 관련 지침 목록을 가져오는 함수"""
-    import urllib.parse
-    service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
-    endpoint = "https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
-    
-    params = {
-        'serviceKey': urllib.parse.unquote(service_key),
-        'pageNo': '1',
-        'numOfRows': '3',        # 상위 3개 연관 지침 검색
-        '_type': 'json',
-        'searchWrd': search_keyword
-    }
-    
-    try:
-        res = requests.get(endpoint, params=params, timeout=3)
-        if res.status_code == 200:
-            data = res.json()
-            items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
-            if isinstance(items, dict):
-                items = [items]
-            return items
-        return []
-    except Exception:
-        return []
-
 
 
     # --- [3단계] 전송 버튼 로직 ---
