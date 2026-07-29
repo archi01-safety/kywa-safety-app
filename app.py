@@ -679,15 +679,8 @@ if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True
                             st.error(f"❌ 분석 중 오류가 발생했습니다: {e}")
                             st.stop()
 
-                # 3단계: Gemini API 호출 (최신 라이브러리 방식)
-                response = client.models.generate_content(
-                    model=model_name,
-                    contents=content, # 이제 content가 프롬프트와 사진을 모두 포함합니다.
-                    config={
-                        "response_mime_type": "application/json",
-                        "temperature": 0.0
-                    }
-                )
+                # 3단계: Gemini API 호출 (최신 라이브러리 방식) 중복 호출코드 삭제
+
 
                 # --- 분석 완료 처리 부분 (기존 코드 하단) ---
                 if response:
