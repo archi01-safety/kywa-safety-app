@@ -157,9 +157,8 @@ st.markdown("""
 os.environ['PYTHONHTTPSVERIFY'] = '0'
 ssl._create_default_https_context = ssl._create_unverified_context
 
-# 2. 페이지 설정 및 세션 초기화
-st.set_page_config(page_title="KYWA AI 위험성평가 시스템", layout="wide", page_icon="🚨")
-
+# 2. 세션 초기화 
+# (주의: 중복된 st.set_page_config 코드는 삭제했습니다.)
 if "analysis_results" not in st.session_state:
     st.session_state.analysis_results = None
 if "final_data" not in st.session_state:
