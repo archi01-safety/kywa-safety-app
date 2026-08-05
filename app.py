@@ -904,16 +904,21 @@ if dashboard_data is not None:
     else:
         st.subheader("📊 실시간 점검 데이터 현황 (2026년)")
         
-        # 3. 상단 지표
+        # 3. 상단 지표 (카드 스타일링 적용)
         total_count = len(yearly_data)
         m1, m2 = st.columns(2)
-        m1.metric("올해 누적 점검 건수", f"{total_count} 건")
         
-        author_col = "작성자 성명" 
-        if author_col in yearly_data.columns:
-            m2.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
-        else:
-            m2.metric("점검결과 제출 시설", f"{yearly_data['시설명'].nunique()} 개 시설")
+        with m1:
+            with st.container(border=True):
+                st.metric("올해 누적 점검 건수", f"{total_count} 건")
+        
+        with m2:
+            with st.container(border=True):
+                author_col = "작성자 성명" 
+                if author_col in yearly_data.columns:
+                    st.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
+                else:
+                    st.metric("점검결과 제출 시설", f"{yearly_data['시설명'].nunique()} 개 시설")
 
         # --- 색상 맵 설정 ---
         CATEGORY_COLOR_MAP = {
@@ -938,78 +943,92 @@ if dashboard_data is not None:
             "활동 안전": "#388E3C"       # 초록색 (일상 활동/야외)
         }
 
+        # 1. 20가지 안전관리 테마 색상 팔레트
+        SAFETY_PALETTE = [
+            "#B93444", "#6B5B95", "#E2725B", "#5B84B1", "#92B06A", 
+            "#D2B48C", "#2E4A62", "#5F7161", "#4F6272", "#8D5B4C",
+            "#778899", "#556B2F", "#8B4513", "#483D8B", "#2F4F4F",
+            "#BC8F8F", "#4682B4", "#9A7D0A", "#696969", "#800000"
+        ]
+
+        # 2. 동적 색상 할당 맵 생성 (시설 리스트 자동 추출 기반)
+        facility_options = cfg.get("facilities", ["기본시설"])
+
         FACILITY_COLOR_MAP = {
-            "중앙": "#B93444", "본원": "#6B5B95", "평창": "#E2725B",
-            "바이오": "#D2B48C", "해양": "#5B84B1", "우주": "#2E4A62",
-            "미래": "#92B06A", "생태": "#5F7161"
+            facility: SAFETY_PALETTE[i % len(SAFETY_PALETTE)] 
+            for i, facility in enumerate(facility_options)
         }
 
-# --- 4. 그래프 시각화 영역 (2단 구성으로 변경) ---
+        # --- 4. 그래프 시각화 영역 (2단 카드 구성) ---
         g_col1, g_col2 = st.columns(2)
 
-        # [1단] 유해위험요인 현황 (E컬럼 - Index 4)
+        # [1단] 유해위험요인 현황 카드
         with g_col1:
-            if len(yearly_data.columns) >= 5:
-                target_col_cat = yearly_data.columns[4] 
-                st.write(f"**⚠️ {target_col_cat} 현황**")
-                if not yearly_data[target_col_cat].dropna().empty:
-                    yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
+            with st.container(border=True):
+                if len(yearly_data.columns) >= 5:
+                    target_col_cat = yearly_data.columns[4] 
+                    st.write(f"**⚠️ {target_col_cat} 현황**")
+                    if not yearly_data[target_col_cat].dropna().empty:
+                        yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
+                        
+                        fig_pie = px.pie(
+                            yearly_data, names=target_col_cat, hole=0.3,
+                            color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
+                        )
+                        fig_pie.update_traces(
+                            textinfo='percent+value', 
+                            texttemplate='%{percent:.0%}<br>(%{value}건)',
+                            insidetextorientation='horizontal',
+                            textfont_size=11
+                        )
+                        fig_pie.update_layout(
+                            margin=dict(t=20, b=60, l=0, r=0), 
+                            height=400, 
+                            showlegend=True,
+                            legend=dict(
+                                orientation="h",      
+                                yanchor="top",        
+                                y=-0.1,               
+                                xanchor="center",     
+                                x=0.5,
+                                font=dict(size=10),   
+                                itemwidth=30          
+                            ),
+                            paper_bgcolor='rgba(0,0,0,0)',
+                            dragmode=False
+                        )
+                        st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
+
+        # [2단] 시설별 점검 건수 카드
+        with g_col2:
+            with st.container(border=True):
+                target_col_fac = "시설명" 
+                if target_col_fac in yearly_data.columns:
+                    st.write(f"**🏢 {target_col_fac}별 건수**")
+                    yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
+                    fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
+                    fac_counts.columns = [target_col_fac, '건수']
                     
-                    fig_pie = px.pie(
-                        yearly_data, names=target_col_cat, hole=0.3,
-                        color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
+                    fig_bar = px.bar(
+                        fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
+                        color_discrete_map=FACILITY_COLOR_MAP
                     )
-                    fig_pie.update_traces(
-                        textinfo='percent+value', 
-                        texttemplate='%{percent:.0%}<br>(%{value}건)',
-                        insidetextorientation='horizontal',
+                    fig_bar.update_traces(
+                        texttemplate='%{y}건', 
+                        textposition='outside',
                         textfont_size=11
                     )
-                    fig_pie.update_layout(
-                        margin=dict(t=30, b=80, l=0, r=0), 
-                        height=450, 
-                        showlegend=True,
-                        legend=dict(
-                            orientation="h",      
-                            yanchor="top",        
-                            y=-0.1,               
-                            xanchor="center",     
-                            x=0.5,
-                            font=dict(size=10),   
-                            itemwidth=30          
-                        ),
+                    fig_bar.update_layout(
+                        margin=dict(t=20, b=0, l=0, r=0), 
+                        height=400,
+                        showlegend=False,
+                        xaxis_title=None, yaxis_title=None,
                         paper_bgcolor='rgba(0,0,0,0)',
-                        dragmode=False
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        dragmode=False 
                     )
-                    st.plotly_chart(fig_pie, width="stretch", config={'displayModeBar': False})
+                    st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
 
-        # [2단] 시설별 점검 건수
-        with g_col2:
-            target_col_fac = "시설명" 
-            if target_col_fac in yearly_data.columns:
-                st.write(f"**🏢 {target_col_fac}별 건수**")
-                yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
-                fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
-                fac_counts.columns = [target_col_fac, '건수']
-                
-                fig_bar = px.bar(
-                    fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
-                    color_discrete_map=FACILITY_COLOR_MAP
-                )
-                fig_bar.update_traces(
-                    texttemplate='%{y}건', 
-                    textposition='outside',
-                    textfont_size=11
-                )
-                fig_bar.update_layout(
-                    margin=dict(t=35, b=0, l=0, r=0), height=450, # 높이를 1단과 동일하게 450으로 맞춤 
-                    showlegend=False,
-                    xaxis_title=None, yaxis_title=None,
-                    paper_bgcolor='rgba(0,0,0,0)',
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    dragmode=False 
-                )
-                st.plotly_chart(fig_bar, width="stretch", config={'displayModeBar': False})
 
 # --- 푸터(Footer) 섹션 ---
 st.write("") # 간격 확보
