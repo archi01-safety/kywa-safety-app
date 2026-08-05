@@ -943,20 +943,10 @@ if dashboard_data is not None:
             "활동 안전": "#388E3C"       # 초록색 (일상 활동/야외)
         }
 
-        # 1. 20가지 안전관리 테마 색상 팔레트
-        SAFETY_PALETTE = [
-            "#B93444", "#6B5B95", "#E2725B", "#5B84B1", "#92B06A", 
-            "#D2B48C", "#2E4A62", "#5F7161", "#4F6272", "#8D5B4C",
-            "#778899", "#556B2F", "#8B4513", "#483D8B", "#2F4F4F",
-            "#BC8F8F", "#4682B4", "#9A7D0A", "#696969", "#800000"
-        ]
-
-        # 2. 동적 색상 할당 맵 생성 (시설 리스트 자동 추출 기반)
-        facility_options = cfg.get("facilities", ["기본시설"])
-
         FACILITY_COLOR_MAP = {
-            facility: SAFETY_PALETTE[i % len(SAFETY_PALETTE)] 
-            for i, facility in enumerate(facility_options)
+            "중앙": "#B93444", "본원": "#6B5B95", "평창": "#E2725B",
+            "바이오": "#D2B48C", "해양": "#5B84B1", "우주": "#2E4A62",
+            "미래": "#92B06A", "생태": "#5F7161"
         }
 
         # --- 4. 그래프 시각화 영역 (2단 카드 구성) ---
