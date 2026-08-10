@@ -186,40 +186,31 @@ except Exception as e:
 
 
 def search_kosha_guide(search_keyword):
-    """KOSHA GUIDE API를 호출하여 관련 지침 목록을 가져오는 함수 (디버깅 포함)"""
-    import urllib.parse
+    """KOSHA GUIDE API 호출 함수 (serviceKey 인코딩 오류 해결)"""
     import requests
-    import streamlit as st  # 화면 출력을 위해 추가
+    import urllib.parse
     
-    service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
-    endpoint = "https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
+    # 1. 공공데이터포털에서 발급받은 Encoding 키를 그대로 사용
+    encoding_service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
     
-    params = {
-        'serviceKey': urllib.parse.unquote(service_key),
-        'pageNo': '1',
-        'numOfRows': '3',        # 상위 3개 연관 지침 검색
-        '_type': 'json',
-        'searchWrd': search_keyword
-    }
+    # 2. 키워드만 URL 인코딩 수행
+    encoded_keyword = urllib.parse.quote(search_keyword)
+    
+    # 3. URL에 serviceKey를 직접 포함시켜 requests가 키를 재인코딩하지 않도록 구성
+    endpoint = (
+        f"https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
+        f"?serviceKey={encoding_service_key}"
+        f"&pageNo=1&numOfRows=3&_type=json"
+        f"&searchWrd={encoded_keyword}"
+    )
     
     try:
-        res = requests.get(endpoint, params=params, timeout=5)
+        # params 매개변수 없이 URL을 직접 호출
+        res = requests.get(endpoint, timeout=5)
         
-        # ================= [디버깅 출력 시작] =================
-        st.write(f"🔍 **[디버그] KOSHA API 호출 키워드:** `{search_keyword}`")
-        st.write(f"1. 응답 상태 코드 (Status Code): `{res.status_code}`")
-        
-        # 실제 요청된 URL 확인 (인코딩 문제 점검용)
-        st.write(f"2. 요청 URL:")
-        st.code(res.url)
-        
-        # API 원문 응답 확인
-        st.write("3. API 원문 응답 데이터 (Response Body):")
-        st.code(res.text, language="json" if "_type=json" in res.url else "xml")
-        # ================= [디버깅 출력 끝] =================
-
         if res.status_code == 200:
             data = res.json()
+            # KOSHA GUIDE 응답 구조 파싱
             items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
             if isinstance(items, dict):
                 items = [items]
@@ -227,11 +218,7 @@ def search_kosha_guide(search_keyword):
         return []
         
     except Exception as e:
-        # 에러 발생 시 에러 메시지 출력
-        st.error(f"❌ KOSHA API 호출 중 예외 발생: {e}")
         return []
-
-
 
 
 # --- [2단계] 구글 드라이브/시트 전송 함수 추가 ---
