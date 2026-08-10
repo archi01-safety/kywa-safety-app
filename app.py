@@ -186,40 +186,55 @@ except Exception as e:
 
 
 def search_kosha_guide(search_keyword):
-    """KOSHA GUIDE API 호출 함수 (serviceKey 인코딩 오류 해결)"""
+    """KOSHA GUIDE API 호출 함수 (인코딩/헤더/파싱 종합 보완)"""
     import requests
     import urllib.parse
     
-    # 1. 공공데이터포털에서 발급받은 Encoding 키를 그대로 사용
-    encoding_service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
+    # 1. 공공데이터포털 [Decoding 인증키] 사용 (기존 소스상의 키)
+    decoding_service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
     
-    # 2. 키워드만 URL 인코딩 수행
-    encoded_keyword = urllib.parse.quote(search_keyword)
+    endpoint = "https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
     
-    # 3. URL에 serviceKey를 직접 포함시켜 requests가 키를 재인코딩하지 않도록 구성
-    endpoint = (
-        f"https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
-        f"?serviceKey={encoding_service_key}"
-        f"&pageNo=1&numOfRows=3&_type=json"
-        f"&searchWrd={encoded_keyword}"
-    )
+    # requests가 serviceKey를 이중 인코딩하지 않도록 unquote 처리 후 params 전달
+    params = {
+        'serviceKey': urllib.parse.unquote(decoding_service_key),
+        'pageNo': '1',
+        'numOfRows': '5',
+        '_type': 'json',
+        'searchWrd': search_keyword
+    }
+    
+    # User-Agent 헤더 추가 (봇 차단 방지)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
     
     try:
-        # params 매개변수 없이 URL을 직접 호출
-        res = requests.get(endpoint, timeout=5)
+        res = requests.get(endpoint, params=params, headers=headers, timeout=5)
         
         if res.status_code == 200:
             data = res.json()
-            # KOSHA GUIDE 응답 구조 파싱
-            items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
+            
+            # response -> body -> items 구조 안전 파싱
+            body = data.get('response', {}).get('body', {})
+            items_container = body.get('items', {})
+            
+            # items가 존재하지 않거나 빈 문자열인 경우 예외 처리
+            if not items_container:
+                return []
+                
+            items = items_container.get('item', [])
+            
+            # 결과가 단일 dict 객체로 올 경우 리스트로 변환
             if isinstance(items, dict):
                 items = [items]
+                
             return items
+            
         return []
         
-    except Exception as e:
+    except Exception:
         return []
-
 
 # --- [2단계] 구글 드라이브/시트 전송 함수 추가 ---
 
