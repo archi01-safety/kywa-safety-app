@@ -185,33 +185,47 @@ except Exception as e:
     st.stop()
 
 
-# --- 도구 함수 (Word/Excel 생성 및 API 연동) ---
+
 def search_kosha_guide(search_keyword):
-    """KOSHA GUIDE API를 호출하여 관련 지침 목록을 가져오는 함수"""
+    """KOSHA GUIDE API 호출 함수"""
+    import requests
     import urllib.parse
-    service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
+    
+    decoding_service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
     endpoint = "https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
     
     params = {
-        'serviceKey': urllib.parse.unquote(service_key),
+        'serviceKey': urllib.parse.unquote(decoding_service_key),
         'pageNo': '1',
-        'numOfRows': '3',        # 상위 3개 연관 지침 검색
-        '_type': 'json',
-        'searchWrd': search_keyword
+        'numOfRows': '5',
+        'callApiId': '1050',
+        'techGdlnNm': search_keyword
+    }
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
     
     try:
-        res = requests.get(endpoint, params=params, timeout=3)
+        res = requests.get(endpoint, params=params, headers=headers, timeout=5)
+        
         if res.status_code == 200:
             data = res.json()
-            items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
+            body = data.get('body', {})
+            items_container = body.get('items', {})
+            
+            if not items_container:
+                return []
+                
+            items = items_container.get('item', [])
             if isinstance(items, dict):
                 items = [items]
+                
             return items
+            
         return []
     except Exception:
         return []
-
 
 
 
@@ -741,63 +755,67 @@ if st.session_state.analysis_results:
     st.session_state.final_data = edited_df.to_dict('records')
 
 # ------------------------------------------------------------------
-    # 💡 [신규 추가] KOSHA GUIDE (자율 안전보건가이드) 연동 섹션
-    # ------------------------------------------------------------------
-    st.write("")
-    with st.expander("📚 **관련 KOSHA GUIDE (자율 안전보건가이드) 조회 및 다운로드**", expanded=True):
-        st.caption("※ 산업안전보건공단 Open API 연동: 법적 최소 기준 외에 현장에 바로 적용 가능한 자율 기술지침 원문 제공")
+# 💡 KOSHA GUIDE (자율 안전보건가이드) 연동 섹션 (수정 완료)
+# ------------------------------------------------------------------
+st.write("")
+with st.expander("📚 **관련 KOSHA GUIDE (자율 안전보건가이드) 조회 및 다운로드**", expanded=True):
+    st.caption("※ 산업안전보건공단 Open API 연동: 법적 최소 기준 외에 현장에 바로 적용 가능한 자율 기술지침 원문 제공")
+    
+    # 데이터프레임에서 실제 위험요인 키워드 우선 추출
+    search_kw = ""
+    if not edited_df.empty:
+        first_row = edited_df.iloc[0]
+        scenario_text = str(first_row.get('scenario', ''))
+        law_text = str(first_row.get('law', ''))
+        full_text = f"{scenario_text} {law_text}"
         
-        # 데이터프레임에서 실제 위험요인 키워드 우선 추출 (비계, 추락, 사다리, 전기, 개구부 등)
-        search_kw = ""
-        if not edited_df.empty:
-            first_row = edited_df.iloc[0]
-            scenario_text = str(first_row.get('scenario', ''))
-            law_text = str(first_row.get('law', ''))
-            full_text = f"{scenario_text} {law_text}"
-            
-            # 현장에서 자주 발생하는 주요 핵심 안전 키워드 목록
-            target_keywords = [
-                '비계', '추락', '개구부', '사다리', '지붕', '난간', 
-                '감전', '화재', '폭발', '밀폐공간', '질식', '굴착', 
-                '지게차', '크레인', '인공신호', '양중기', '통로', '전도', '낙하'
-            ]
-            
-            # 1순위: 위험상황/법률 문장에서 핵심 키워드 매칭 검색
-            for kw in target_keywords:
-                if kw in full_text:
-                    search_kw = kw
-                    break
-            
-            # 2순위: 매칭된 핵심 키워드가 없으면 위험상황 단어 중 하나 사용 (일반 '작업/안전' 제외)
-            if not search_kw and scenario_text:
-                words = [w for w in scenario_text.split() if len(w) >= 2 and w not in ['작업', '안전', '위험', '발생', '미흡', '조치']]
-                if words:
-                    search_kw = words[0]
-            
-            # 3순위: 기본값
-            if not search_kw:
-                search_kw = "추락"
+        # 작업 및 기계/기구 키워드를 상단에 배치
+        target_keywords = [
+            '용접', '비계', '사다리', '지게차', '크레인', '고소작업대',  # 작업/기구 (구체적)
+            '개구부', '지붕', '난간', '밀폐공간',                     # 장소/환경
+            '추락', '감전', '화재', '폭발', '질식', '낙하'              # 위험 유형 (일반적)
+        ]
+        
+        for kw in target_keywords:
+            if kw in full_text:
+                search_kw = kw
+                break
+        
+        if not search_kw and scenario_text:
+            words = [w for w in scenario_text.split() if len(w) >= 2 and w not in ['작업', '안전', '위험', '발생', '미흡', '조치']]
+            if words:
+                search_kw = words[0]
+        
+        if not search_kw:
+            search_kw = "추락"
 
-        if search_kw:
-            guides = search_kosha_guide(search_kw)
-            if guides:
-                st.success(f"키워드 **' {search_kw} '** 관련 코샤가이드 {len(guides)}건이 검색되었습니다.")
-                for g in guides:
-                    rule_nm = g.get('ruleNm', '기술지침 가이드')
-                    rule_no = g.get('ruleNo', '')
-                    down_url = g.get('downUrl', '')
+    if search_kw:
+        guides = search_kosha_guide(search_kw)
+        if guides:
+            st.success(f"키워드 **' {search_kw} '** 관련 코샤가이드 {len(guides)}건이 검색되었습니다.")
+            for g in guides:
+                # -----------------------------------------------------------
+                # 🛠️ [수정 포인트] 공공데이터포털 KOSHA GUIDE API 실제 필드명 매칭
+                # -----------------------------------------------------------
+                rule_nm = g.get('techGdlnNm', '기술지침 가이드')    # 지침명
+                rule_no = g.get('techGdlnNo', '')                 # 지침번호
+                down_url = g.get('fileDownloadUrl', '')           # 다운로드 URL
+                # -----------------------------------------------------------
 
-                    c1, c2 = st.columns([3, 1])
-                    with c1:
+                c1, c2 = st.columns([3, 1])
+                with c1:
+                    if rule_no:
                         st.markdown(f"• **[{rule_no}]** {rule_nm}")
-                    with c2:
-                        if down_url:
-                            st.link_button("📥 지침 다운로드", down_url, use_container_width=True)
-                        else:
-                            st.caption("링크 없음")
-            else:
-                st.info(f"키워드 '{search_kw}'에 대한 별도 KOSHA GUIDE 검색 결과가 없거나 준비 중입니다.")
-    # ------------------------------------------------------------------
+                    else:
+                        st.markdown(f"• **{rule_nm}**")
+                with c2:
+                    if down_url:
+                        st.link_button("📥 지침 다운로드", down_url, use_container_width=True)
+                    else:
+                        st.caption("링크 없음")
+        else:
+            st.info(f"키워드 '{search_kw}'에 대한 별도 KOSHA GUIDE 검색 결과가 없거나 준비 중입니다.")
+# ------------------------------------------------------------------
 
 
     # --- [3단계] 전송 버튼 로직 ---
