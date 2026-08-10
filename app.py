@@ -186,27 +186,24 @@ except Exception as e:
 
 
 def search_kosha_guide(search_keyword):
-    """KOSHA GUIDE API 호출 함수 (인코딩/헤더/파싱 종합 보완)"""
+    """KOSHA GUIDE API 호출 함수 (파라미터 명세 및 JSON 구조 수정)"""
     import requests
     import urllib.parse
     
-    # 1. 공공데이터포털 [Decoding 인증키] 사용 (기존 소스상의 키)
     decoding_service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
-    
     endpoint = "https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
     
-    # requests가 serviceKey를 이중 인코딩하지 않도록 unquote 처리 후 params 전달
+    # 공공데이터포털 명세에 맞춘 요청 파라미터
     params = {
         'serviceKey': urllib.parse.unquote(decoding_service_key),
         'pageNo': '1',
-        'numOfRows': '5',
-        '_type': 'json',
-        'searchWrd': search_keyword
+        'numOfRows': '3',
+        'callApiId': '1050',             # 필수입력 고정값
+        'techGdlnNm': search_keyword      # 검색 키워드 파라미터명
     }
     
-    # User-Agent 헤더 추가 (봇 차단 방지)
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
     
     try:
@@ -215,17 +212,15 @@ def search_kosha_guide(search_keyword):
         if res.status_code == 200:
             data = res.json()
             
-            # response -> body -> items 구조 안전 파싱
-            body = data.get('response', {}).get('body', {})
+            # 최상위에 바로 위치한 'body'에서 'items' 추출 (response 키 제외)
+            body = data.get('body', {})
             items_container = body.get('items', {})
             
-            # items가 존재하지 않거나 빈 문자열인 경우 예외 처리
             if not items_container:
                 return []
                 
             items = items_container.get('item', [])
             
-            # 결과가 단일 dict 객체로 올 경우 리스트로 변환
             if isinstance(items, dict):
                 items = [items]
                 
@@ -235,6 +230,8 @@ def search_kosha_guide(search_keyword):
         
     except Exception:
         return []
+
+
 
 # --- [2단계] 구글 드라이브/시트 전송 함수 추가 ---
 
