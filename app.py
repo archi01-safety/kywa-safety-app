@@ -185,10 +185,12 @@ except Exception as e:
     st.stop()
 
 
-# --- 도구 함수 (Word/Excel 생성 및 API 연동) ---
 def search_kosha_guide(search_keyword):
-    """KOSHA GUIDE API를 호출하여 관련 지침 목록을 가져오는 함수"""
+    """KOSHA GUIDE API를 호출하여 관련 지침 목록을 가져오는 함수 (디버깅 포함)"""
     import urllib.parse
+    import requests
+    import streamlit as st  # 화면 출력을 위해 추가
+    
     service_key = "801f7d06fa1418ec27119eea23fac9fa6aeec50a1a6e6680ea8197534e50e708"
     endpoint = "https://apis.data.go.kr/B552468/koshaguide/getKoshaGuide"
     
@@ -201,7 +203,21 @@ def search_kosha_guide(search_keyword):
     }
     
     try:
-        res = requests.get(endpoint, params=params, timeout=3)
+        res = requests.get(endpoint, params=params, timeout=5)
+        
+        # ================= [디버깅 출력 시작] =================
+        st.write(f"🔍 **[디버그] KOSHA API 호출 키워드:** `{search_keyword}`")
+        st.write(f"1. 응답 상태 코드 (Status Code): `{res.status_code}`")
+        
+        # 실제 요청된 URL 확인 (인코딩 문제 점검용)
+        st.write(f"2. 요청 URL:")
+        st.code(res.url)
+        
+        # API 원문 응답 확인
+        st.write("3. API 원문 응답 데이터 (Response Body):")
+        st.code(res.text, language="json" if "_type=json" in res.url else "xml")
+        # ================= [디버깅 출력 끝] =================
+
         if res.status_code == 200:
             data = res.json()
             items = data.get('response', {}).get('body', {}).get('items', {}).get('item', [])
@@ -209,7 +225,10 @@ def search_kosha_guide(search_keyword):
                 items = [items]
             return items
         return []
-    except Exception:
+        
+    except Exception as e:
+        # 에러 발생 시 에러 메시지 출력
+        st.error(f"❌ KOSHA API 호출 중 예외 발생: {e}")
         return []
 
 
