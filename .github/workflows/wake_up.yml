@@ -1,4 +1,4 @@
-name: Wake Up App with Browser
+name: Wake_Up
 
 on:
   schedule:
