@@ -1,0 +1,14 @@
+name: Streamlit Keep Alive_dev
+
+on:
+  schedule:
+    - cron: '*/50 * * * *'  # 50분마다 실행 (더 안정적임)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit App
+        run: |
+          curl -s -o /dev/null -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" https://kywa-safety-check.streamlit.app/
