@@ -145,7 +145,6 @@ def append_row_to_sheet(row_data):
 def update_action_result_to_sheet(row_idx, action_data):
     """구글 시트의 해당 행 N~R열(개선 후 데이터)을 업데이트"""
     try:
-        # row_idx는 0부터 시작하므로 헤더 고려 +2
         actual_row = row_idx + 2
         range_name = f"'{SHEET_NAME}'!N{actual_row}:R{actual_row}"
         body = {'values': [action_data]}
@@ -173,7 +172,6 @@ def load_dashboard_data():
 # --- [스타일링] ---
 st.markdown("""
     <style>
-    /* 버튼 스타일 */
     div.stButton > button {
         background-color: #ff4b4b !important;
         color: white !important;
@@ -185,18 +183,21 @@ st.markdown("""
         background-color: #ff3333 !important;
         transform: scale(1.01);
     }
-    /* 로고 및 타이틀 스타일 */
     .logo-img { cursor: pointer; display: block; margin-top: 2px; }
     .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
     .refresh-title:hover { color: #FF4B4B !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- [헤더 레이아웃] ---
+# --- [헤더 레이아웃 (로고 파일 반영)] ---
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
-    st.markdown('''<a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
-        <h2 style="color:#ff4b4b; margin-top:10px;">KYWA</h2></a>''', unsafe_allow_html=True)
+    if os.path.exists("kywa_logo.png"):
+        st.image("kywa_logo.png", width=130)
+    else:
+        st.markdown('''<a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
+            <h2 style="color:#ff4b4b; margin-top:10px;">KYWA</h2></a>''', unsafe_allow_html=True)
+
 with header_col2:
     st.markdown("""<h1 style='margin-bottom: 0;'>🚨 KYWA AI 위험성평가 시스템</h1>
     <p style='color: gray; margin-top: 0;'>Korea Youth Work Agency - 스마트 안전관리 플랫폼</p>""", unsafe_allow_html=True)
@@ -208,6 +209,94 @@ if "analysis_results" not in st.session_state: st.session_state.analysis_results
 if "final_data" not in st.session_state: st.session_state.final_data = None
 if "eval_after_data" not in st.session_state: st.session_state.eval_after_data = None
 
+# --- [대시보드 출력 함수] ---
+def render_dashboard(dashboard_data):
+    if dashboard_data is not None:
+        if '타임스탬프' in dashboard_data.columns:
+            yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026].copy()
+        else:
+            yearly_data = dashboard_data.copy()
+
+        if yearly_data.empty:
+            st.warning("📅 2026년도 데이터가 아직 없습니다. 데이터를 첫 번째로 전송해 보세요!")
+        else:
+            st.subheader("📊 실시간 점검 데이터 현황 (2026년)")
+            
+            total_count = len(yearly_data)
+            m1, m2 = st.columns(2)
+            
+            with m1:
+                with st.container(border=True):
+                    st.metric("올해 누적 점검 건수", f"{total_count} 건")
+            
+            with m2:
+                with st.container(border=True):
+                    author_col = "작성자 성명" 
+                    if author_col in yearly_data.columns:
+                        st.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
+                    else:
+                        st.metric("점검결과 제출 시설", f"{yearly_data['시설명'].nunique()} 개 시설")
+
+            CATEGORY_COLOR_MAP = {
+                "시설 안전": "#D32F2F", "화재 안전": "#FF5722", "재난 안전": "#880E4F",
+                "작업 안전": "#FFA000", "작업 특성": "#E64A19", "기계(설비)적 요인": "#795548",
+                "전기적 요인": "#FBC02D", "보건 및 위생관리": "#E91E63", "화학물질 관리": "#9C27B0",
+                "작업 환경": "#455A64", "보행 안전": "#1976D2", "활동 안전": "#388E3C"
+            }
+
+            FACILITY_COLOR_MAP = {
+                "중앙": "#B93444", "본원": "#6B5B95", "평창": "#E2725B",
+                "바이오": "#D2B48C", "해양": "#5B84B1", "우주": "#2E4A62",
+                "미래": "#92B06A", "생태": "#5F7161"
+            }
+
+            g_col1, g_col2 = st.columns(2)
+
+            with g_col1:
+                with st.container(border=True):
+                    if len(yearly_data.columns) >= 5:
+                        target_col_cat = yearly_data.columns[4] 
+                        st.write(f"**⚠️ {target_col_cat} 현황**")
+                        if not yearly_data[target_col_cat].dropna().empty:
+                            yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
+                            
+                            fig_pie = px.pie(
+                                yearly_data, names=target_col_cat, hole=0.3,
+                                color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
+                            )
+                            fig_pie.update_traces(
+                                textinfo='percent+value', 
+                                texttemplate='%{percent:.0%}<br>(%{value}건)',
+                                insidetextorientation='horizontal',
+                                textfont_size=11
+                            )
+                            fig_pie.update_layout(
+                                margin=dict(t=20, b=60, l=0, r=0), height=400, showlegend=True,
+                                legend=dict(orientation="h", yanchor="top", y=-0.1, xanchor="center", x=0.5, font=dict(size=10), itemwidth=30),
+                                paper_bgcolor='rgba(0,0,0,0)', dragmode=False
+                            )
+                            st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
+
+            with g_col2:
+                with st.container(border=True):
+                    target_col_fac = "시설명" 
+                    if target_col_fac in yearly_data.columns:
+                        st.write(f"**🏢 {target_col_fac}별 건수**")
+                        yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
+                        fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
+                        fac_counts.columns = [target_col_fac, '건수']
+                        
+                        fig_bar = px.bar(
+                            fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
+                            color_discrete_map=FACILITY_COLOR_MAP
+                        )
+                        fig_bar.update_traces(texttemplate='%{y}건', textposition='outside', textfont_size=11)
+                        fig_bar.update_layout(
+                            margin=dict(t=20, b=0, l=0, r=0), height=400, showlegend=False,
+                            xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', dragmode=False 
+                        )
+                        st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+
 # --- [메인 탭 구획] ---
 tab1, tab2, tab3 = st.tabs([
     "📝 AI 위험성평가", 
@@ -216,7 +305,7 @@ tab1, tab2, tab3 = st.tabs([
 ])
 
 # ==========================================
-# [탭 1] AI 위험성평가 (기존 기능 + 요약 대시보드)
+# [탭 1] AI 위험성평가
 # ==========================================
 with tab1:
     col1, col2 = st.columns([1, 1])
@@ -238,7 +327,6 @@ with tab1:
             if img_file:
                 st.image(img_file, caption="업로드된 원본 사진", use_container_width=True)
 
-    # 분석 버튼
     if st.button("🚀 KYWA AI 위험요인 분석 시작", use_container_width=True, key="btn_run_analysis"):
         if not user_description.strip() and not img_file:
             st.warning("⚠️ 분석할 내용(글 또는 사진)을 입력해 주세요.")
@@ -270,7 +358,6 @@ with tab1:
                 except Exception as e:
                     st.error(f"❌ 분석 실패: {e}")
 
-    # 결과 테이블 및 편집기
     if st.session_state.analysis_results:
         st.markdown("### 📋 AI 위험성평가 결과")
         df = pd.DataFrame(st.session_state.analysis_results)
@@ -292,7 +379,6 @@ with tab1:
         )
         st.session_state.final_data = edited_df.to_dict('records')
 
-    # KOSHA GUIDE 섹션
     st.write("")
     with st.expander("📚 **관련 KOSHA GUIDE (자율 안전보건가이드) 조회 및 다운로드**", expanded=True):
         if 'edited_df' in locals() and edited_df is not None and not edited_df.empty:
@@ -312,7 +398,6 @@ with tab1:
         else:
             st.info("💡 위험성평가 분석을 실행하시면, 맞춤형 KOSHA GUIDE 원문 다운로드 링크가 제공됩니다.")
 
-    # 전송 버튼
     st.write("")
     if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True, key="btn_send_t1"):
         if sheets_service is None:
@@ -341,138 +426,10 @@ with tab1:
                     st.success(f"✅ {success_count}건의 데이터가 성공적으로 전송되었습니다!")
                     st.balloons()
 
-    # --- 하단 실시간 요약 대시보드 (기존 위치 유지) ---
-# --- 대시보드 섹션 ---
-st.write("---")
-dashboard_data = load_dashboard_data()
-
-if dashboard_data is not None:
-    # 2. 날짜 필터링 (2026년 데이터만)
-    if '타임스탬프' in dashboard_data.columns:
-        yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026].copy()
-    else:
-        yearly_data = dashboard_data.copy()
-
-    if yearly_data.empty:
-        st.warning("📅 2026년도 데이터가 아직 없습니다. 데이터를 첫 번째로 전송해 보세요!")
-    else:
-        st.subheader("📊 실시간 점검 데이터 현황 (2026년)")
-        
-        # 3. 상단 지표 (카드 스타일링 적용)
-        total_count = len(yearly_data)
-        m1, m2 = st.columns(2)
-        
-        with m1:
-            with st.container(border=True):
-                st.metric("올해 누적 점검 건수", f"{total_count} 건")
-        
-        with m2:
-            with st.container(border=True):
-                author_col = "작성자 성명" 
-                if author_col in yearly_data.columns:
-                    st.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
-                else:
-                    st.metric("점검결과 제출 시설", f"{yearly_data['시설명'].nunique()} 개 시설")
-
-        # --- 색상 맵 설정 ---
-        CATEGORY_COLOR_MAP = {
-        # 1. 시설/재난/화재 (고정 위험 및 비상사태 - 붉은색 계열)
-            "시설 안전": "#D32F2F",      # 진한 빨강
-            "화재 안전": "#FF5722",      # 주황빛 빨강 (불꽃)
-            "재난 안전": "#880E4F",      # 자주색 (중대 재난)
-
-        # 2. 설비/전기/작업 (기술적/물리적 요인 - 노란색/갈색 계열)
-            "작업 안전": "#FFA000",      # 호박색 (주의/작업)
-            "작업 특성": "#E64A19",      # 진한 주황 (인적 요인/작업 강도)
-            "기계(설비)적 요인": "#795548", # 갈색 (기계/금속)
-            "전기적 요인": "#FBC02D",    # 노란색 (전기/번개)
-
-        # 3. 물질/환경/보건 (보이지 않는 위해 요인 - 보라색/회색 계열)
-            "보건 및 위생관리": "#E91E63", # 분홍/보라 (의료/위생)
-            "화학물질 관리": "#9C27B0",   # 보라 (유독물질)
-            "작업 환경": "#455A64",      # 블루그레이 (환경/소음/먼지)
-
-        # 4. 보행/활동 (동적 유해요인 - 파란색/초록색 계열)
-            "보행 안전": "#1976D2",      # 파란색 (통로/이동)
-            "활동 안전": "#388E3C"       # 초록색 (일상 활동/야외)
-        }
-
-        FACILITY_COLOR_MAP = {
-            "중앙": "#B93444", "본원": "#6B5B95", "평창": "#E2725B",
-            "바이오": "#D2B48C", "해양": "#5B84B1", "우주": "#2E4A62",
-            "미래": "#92B06A", "생태": "#5F7161"
-        }
-
-        # --- 4. 그래프 시각화 영역 (2단 카드 구성) ---
-        g_col1, g_col2 = st.columns(2)
-
-        # [1단] 유해위험요인 현황 카드
-        with g_col1:
-            with st.container(border=True):
-                if len(yearly_data.columns) >= 5:
-                    target_col_cat = yearly_data.columns[4] 
-                    st.write(f"**⚠️ {target_col_cat} 현황**")
-                    if not yearly_data[target_col_cat].dropna().empty:
-                        yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
-                        
-                        fig_pie = px.pie(
-                            yearly_data, names=target_col_cat, hole=0.3,
-                            color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
-                        )
-                        fig_pie.update_traces(
-                            textinfo='percent+value', 
-                            texttemplate='%{percent:.0%}<br>(%{value}건)',
-                            insidetextorientation='horizontal',
-                            textfont_size=11
-                        )
-                        fig_pie.update_layout(
-                            margin=dict(t=20, b=60, l=0, r=0), 
-                            height=400, 
-                            showlegend=True,
-                            legend=dict(
-                                orientation="h",      
-                                yanchor="top",        
-                                y=-0.1,               
-                                xanchor="center",     
-                                x=0.5,
-                                font=dict(size=10),   
-                                itemwidth=30          
-                            ),
-                            paper_bgcolor='rgba(0,0,0,0)',
-                            dragmode=False
-                        )
-                        st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
-
-        # [2단] 시설별 점검 건수 카드
-        with g_col2:
-            with st.container(border=True):
-                target_col_fac = "시설명" 
-                if target_col_fac in yearly_data.columns:
-                    st.write(f"**🏢 {target_col_fac}별 건수**")
-                    yearly_data[target_col_fac] = yearly_data[target_col_fac].astype(str).str.strip()
-                    fac_counts = yearly_data[target_col_fac].value_counts().reset_index()
-                    fac_counts.columns = [target_col_fac, '건수']
-                    
-                    fig_bar = px.bar(
-                        fac_counts, x=target_col_fac, y='건수', color=target_col_fac,
-                        color_discrete_map=FACILITY_COLOR_MAP
-                    )
-                    fig_bar.update_traces(
-                        texttemplate='%{y}건', 
-                        textposition='outside',
-                        textfont_size=11
-                    )
-                    fig_bar.update_layout(
-                        margin=dict(t=20, b=0, l=0, r=0), 
-                        height=400,
-                        showlegend=False,
-                        xaxis_title=None, yaxis_title=None,
-                        paper_bgcolor='rgba(0,0,0,0)',
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        dragmode=False 
-                    )
-                    st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
-
+    # 탭 1 하단 대시보드
+    st.write("---")
+    dashboard_data = load_dashboard_data()
+    render_dashboard(dashboard_data)
 
 # ==========================================
 # [탭 2] 개선조치 등록 (담당자용)
@@ -485,22 +442,23 @@ with tab2:
     if dashboard_data is None or dashboard_data.empty:
         st.warning("⚠️ 불러올 점검 데이터가 없습니다.")
     else:
-        # B안: 시설 선택 -> 미완료 항목 선택
         target_fac = st.selectbox("• 시설명 선택", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], key="t2_fac")
         
-        # '개선후 위험등급'(Q열) 정보가 없거나 비어있는 건을 미완료로 판단
         fac_df = dashboard_data[dashboard_data['시설명'] == target_fac].copy()
         
-        # N~R열이 없는 이전 시트 구조 대비
         if '개선후 위험등급' not in fac_df.columns:
             fac_df['개선후 위험등급'] = np.nan
 
-        uncompleted_df = fac_df[fac_df['개선후 위험등급'].isna() | (fac_df['개선후 위험등급'].str.strip() == '')]
+        # 핵심 수정: 데이터 타입을 문자열(astype(str))로 정제하여 AttributeError 방지
+        uncompleted_df = fac_df[
+            fac_df['개선후 위험등급'].isna() | 
+            (fac_df['개선후 위험등급'].astype(str).str.strip() == '') | 
+            (fac_df['개선후 위험등급'].astype(str).str.strip() == 'nan')
+        ]
 
         if uncompleted_df.empty:
             st.success(f"🎉 [{target_fac}] 시설은 개선 조치가 필요한 항목이 없습니다.")
         else:
-            # 항목 선택용 라벨 생성
             options = {}
             for idx, row in uncompleted_df.iterrows():
                 label = f"[{row.get('타임스탬프', '일시미상')}] {row.get('장소', '장소미상')} - {str(row.get('위험상황', ''))[:20]}..."
@@ -527,7 +485,6 @@ with tab2:
                 action_img = st.file_uploader("📸 개선 후 사진 업로드", type=['png', 'jpg', 'jpeg'], key="t2_act_img")
                 if action_img: st.image(action_img, caption="개선 후 사진", width=250)
 
-            # AI 조치결과 재분석 버튼
             if st.button("🤖 조치결과 AI 분석 (빈도/강도 재산출)", use_container_width=True, key="btn_eval_after"):
                 if not action_text.strip():
                     st.warning("⚠️ 개선 조치 상세 내용을 입력해야 AI 분석이 가능합니다.")
@@ -553,7 +510,6 @@ with tab2:
                         except Exception as e:
                             st.error(f"❌ 재분석 실패: {e}")
 
-            # AI 분석 결과 출력 및 제출 폼
             if st.session_state.eval_after_data:
                 res_a = st.session_state.eval_after_data
                 st.markdown("##### 📊 AI 개선 후 위험도 재산출 결과")
@@ -573,13 +529,8 @@ with tab2:
                             now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                             act_photo_link = upload_to_drive(f"AFTER_{target_fac}_{now_str}.jpg", act_photo_bytes)
 
-                        # N~R열 입력용 데이터 배열
                         action_row_data = [
-                            p_after,          # N열: 개선후 빈도
-                            s_after,          # O열: 개선후 강도
-                            score_after,      # P열: 개선후 점수
-                            grade_after,      # Q열: 개선후 위험등급
-                            act_photo_link    # R열: 개선후 사진기록
+                            p_after, s_after, score_after, grade_after, act_photo_link
                         ]
 
                         if update_action_result_to_sheet(selected_row_idx, action_row_data):
@@ -587,6 +538,9 @@ with tab2:
                             st.session_state.eval_after_data = None
                             st.balloons()
 
+    # 탭 2 하단 대시보드
+    st.write("---")
+    render_dashboard(dashboard_data)
 
 # ==========================================
 # [탭 3] 종합 대시보드 (관리자용)
@@ -595,11 +549,15 @@ with tab3:
     st.markdown("### 📊 관리자 전용 종합 대시보드")
     admin_pw = st.text_input("🔑 관리자 비밀번호 입력", type="password")
     
-    if admin_pw == "1234":  # 임시 관리자 비밀번호
+    if admin_pw == "1234":
         st.success("🔓 관리자 인증 성공")
         dashboard_data = load_dashboard_data()
         
         if dashboard_data is not None:
+            # 관리자용 통합 대시보드 시각화
+            render_dashboard(dashboard_data)
+            
+            st.divider()
             st.markdown("#### 📂 전체 위험성평가 및 개선 현황 DB")
             st.dataframe(dashboard_data, use_container_width=True)
 
@@ -607,7 +565,6 @@ with tab3:
             st.markdown("#### 📥 보고서 및 데이터 내보내기")
             st.info("💡 추후 이곳에서 개선전/후 사진이 통합 포함된 한글(HWPX) 문서 자동 생성 및 엑셀 출력 기능이 연결됩니다.")
             
-            # 내보내기 샘플 버튼
             csv_data = dashboard_data.to_csv(index=False).encode('utf-8-sig')
             st.download_button(
                 label="📥 전체 데이터 엑셀(CSV) 다운로드",
@@ -618,8 +575,8 @@ with tab3:
     elif admin_pw:
         st.error("❌ 비밀번호가 올바르지 않습니다.")
 
-# --- 푸터(Footer) 섹션 ---
-st.write("") # 간격 확보
+# --- [푸터(Footer) 섹션] ---
+st.write("") 
 st.write("---")
 footer_cols = st.columns([3, 1])
 
@@ -636,8 +593,7 @@ with footer_cols[0]:
 
 with footer_cols[1]:
     st.markdown("### 📞 Contact")
-    # HTML을 사용하여 아이콘 색상을 제어합니다 (Dark Gray/Black 계열)
-    st.markdown(f"""
+    st.markdown("""
     <div style="line-height: 1.6;">
         <span style="font-weight: bold; font-size: 0.9rem; color: #31333F;">경영지원본부 안전경영부</span><br>
         <span style="color: #444; font-size: 0.85rem;">📧 archi01@kywa.or.kr</span><br>
@@ -647,6 +603,4 @@ with footer_cols[1]:
     </div>
     """, unsafe_allow_html=True)
 
-# 최하단 한 줄 강조
 st.markdown("<p style='font-size: 0.8rem; color: gray; text-align: center;'>Safe Together, KYWA AI Risk Assessment System</p>", unsafe_allow_html=True)
-
