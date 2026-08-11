@@ -14,6 +14,7 @@ import base64
 import codecs
 import pandas as pd
 import numpy as np
+pip install opencv-contrib-python
 import cv2
 import plotly.express as px
 import urllib.parse
