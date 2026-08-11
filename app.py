@@ -521,8 +521,7 @@ with tab2:
                         except Exception as e:
                             st.error(f"❌ 재분석 실패: {e}")
 
-            if st.session_state.eval_after_data:
-# --- [위험등급 자동 산출 함수] ---
+# --- [위험등급 자동 산출 함수] (조건문 외부 상단에 배치) ---
 def get_risk_grade(score):
     if score <= 3:
         return "매우 낮음"
