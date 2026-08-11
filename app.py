@@ -522,32 +522,68 @@ with tab2:
                             st.error(f"❌ 재분석 실패: {e}")
 
             if st.session_state.eval_after_data:
-                res_a = st.session_state.eval_after_data
-                st.markdown("##### 📊 AI 개선 후 위험도 재산출 결과")
-                r_col1, r_col2, r_col3, r_col4 = st.columns(4)
+# --- [위험등급 자동 산출 함수] ---
+def get_risk_grade(score):
+    if score <= 3:
+        return "매우 낮음"
+    elif score <= 6:
+        return "낮음"
+    elif score <= 9:
+        return "보통"
+    elif score <= 12:
+        return "높음"
+    else:
+        return "매우 높음"
+
+# ==========================================
+# [탭 2] 내 AI 재분석 결과 표시 섹션
+# ==========================================
+if st.session_state.eval_after_data:
+    res_a = st.session_state.eval_after_data
+    st.markdown("##### 📊 AI 개선 후 위험도 재산출 결과")
+    
+    # 세션에 초기값 저장 (초기 1회만 적용)
+    if "p_after_val" not in st.session_state:
+        st.session_state.p_after_val = int(res_a.get("p_after", 1))
+    if "s_after_val" not in st.session_state:
+        st.session_state.s_after_val = int(res_a.get("s_after", 1))
+
+    r_col1, r_col2, r_col3, r_col4 = st.columns(4)
+    
+    # 1. 빈도 및 강도 수동 입력 (+/- 버튼)
+    p_after = r_col1.number_input("개선후 빈도", min_value=1, max_value=5, value=st.session_state.p_after_val, key="num_p_after")
+    s_after = r_col2.number_input("개선후 강도", min_value=1, max_value=4, value=st.session_state.s_after_val, key="num_s_after")
+    
+    # 2. 실시간 점수 및 위험등급 계산
+    score_after = p_after * s_after
+    grade_after = get_risk_grade(score_after)  # 점수에 따른 등급 자동 연동
+    
+    # 3. 실시간 결과 표시
+    r_col3.metric("개선후 점수", f"{score_after} 점")
+    r_col4.metric("개선후 위험등급", grade_after)
+
+    st.write("")
+    if st.button("📤 개선조치 최종 제출 (구글 시트 저장)", use_container_width=True, key="btn_save_action"):
+        with st.spinner("구글 시트에 조치결과를 반영 중입니다..."):
+            act_photo_link = "사진 없음"
+            if action_img:
+                act_photo_bytes = apply_face_blur_ai(action_img)
+                now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                act_photo_link = upload_to_drive(f"AFTER_{target_fac}_{now_str}.jpg", act_photo_bytes)
+
+            action_row_data = [
+                p_after, s_after, score_after, grade_after, act_photo_link
+            ]
+
+            if update_action_result_to_sheet(selected_row_idx, action_row_data):
+                st.success(f"✅ 조치결과(점수: {score_after}점 / 등급: {grade_after})가 성공적으로 구글 시트(N~R열)에 업데이트되었습니다!")
                 
-                p_after = r_col1.number_input("개선후 빈도", 1, 5, int(res_a.get("p_after", 1)))
-                s_after = r_col2.number_input("개선후 강도", 1, 4, int(res_a.get("s_after", 1)))
-                score_after = p_after * s_after
-                r_col3.metric("개선후 점수", f"{score_after} 점")
-                grade_after = r_col4.text_input("개선후 위험등급", value=res_a.get("grade_after", "매우 낮음"))
-
-                if st.button("📤 개선조치 최종 제출 (구글 시트 저장)", use_container_width=True, key="btn_save_action"):
-                    with st.spinner("구글 시트에 조치결과를 반영 중입니다..."):
-                        act_photo_link = "사진 없음"
-                        if action_img:
-                            act_photo_bytes = apply_face_blur_ai(action_img)
-                            now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                            act_photo_link = upload_to_drive(f"AFTER_{target_fac}_{now_str}.jpg", act_photo_bytes)
-
-                        action_row_data = [
-                            p_after, s_after, score_after, grade_after, act_photo_link
-                        ]
-
-                        if update_action_result_to_sheet(selected_row_idx, action_row_data):
-                            st.success("✅ 조치결과가 성공적으로 구글 시트(N~R열)에 업데이트되었습니다!")
-                            st.session_state.eval_after_data = None
-                            st.balloons()
+                # 제출 완료 후 세션 데이터 초기화
+                st.session_state.eval_after_data = None
+                if "p_after_val" in st.session_state: del st.session_state.p_after_val
+                if "s_after_val" in st.session_state: del st.session_state.s_after_val
+                
+                st.balloons()
 
     # 탭 2 하단 대시보드
     st.write("---")
