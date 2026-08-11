@@ -1,0 +1,55 @@
+name: Wake Up App with Browser
+
+on:
+  schedule:
+    - cron: '0 */4 * * *' # 4시간마다 (Streamlit 대기 모드 방지)
+  workflow_dispatch:      # 수동으로도 실행할 수 있게 버튼 추가
+
+jobs:
+  wake-up:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. 최신 버전(v4)으로 업데이트하여 Node.js 경고 해결
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 최신 버전(v5)으로 업데이트
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+          cache: 'pip' # 패키지 설치 속도 향상을 위한 캐시 추가
+
+      # 3. 브라우저 환경 및 라이브러리 설치
+      - name: Install Playwright & Dependencies
+        run: |
+          pip install playwright
+          playwright install --with-deps chromium # 시스템 의존성까지 한 번에 설치
+
+      # 4. 앱 깨우기 실행 (로그 출력 강화)
+      - name: Run Wake Up Script
+        run: |
+          python -c "
+          from playwright.sync_api import sync_playwright
+          import sys
+
+          try:
+              with sync_playwright() as p:
+                  print('🚀 브라우저를 실행합니다...')
+                  browser = p.chromium.launch()
+                  page = browser.new_page()
+                  
+                  url = 'https://kywa-safety-app-dev.streamlit.app/'
+                  print(f'🔗 {url} 접속 시도 중...')
+                  
+                  page.goto(url)
+                  # 50초 대기 (Streamlit 서버가 완전히 깨어날 시간 확보)
+                  page.wait_for_timeout(50000) 
+                  
+                  print(f'✅ 앱 깨우기 성공! 타이틀: {page.title()}')
+                  browser.close()
+          except Exception as e:
+              print(f'❌ 오류 발생: {e}')
+              sys.exit(1)
+          "
