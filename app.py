@@ -165,6 +165,13 @@ def load_dashboard_data():
             df['타임스탬프'] = df['타임스탬프'].astype(str).str.replace('오전', 'AM').str.replace('오후', 'PM')
             df['타임스탬프'] = pd.to_datetime(df['타임스탬프'], format='mixed', errors='coerce')
             df = df.dropna(subset=['타임스탬프'])
+        
+        # M열까지만 수집되어 있는 상황 대응 (N~R열 기본값 자동생성)
+        needed_cols = ['개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진']
+        for col in needed_cols:
+            if col not in df.columns:
+                df[col] = np.nan
+                
         return df
     except Exception:
         return None
@@ -183,17 +190,21 @@ st.markdown("""
         background-color: #ff3333 !important;
         transform: scale(1.01);
     }
-    .logo-img { cursor: pointer; display: block; margin-top: 2px; }
-    .refresh-title { text-decoration: none !important; color: inherit !important; cursor: pointer; }
-    .refresh-title:hover { color: #FF4B4B !important; }
+    .logo-container img { height: 48px !important; width: auto !important; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- [헤더 레이아웃 (로고 파일 반영)] ---
+# --- [헤더 레이아웃 (로고 크기 및 링크 클릭 복원)] ---
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
     if os.path.exists("kywa_logo.png"):
-        st.image("kywa_logo.png", width=130)
+        with open("kywa_logo.png", "rb") as f:
+            logo_base64 = base64.b64encode(f.read()).decode()
+        st.markdown(f'''
+            <a href="https://www.kywa.or.kr/main/main.jsp" target="_blank" class="logo-container">
+                <img src="data:image/png;base64,{logo_base64}" style="height: 48px; margin-top: 5px;">
+            </a>
+        ''', unsafe_allow_html=True)
     else:
         st.markdown('''<a href="https://www.kywa.or.kr/main/main.jsp" target="_blank">
             <h2 style="color:#ff4b4b; margin-top:10px;">KYWA</h2></a>''', unsafe_allow_html=True)
@@ -209,8 +220,8 @@ if "analysis_results" not in st.session_state: st.session_state.analysis_results
 if "final_data" not in st.session_state: st.session_state.final_data = None
 if "eval_after_data" not in st.session_state: st.session_state.eval_after_data = None
 
-# --- [대시보드 출력 함수] ---
-def render_dashboard(dashboard_data):
+# --- [대시보드 출력 함수 (Plotly ID 중복 해결)] ---
+def render_dashboard(dashboard_data, key_suffix="default"):
     if dashboard_data is not None:
         if '타임스탬프' in dashboard_data.columns:
             yearly_data = dashboard_data[dashboard_data['타임스탬프'].dt.year == 2026].copy()
@@ -234,8 +245,10 @@ def render_dashboard(dashboard_data):
                     author_col = "작성자 성명" 
                     if author_col in yearly_data.columns:
                         st.metric("참여 인원(명)", f"{yearly_data[author_col].nunique()} 명")
-                    else:
+                    elif "시설명" in yearly_data.columns:
                         st.metric("점검결과 제출 시설", f"{yearly_data['시설명'].nunique()} 개 시설")
+                    else:
+                        st.metric("점검결과 제출 건수", f"{total_count} 건")
 
             CATEGORY_COLOR_MAP = {
                 "시설 안전": "#D32F2F", "화재 안전": "#FF5722", "재난 안전": "#880E4F",
@@ -254,8 +267,9 @@ def render_dashboard(dashboard_data):
 
             with g_col1:
                 with st.container(border=True):
-                    if len(yearly_data.columns) >= 5:
-                        target_col_cat = yearly_data.columns[4] 
+                    # 유형 구분 열 자동 탐색
+                    target_col_cat = "위험요인 분류" if "위험요인 분류" in yearly_data.columns else (yearly_data.columns[4] if len(yearly_data.columns) >= 5 else None)
+                    if target_col_cat:
                         st.write(f"**⚠️ {target_col_cat} 현황**")
                         if not yearly_data[target_col_cat].dropna().empty:
                             yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
@@ -275,7 +289,7 @@ def render_dashboard(dashboard_data):
                                 legend=dict(orientation="h", yanchor="top", y=-0.1, xanchor="center", x=0.5, font=dict(size=10), itemwidth=30),
                                 paper_bgcolor='rgba(0,0,0,0)', dragmode=False
                             )
-                            st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False})
+                            st.plotly_chart(fig_pie, use_container_width=True, config={'displayModeBar': False}, key=f"pie_{key_suffix}")
 
             with g_col2:
                 with st.container(border=True):
@@ -295,7 +309,7 @@ def render_dashboard(dashboard_data):
                             margin=dict(t=20, b=0, l=0, r=0), height=400, showlegend=False,
                             xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', dragmode=False 
                         )
-                        st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False})
+                        st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
 
 # --- [메인 탭 구획] ---
 tab1, tab2, tab3 = st.tabs([
@@ -429,7 +443,7 @@ with tab1:
     # 탭 1 하단 대시보드
     st.write("---")
     dashboard_data = load_dashboard_data()
-    render_dashboard(dashboard_data)
+    render_dashboard(dashboard_data, key_suffix="tab1")
 
 # ==========================================
 # [탭 2] 개선조치 등록 (담당자용)
@@ -445,11 +459,8 @@ with tab2:
         target_fac = st.selectbox("• 시설명 선택", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], key="t2_fac")
         
         fac_df = dashboard_data[dashboard_data['시설명'] == target_fac].copy()
-        
-        if '개선후 위험등급' not in fac_df.columns:
-            fac_df['개선후 위험등급'] = np.nan
 
-        # 핵심 수정: 데이터 타입을 문자열(astype(str))로 정제하여 AttributeError 방지
+        # 데이터 타입을 문자열로 정제하여 필터링
         uncompleted_df = fac_df[
             fac_df['개선후 위험등급'].isna() | 
             (fac_df['개선후 위험등급'].astype(str).str.strip() == '') | 
@@ -540,7 +551,7 @@ with tab2:
 
     # 탭 2 하단 대시보드
     st.write("---")
-    render_dashboard(dashboard_data)
+    render_dashboard(dashboard_data, key_suffix="tab2")
 
 # ==========================================
 # [탭 3] 종합 대시보드 (관리자용)
@@ -555,7 +566,7 @@ with tab3:
         
         if dashboard_data is not None:
             # 관리자용 통합 대시보드 시각화
-            render_dashboard(dashboard_data)
+            render_dashboard(dashboard_data, key_suffix="tab3")
             
             st.divider()
             st.markdown("#### 📂 전체 위험성평가 및 개선 현황 DB")
