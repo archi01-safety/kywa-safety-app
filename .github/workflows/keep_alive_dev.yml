@@ -1,4 +1,4 @@
-name: Streamlit Keep Alive_dev
+name: Keep_Alive_dev
 
 on:
   schedule:
