@@ -524,6 +524,28 @@ tab1, tab2, tab3 = st.tabs([
     "📊 종합 대시보드 (관리자용)"
 ])
 
+# --- [좌측 세로형 탭(사이드바) 전환 방식] ---
+with st.sidebar:
+    st.markdown("### 📌 메뉴 선택")
+    selected_tab = st.radio(
+        label="이동할 화면을 선택하세요",
+        options=["📝 점검 입력", "📊 결과 조회", "📥 내보내기"],
+        label_visibility="collapsed"  # 라벨 숨김으로 간결하게 처리
+    )
+
+# 선택된 메뉴에 따라 화면 분기
+if selected_tab == "📝 점검 입력":
+    # 기존 tab1 내부 코드 작성
+    st.write("점검 입력 화면입니다.")
+
+elif selected_tab == "📊 결과 조회":
+    # 기존 tab2 내부 코드 작성
+    st.write("결과 조회 화면입니다.")
+
+elif selected_tab == "📥 내보내기":
+    # 기존 tab3 내부 코드 작성
+    st.write("내보내기 화면입니다.")
+
 # ==========================================
 # [탭 1] AI 위험성평가
 # ==========================================
