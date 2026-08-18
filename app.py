@@ -793,7 +793,7 @@ with tab3:
             st.markdown("#### 📂 전체 위험성평가 및 개선 현황 DB")
             st.dataframe(dashboard_data, use_container_width=True)
 
-st.divider()
+            st.divider()
             st.markdown("#### 📥 보고서 및 데이터 맞춤 내보내기")
             
             # 4번 수정: 설정 변경 시 자동실행되지 않도록 버튼 기반 생성 프로세스 구현
