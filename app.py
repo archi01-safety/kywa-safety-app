@@ -16,11 +16,17 @@ import numpy as np
 import cv2
 import plotly.express as px
 import urllib.parse
-from PIL import Image
+import zipfile
+import xml.etree.ElementTree as ET
 import google.genai as genai
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseUpload
+from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from openpyxl.drawing.image import Image as OpenpyxlImage
+from PIL import Image
 
 # --- [환경 설정 및 보안 우회] ---
 os.environ['PYTHONHTTPSVERIFY'] = '0'
@@ -157,6 +163,7 @@ def update_action_result_to_sheet(row_idx, action_data):
         st.error(f"개선조치 업데이트 실패: {e}")
         return False
 
+# --- [대시보드 데이터 로드 함수] ---
 def load_dashboard_data():
     sheet_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv&gid=413707311"
     try:
@@ -175,6 +182,179 @@ def load_dashboard_data():
         return df
     except Exception:
         return None
+
+
+# =========================================================
+# 📥 [내보내기 전용 유틸리티 함수 3종]
+# =========================================================
+
+def get_image_bytes_from_link(link_str):
+    """구글 드라이브 웹 링크 또는 URL에서 이미지 바이너리를 추출하는 함수"""
+    if not isinstance(link_str, str) or "http" not in link_str:
+        return None
+    try:
+        file_id = None
+        if "id=" in link_str:
+            file_id = link_str.split("id=")[1].split("&")[0]
+        elif "/d/" in link_str:
+            file_id = link_str.split("/d/")[1].split("/")[0]
+
+        if file_id and drive_service:
+            request = drive_service.files().get_media(fileId=file_id)
+            fh = io.BytesIO()
+            downloader = MediaIoBaseDownload(fh, request)
+            done = False
+            while not done:
+                _, done = downloader.next_chunk()
+            return fh.getvalue()
+        else:
+            res = requests.get(link_str, timeout=5)
+            if res.status_code == 200:
+                return res.content
+    except Exception:
+        pass
+    return None
+
+
+def create_excel_with_images(df):
+    """행/열 간격 최적화 및 사진 자동 삽입 엑셀(.xlsx) 생성 함수"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "위험성평가_개선현황"
+
+    headers = list(df.columns)
+    ws.append(headers)
+
+    header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+    header_font = Font(name="맑은 고딕", size=11, bold=True, color="FFFFFF")
+    thin_border = Border(
+        left=Side(style='thin', color='CCCCCC'),
+        right=Side(style='thin', color='CCCCCC'),
+        top=Side(style='thin', color='CCCCCC'),
+        bottom=Side(style='thin', color='CCCCCC')
+    )
+
+    for col_num in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=col_num)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = thin_border
+
+    photo_cols = [i for i, col in enumerate(headers) if "사진" in str(col)]
+
+    for row_idx, row_data in enumerate(df.values, start=2):
+        ws.row_dimensions[row_idx].height = 80  # 사진 들어갈 행 높이 설정
+        for col_idx, value in enumerate(row_data, start=1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=str(value) if pd.notna(value) else "")
+            cell.font = Font(name="맑은 고딕", size=10)
+            cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            cell.border = thin_border
+
+            # 사진 열인 경우 이미지 다운로드 후 셀 내 자동 삽입
+            if (col_idx - 1) in photo_cols and pd.notna(value) and str(value).startswith("http"):
+                img_bytes = get_image_bytes_from_link(str(value))
+                if img_bytes:
+                    try:
+                        img_io = io.BytesIO(img_bytes)
+                        img = OpenpyxlImage(img_io)
+                        img.width = 120
+                        img.height = 90
+                        cell_address = f"{get_column_letter(col_idx)}{row_idx}"
+                        ws.add_image(img, cell_address)
+                        cell.value = ""
+                    except Exception:
+                        pass
+
+    # 열 너비 자동 최적화
+    for col in ws.columns:
+        max_len = 0
+        col_letter = get_column_letter(col[0].column)
+        col_name = headers[col[0].column - 1]
+        
+        if "사진" in str(col_name):
+            ws.column_dimensions[col_letter].width = 18
+        else:
+            for cell in col:
+                val_str = str(cell.value or '')
+                max_len = max(max_len, len(val_str))
+            ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return output.getvalue()
+
+
+def create_hwpx_with_images(df):
+    """한글(.hwpx) 문서 생성기 (표 생성 + 이미지 패킹 + 간격 최적화)"""
+    output = io.BytesIO()
+
+    with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as zf:
+        # 1. mimetype
+        zf.writestr('mimetype', 'application/hwp+zip', compress_type=zipfile.ZIP_STORED)
+
+        # 2. META-INF/manifest.xml
+        manifest_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
+            <manifest:file-entry manifest:full-path="/" manifest:media-type="application/hwp+zip"/>
+            <manifest:file-entry manifest:full-path="Contents/header.xml" manifest:media-type="text/xml"/>
+            <manifest:file-entry manifest:full-path="Contents/section0.xml" manifest:media-type="text/xml"/>
+        </manifest:manifest>"""
+        zf.writestr('META-INF/manifest.xml', manifest_xml)
+
+        # 3. Header.xml
+        header_xml = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <hh:head xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head">
+            <hh:docDefinition secCnt="1"/>
+        </hh:head>"""
+        zf.writestr('Contents/header.xml', header_xml)
+
+        # 4. Section0.xml
+        rows_xml = ""
+        headers = list(df.columns)
+        
+        # 표 헤더
+        rows_xml += "<hp:tr>"
+        for h in headers:
+            rows_xml += f"""<hp:tc><hp:subList><hp:p><hp:run><hp:t>{h}</hp:t></hp:run></hp:p></hp:subList></hp:tc>"""
+        rows_xml += "</hp:tr>"
+
+        # 표 데이터 행
+        img_counter = 1
+        for row_idx, row in df.iterrows():
+            rows_xml += "<hp:tr>"
+            for col_name in headers:
+                val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
+                
+                if "사진" in col_name and val.startswith("http"):
+                    img_bytes = get_image_bytes_from_link(val)
+                    if img_bytes:
+                        img_filename = f"BinData/image{img_counter}.jpg"
+                        zf.writestr(img_filename, img_bytes)
+                        val_content = f"[사진 첨부: image{img_counter}.jpg]"
+                        img_counter += 1
+                    else:
+                        val_content = "[사진 링크]"
+                else:
+                    val_content = val
+
+                rows_xml += f"""<hp:tc><hp:subList><hp:p><hp:run><hp:t>{val_content}</hp:t></hp:run></hp:p></hp:subList></hp:tc>"""
+            rows_xml += "</hp:tr>"
+
+        section_xml = f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+        <hs:sec xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section"
+                xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph">
+            <hp:p><hp:run><hp:t>🚨 KYWA AI 위험성평가 및 개선조치 종합 보고서</hp:t></hp:run></hp:p>
+            <hp:tbl rowCnt="{len(df)+1}" colCnt="{len(headers)}">
+                {rows_xml}
+            </hp:tbl>
+        </hs:sec>"""
+        zf.writestr('Contents/section0.xml', section_xml)
+
+    output.seek(0)
+    return output.getvalue()
+
 
 # --- [스타일링] ---
 st.markdown("""
@@ -595,12 +775,12 @@ with tab3:
     st.markdown("### 📊 관리자 전용 종합 대시보드")
     admin_pw = st.text_input("🔑 관리자 비밀번호 입력", type="password")
     
-    if admin_pw == "1234":
+    if admin_pw == "1234":  # 초기 관리자 비밀번호
         st.success("🔓 관리자 인증 성공")
         dashboard_data = load_dashboard_data()
         
-        if dashboard_data is not None:
-            # 관리자용 통합 대시보드 시각화
+        if dashboard_data is not None and not dashboard_data.empty:
+            # 하단 통합 시각화 대시보드
             render_dashboard(dashboard_data, key_suffix="tab3")
             
             st.divider()
@@ -608,18 +788,70 @@ with tab3:
             st.dataframe(dashboard_data, use_container_width=True)
 
             st.divider()
-            st.markdown("#### 📥 보고서 및 데이터 내보내기")
-            st.info("💡 추후 이곳에서 개선전/후 사진이 통합 포함된 한글(HWPX) 문서 자동 생성 및 엑셀 출력 기능이 연결됩니다.")
+            st.markdown("#### 📥 보고서 및 데이터 맞춤 내보내기")
             
-            csv_data = dashboard_data.to_csv(index=False).encode('utf-8-sig')
-            st.download_button(
-                label="📥 전체 데이터 엑셀(CSV) 다운로드",
-                data=csv_data,
-                file_name=f"KYWA_Risk_Assessment_{datetime.date.today()}.csv",
-                mime="text/csv"
-            )
+            # --- [내보내기 프로세스 UI] ---
+            with st.container(border=True):
+                st.markdown("##### **[내보내기 설정]**")
+                exp_col1, exp_col2 = st.columns(2)
+                
+                # Step 1: 문서 포맷 선택
+                with exp_col1:
+                    export_type = st.radio(
+                        "1️⃣ 내보낼 파일 형식 선택",
+                        ["📊 엑셀 문서 (.xlsx)", "📄 한글 문서 (.hwpx)"],
+                        key="exp_type"
+                    )
+                
+                # Step 2: 시설 범위 선택
+                facility_options = ["전체"] + ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"]
+                with exp_col2:
+                    selected_exp_fac = st.selectbox(
+                        "2️⃣ 대상 시설 선택",
+                        facility_options,
+                        key="exp_fac"
+                    )
+
+                # 데이터 필터링 적용
+                if selected_exp_fac == "전체":
+                    export_df = dashboard_data.copy()
+                else:
+                    export_df = dashboard_data[dashboard_data['시설명'] == selected_exp_fac].copy()
+
+                st.write("")
+                st.caption(f"💡 선택된 데이터: **총 {len(export_df)} 건** (사진 파일 자동 결합 처리 포함)")
+
+                # Step 3: 다운로드 버튼 생성
+                if not export_df.empty:
+                    today_str = datetime.date.today().strftime("%Y%m%d")
+                    fac_name_str = "전체시설" if selected_exp_fac == "전체" else selected_exp_fac
+
+                    if "엑셀" in export_type:
+                        with st.spinner("🚀 엑셀 서식 최적화 및 이미지 삽입 작업 중..."):
+                            excel_bytes = create_excel_with_images(export_df)
+                            st.download_button(
+                                label=f"📥 [{fac_name_str}] 엑셀(.xlsx) 보고서 다운로드",
+                                data=excel_bytes,
+                                file_name=f"KYWA_위험성평가_보고서_{fac_name_str}_{today_str}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True
+                            )
+                    else: # 한글(.hwpx)
+                        with st.spinner("🚀 한글(.hwpx) 표 및 사진 패킹 문서 생성 중..."):
+                            hwpx_bytes = create_hwpx_with_images(export_df)
+                            st.download_button(
+                                label=f"📥 [{fac_name_str}] 한글(.hwpx) 보고서 다운로드",
+                                data=hwpx_bytes,
+                                file_name=f"KYWA_위험성평가_보고서_{fac_name_str}_{today_str}.hwpx",
+                                mime="application/hwp+zip",
+                                use_container_width=True
+                            )
+                else:
+                    st.warning("⚠️ 선택한 시설의 점검 데이터가 없습니다.")
+
     elif admin_pw:
         st.error("❌ 비밀번호가 올바르지 않습니다.")
+
 
 # --- [푸터(Footer) 섹션] ---
 st.write("") 
