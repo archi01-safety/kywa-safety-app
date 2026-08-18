@@ -279,7 +279,7 @@ def create_excel_with_images(df):
         col_name = headers[col[0].column - 1]
         
         if "사진" in str(col_name):
-            ws.column_dimensions[col_letter].width = 17.38 # 지정하신 열 너비 적용
+            ws.column_dimensions[col_letter].width = 16 # 지정하신 열 너비 적용
         else:
             max_len = max(len(str(cell.value or '')) for cell in col)
             ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
