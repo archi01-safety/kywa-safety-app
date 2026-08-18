@@ -518,13 +518,23 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
 
 
+# --- [탭 폰트 Bold 스타일 적용] ---
+st.markdown("""
+    <style>
+    /* 탭 전체 텍스트 폰트 굵게 적용 */
+    button[data-baseweb="tab"] div p {
+        font-weight: bold !important;
+        font-size: 16px !important; /* 필요 시 글자 크기도 조정 가능 */
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- [메인 탭 구획] ---
 tab1, tab2, tab3 = st.tabs([
     "📝 AI 위험성평가", 
     "🛠️ 개선조치 등록 (담당자용)", 
     "📊 종합 대시보드 (관리자용)"
 ])
-
 # ==========================================
 # [탭 1] AI 위험성평가
 # ==========================================
