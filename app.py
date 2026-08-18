@@ -258,15 +258,15 @@ def create_excel_with_images(df):
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = thin_border
 
-            # 3번 수정: 사진 셀 내 크기 키우기 (가로 125px x 세로 98px)
+            # 3번 수정: 사진 셀 내 크기 키우기 (가로 132px x 세로 104px)
             if (col_idx - 1) in photo_cols and pd.notna(value) and str(value).startswith("http"):
                 img_bytes = get_image_bytes_from_link(str(value))
                 if img_bytes:
                     try:
                         img_io = io.BytesIO(img_bytes)
                         img = OpenpyxlImage(img_io)
-                        img.width = 125   # 열 너비 17.38에 꽉 차게 확장
-                        img.height = 98   # 행 높이 80pt에 꽉 차게 확장
+                        img.width = 132
+                        img.height = 104
                         cell_address = f"{get_column_letter(col_idx)}{row_idx}"
                         ws.add_image(img, cell_address)
                         cell.value = ""
