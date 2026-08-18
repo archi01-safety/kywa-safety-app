@@ -518,28 +518,6 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
 
 
-# --- [탭 폰트 Bold 스타일 적용 (최신 Streamlit 호환)] ---
-st.markdown("""
-    <style>
-    /* 1. 기본 탭 텍스트 굵게 및 크기 변경 */
-    .stTabs [data-baseweb="tab"] {
-        font-weight: bold !important;
-        font-size: 16px !important;
-    }
-    
-    /* 2. 탭 내부 p 태그 굵게 처리 */
-    .stTabs [data-baseweb="tab"] p {
-        font-weight: bold !important;
-        font-size: 16px !important;
-    }
-
-    /* 3. 선택된(Active) 탭 강조 색상 설정 (선택 사항) */
-    .stTabs [data-baseweb="tab"][aria-selected="true"] p {
-        color: #1F618D !important; /* 포인트 컬러 (네이비 계열) */
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 # --- [메인 탭 구획] ---
 tab1, tab2, tab3 = st.tabs([
     "📝 AI 위험성평가", 
