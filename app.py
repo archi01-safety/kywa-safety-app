@@ -517,12 +517,27 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                         )
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
 
-# --- [메인 탭 구획] ---
-tab1, tab2, tab3 = st.tabs([
-    "📝 AI 위험성평가", 
-    "🛠️ 개선조치 등록 (담당자용)", 
-    "📊 종합 대시보드 (관리자용)"
-])
+# --- [좌측 세로형 탭(사이드바) 전환 방식] ---
+with st.sidebar:
+    st.markdown("### 📌 메뉴 선택")
+    selected_tab = st.radio(
+        label="이동할 화면을 선택하세요",
+        options=["📝 점검 입력", "📊 결과 조회", "📥 내보내기"],
+        label_visibility="collapsed"  # 라벨 숨김으로 간결하게 처리
+    )
+
+# 선택된 메뉴에 따라 화면 분기
+if selected_tab == "📝 점검 입력":
+    # 기존 tab1 내부 코드 작성
+    st.write("점검 입력 화면입니다.")
+
+elif selected_tab == "📊 결과 조회":
+    # 기존 tab2 내부 코드 작성
+    st.write("결과 조회 화면입니다.")
+
+elif selected_tab == "📥 내보내기":
+    # 기존 tab3 내부 코드 작성
+    st.write("내보내기 화면입니다.")
 
 # ==========================================
 # [탭 1] AI 위험성평가
@@ -702,7 +717,7 @@ with tab2:
                 action_img = st.file_uploader("📸 개선 후 사진 업로드", type=['png', 'jpg', 'jpeg'], key="t2_act_img")
                 if action_img: st.image(action_img, caption="개선 후 사진", width=250)
 
-            if st.button("🤖 조치결과 AI 분석 (빈도/강도 재산출)", use_container_width=True, key="btn_eval_after"):
+            if st.button("🛠️ 조치결과 AI 분석 (빈도/강도 재산출)", use_container_width=True, key="btn_eval_after"):
                 if not action_text.strip():
                     st.warning("⚠️ 개선 조치 상세 내용을 입력해야 AI 분석이 가능합니다.")
                 else:
