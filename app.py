@@ -301,6 +301,8 @@ def create_excel_with_images(df):
             ws.column_dimensions[col_letter].width = 50.0
         elif col_name == '관련근거':
             ws.column_dimensions[col_letter].width = 30.0
+        elif col_name == '개선후 위험등급':
+            ws.column_dimensions[col_letter].width = 15.0
             
         # 3. 기타 미지정 열 (글자 수 기반 자동 계산, 최소 너비 12)
         else:
