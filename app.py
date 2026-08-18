@@ -281,13 +281,28 @@ def create_excel_with_images(df):
                     except Exception:
                         pass
 
-    # 🔥 요청사항 2: 열 너비 지정 (16.6)
+    # 열 너비 개별 및 자동 설정
     for col in ws.columns:
         col_letter = get_column_letter(col[0].column)
-        col_name = headers[col[0].column - 1]
+        col_name = str(headers[col[0].column - 1]).strip()
         
-        if "사진" in str(col_name):
-            ws.column_dimensions[col_letter].width = 16.6  # 지정값 적용
+        # 1. 사진 관련 열 너비 지정 (16.6)
+        if "사진" in col_name:
+            ws.column_dimensions[col_letter].width = 16.6
+            
+        # 2. 지정 항목별 열 너비 설정
+        elif col_name in ['타임스탬프', '장소']:
+            ws.column_dimensions[col_letter].width = 16.6
+        elif col_name == '유해위험요인':
+            ws.column_dimensions[col_letter].width = 15.0
+        elif col_name == '위험상황':
+            ws.column_dimensions[col_letter].width = 40.0
+        elif col_name == '감소대책':
+            ws.column_dimensions[col_letter].width = 50.0
+        elif col_name == '관련근거':
+            ws.column_dimensions[col_letter].width = 30.0
+            
+        # 3. 기타 미지정 열 (글자 수 기반 자동 계산, 최소 너비 12)
         else:
             max_len = max(len(str(cell.value or '')) for cell in col)
             ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
