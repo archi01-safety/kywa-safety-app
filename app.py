@@ -516,8 +516,6 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                             xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', dragmode=False 
                         )
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
-
-
 # --- [메인 탭 구획] ---
 tab1, tab2, tab3 = st.tabs([
     "📝 AI 위험성평가", 
