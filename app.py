@@ -217,18 +217,26 @@ def get_image_bytes_from_link(link_str):
     return None
 
 
+# 내보내기 전용 전체 17개 표준 컬럼 목록
+EXPORT_COLUMNS = [
+    '타임스탬프', '시설명', '담당 부서', '장소', '유해위험요인', '위험상황', 
+    '빈도', '강도', '점수', '위험등급', '감소대책', '관련근거', '사진 기록', 
+    '개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록'
+]
+
+
 def create_excel_with_images(df):
-    """3번 수정: 행 높이 80, 열 너비 17.38 셀 크기에 꽉 차게 이미지 삽입 (너비 125, 높이 98)"""
+    """행 높이 80, 열 너비 16.6 규격에 지정 이미지 크기(132x104) 적용 엑셀 생성 함수"""
     wb = Workbook()
     ws = wb.active
     ws.title = "위험성평가_개선현황"
 
-    # 1번 수정: '개선후 사진' 제거, '개선후 사진기록'으로 표준화
-    standard_cols = ['타임스탬프', '시설명', '공종명', '위험요인', '개선대책', '빈도', '강도', '점수', '위험등급', '사진 기록', 
-                     '개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록']
-    
-    # 실제 존재하는 열만 추출
-    headers = [col for col in standard_cols if col in df.columns]
+    # EXPORT_COLUMNS 목록 순서대로 데이터프레임 헤더 구성
+    headers = [col for col in EXPORT_COLUMNS if col in df.columns]
+    for col in df.columns:
+        if col not in headers:
+            headers.append(col)
+
     ws.append(headers)
 
     header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
@@ -250,7 +258,7 @@ def create_excel_with_images(df):
     photo_cols = [i for i, col in enumerate(headers) if "사진" in str(col)]
 
     for row_idx, (_, row) in enumerate(df.iterrows(), start=2):
-        ws.row_dimensions[row_idx].height = 80  # 행 높이 80
+        ws.row_dimensions[row_idx].height = 80  # 행 높이 80pt
         for col_idx, col_name in enumerate(headers, start=1):
             value = row.get(col_name, '')
             cell = ws.cell(row=row_idx, column=col_idx, value=str(value) if pd.notna(value) else "")
@@ -258,28 +266,28 @@ def create_excel_with_images(df):
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = thin_border
 
-            # 3번 수정: 사진 셀 내 크기 키우기 (가로 132px x 세로 104px)
+            # 🔥 요청사항 1: 사진 크기 지정 (width=132, height=104)
             if (col_idx - 1) in photo_cols and pd.notna(value) and str(value).startswith("http"):
                 img_bytes = get_image_bytes_from_link(str(value))
                 if img_bytes:
                     try:
                         img_io = io.BytesIO(img_bytes)
                         img = OpenpyxlImage(img_io)
-                        img.width = 132
-                        img.height = 104
+                        img.width = 132   # 지정값 적용
+                        img.height = 104  # 지정값 적용
                         cell_address = f"{get_column_letter(col_idx)}{row_idx}"
                         ws.add_image(img, cell_address)
                         cell.value = ""
                     except Exception:
                         pass
 
-    # 열 너비 최적화
+    # 🔥 요청사항 2: 열 너비 지정 (16.6)
     for col in ws.columns:
         col_letter = get_column_letter(col[0].column)
         col_name = headers[col[0].column - 1]
         
         if "사진" in str(col_name):
-            ws.column_dimensions[col_letter].width = 16.6 # 지정하신 열 너비 적용
+            ws.column_dimensions[col_letter].width = 16.6  # 지정값 적용
         else:
             max_len = max(len(str(cell.value or '')) for cell in col)
             ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
@@ -291,18 +299,17 @@ def create_excel_with_images(df):
 
 
 def create_hwpx_with_images(df):
-    """2번 수정: 한글(.hwpx) '손상된 파일' 에러 해결 - 정식 HWPX ZIP 및 XML 구조 적용"""
+    """한글(.hwpx) 표 생성기 (17개 전 컬럼 반영)"""
     output = io.BytesIO()
 
-    standard_cols = ['타임스탬프', '시설명', '공종명', '위험요인', '개선대책', '빈도', '강도', '점수', '위험등급', '사진 기록', 
-                     '개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록']
-    headers = [col for col in standard_cols if col in df.columns]
+    headers = [col for col in EXPORT_COLUMNS if col in df.columns]
+    for col in df.columns:
+        if col not in headers:
+            headers.append(col)
 
     with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as zf:
-        # 1. mimetype (압축 방식 ZIP_STORED 필수)
         zf.writestr('mimetype', 'application/hwp+zip', compress_type=zipfile.ZIP_STORED)
 
-        # 2. META-INF/container.xml (HWPX 정식 규격)
         container_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
     <rootfiles>
@@ -311,7 +318,6 @@ def create_hwpx_with_images(df):
 </container>"""
         zf.writestr('META-INF/container.xml', container_xml)
 
-        # 3. Contents/content.hpf (패키지 매니페스트)
         content_hpf = """<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.hancom.com/hwpml/2011/version" version="1.0">
     <metadata>
@@ -327,25 +333,22 @@ def create_hwpx_with_images(df):
 </package>"""
         zf.writestr('Contents/content.hpf', content_hpf)
 
-        # 4. Contents/header.xml
         header_xml = """<?xml version="1.0" encoding="UTF-8"?>
 <hh:head xmlns:hh="http://www.hancom.com/hwpml/2011/head"/>"""
         zf.writestr('Contents/header.xml', header_xml)
 
-        # 5. Contents/section0.xml (본문 표)
         rows_xml = ""
-        # 표 헤더
+        # 헤더 행
         rows_xml += "<hp:tr>"
         for h in headers:
             rows_xml += f"<hp:tc><hp:p><hp:t>{h}</hp:t></hp:p></hp:tc>"
         rows_xml += "</hp:tr>"
 
-        # 표 데이터 행
+        # 데이터 행
         for _, row in df.iterrows():
             rows_xml += "<hp:tr>"
             for col_name in headers:
                 val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
-                # XML 특수문자 이스케이프 처리
                 val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 rows_xml += f"<hp:tc><hp:p><hp:t>{val}</hp:t></hp:p></hp:tc>"
             rows_xml += "</hp:tr>"
