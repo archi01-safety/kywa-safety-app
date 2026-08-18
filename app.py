@@ -517,12 +517,6 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                         )
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
 
-# --- [메인 탭 구획] ---
-tab1, tab2, tab3 = st.tabs([
-    "📝 AI 위험성평가", 
-    "🛠️ 개선조치 등록 (담당자용)", 
-    "📊 종합 대시보드 (관리자용)"
-])
 
 # --- [좌측 세로형 탭(사이드바) 전환 방식] ---
 with st.sidebar:
