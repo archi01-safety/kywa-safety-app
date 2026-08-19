@@ -29,6 +29,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Frame, PageTemplate, Image as RLImage, NextPageTemplate
 
 # Retry 및 예외 처리 라이브러리
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
@@ -323,23 +324,18 @@ def generate_ai_summary(export_df, facility_name, client):
         return "※ AI 총평 생성 중 일시적인 서버 과부하가 발생하여 통계 데이터 기반 표준 총평으로 대체합니다."
 
 def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, get_image_bytes_func):
-    """
-    A4 세로(1 Page) + A3 가로(2 Page~ 첨부표) 결합 및 열 너비 비율 최적화 PDF 생성
-    """
     buffer = io.BytesIO()
     
-    # 1. 문서 기본 객체 생성 (기본 규격: A4 세로)
+    # 기본 문서를 A4 세로로 생성
     doc = SimpleDocTemplate(
         buffer, pagesize=portrait(A4),
         rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20
     )
 
-    # 2. PageTemplates 구성 (A4 Portrait / A3 Landscape)
-    # A4 Portrait Frame (210 x 297 mm -> 595.27 x 841.89 pt)
-    frame_a4 = Frame(20, 20, 555.27, 801.89, id='normal')
+    # A4/A3 템플릿 정의
+    frame_a4 = Frame(20, 20, 555.27, 801.89, id='normal_a4')
     template_a4 = PageTemplate(id='A4_Portrait', frames=frame_a4, pagesize=portrait(A4))
 
-    # A3 Landscape Frame (420 x 297 mm -> 1190.55 x 841.89 pt)
     frame_a3 = Frame(20, 20, 1150.55, 801.89, id='normal_a3')
     template_a3 = PageTemplate(id='A3_Landscape', frames=frame_a3, pagesize=landscape(A3))
 
@@ -369,36 +365,12 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
                 story.append(Paragraph(clean_line, body_style))
                 story.append(Spacer(1, 3))
 
-    # --- PAGE 2~: A3 가로 페이지로 전환 ---
-    story.append(PageBreak())
-    story.append(Paragraph("<seq reset=1/>", body_style)) # 페이지 템플릿 변경 신호
-    story.append(PageBreak()) # A3 템플릿 적용을 위한 명시적 구분
+    # --- PAGE 2~: A3 가로 페이지로 전환 (올바른 스위칭 방식) ---
+    story.append(NextPageTemplate('A3_Landscape')) # 다음 페이지부터 A3 가로 템플릿 적용
+    story.append(PageBreak()) # 즉시 다음 페이지로 이동 (1번만 호출!)
 
     story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
     story.append(Spacer(1, 8))
-
-    headers = [col for col in export_cols if col in export_df.columns]
-    table_data = [[Paragraph(f"<b>{h}</b>", body_style) for h in headers]]
-
-    for _, row in export_df.iterrows():
-        row_data = []
-        for col_name in headers:
-            val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
-            if "사진" in col_name and val.startswith("http"):
-                img_bytes = get_image_bytes_func(val)
-                if img_bytes:
-                    try:
-                        img_io = io.BytesIO(img_bytes)
-                        rl_img = RLImage(img_io, width=50, height=35)
-                        row_data.append(rl_img)
-                    except Exception:
-                        row_data.append(Paragraph("", body_style))
-                else:
-                    row_data.append(Paragraph("", body_style))
-            else:
-                clean_val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                row_data.append(Paragraph(clean_val, body_style))
-        table_data.append(row_data)
 
     # A3 Landscape 전체 사용 가능 폭 = 1150 pt 기준 열 너비 비율 산정 (총합 100%)
     COLUMN_RATIOS = {
@@ -431,7 +403,8 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     def switch_to_a3(canvas, doc):
         canvas.setPageSize(landscape(A3))
 
-    doc.build(story, onFirstPage=lambda c, d: None)
+# doc.build 실행 (onFirstPage 람다 제거)
+    doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
 
