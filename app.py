@@ -21,12 +21,20 @@ import zipfile
 import xml.etree.ElementTree as ET
 import google.genai as genai
 import openpyxl
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image as RLImage
+
+# PDF 관련 라이브러리 (A3/A4 혼용 구현을 위한 PageTemplate 추가)
+from reportlab.lib.pagesizes import A4, A3, landscape, portrait
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Frame, PageTemplate, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Frame, PageTemplate, Image as RLImage, NextPageTemplate
+
+# Retry 및 예외 처리 라이브러리
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+from google.genai.errors import APIError
+
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
@@ -67,21 +75,36 @@ model_name = "gemini-flash-latest"
 if "GEMINI_API_KEY" in st.secrets:
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
+# --- [Retry 판별 전용 검증 함수] ---
+def is_transient_error(exception):
+    """503 과부하 또는 429 Rate Limit 에러 시에만 재시도 수행"""
+    if isinstance(exception, APIError):
+        if exception.code in [503, 429] or "UNAVAILABLE" in str(exception) or "high demand" in str(exception):
+            return True
+    return False
+
+# --- [Tenacity 기반 Gemini API 안전 호출 함수] ---
+@retry(
+    stop=stop_after_attempt(5),               # 최대 5회 시도
+    wait=wait_exponential(min=2, max=20),      # 2초 -> 4초 -> 8초 -> 16초 지수 대기
+    retry=retry_if_exception(is_transient_error),
+    reraise=True                              # 최종 실패 시 예외를 던져 에러 텍스트 저장을 방지
+)
+def call_gemini_api_safe(client, model, contents, config=None):
+    """503/429 발생 시 자동으로 지수 대기 재시도를 수행하는 안전 호출 함수"""
+    if config:
+        return client.models.generate_content(model=model, contents=contents, config=config)
+    return client.models.generate_content(model=model, contents=contents)
+
 # --- [유틸리티 함수들] ---
 
 def get_image_bytes_from_link(url_or_id):
-    """
-    구글 드라이브 링크/일반 이미지 URL을 수신하여 
-    PIL을 활용해 300px 이하로 압축 및 축소된 JPEG 바이트를 반환합니다.
-    """
     if not url_or_id or not isinstance(url_or_id, str):
         return None
-    
     url = url_or_id.strip()
     if not url.startswith("http"):
         return None
 
-    # 구글 드라이브 공유 URL일 경우 직접 다운로드 URL로 변환
     drive_id_match = re.search(r'd/([a-zA-Z0-9_-]+)', url) or re.search(r'id=([a-zA-Z0-9_-]+)', url)
     if drive_id_match:
         file_id = drive_id_match.group(1)
@@ -93,11 +116,7 @@ def get_image_bytes_from_link(url_or_id):
         response = requests.get(download_url, timeout=7, headers={'User-Agent': 'Mozilla/5.0'})
         if response.status_code == 200:
             img_raw = Image.open(io.BytesIO(response.content))
-            
-            # 300px 이하로 썸네일 축소 (비율 유지)
             img_raw.thumbnail((300, 300), Image.Resampling.LANCZOS)
-            
-            # RGB 변환 및 압축 저장
             buffer = io.BytesIO()
             img_raw.convert("RGB").save(buffer, format="JPEG", quality=75)
             buffer.seek(0)
@@ -143,8 +162,10 @@ def apply_face_blur_ai(img_file):
         pil_img = Image.open(io.BytesIO(compressed_bytes))
 
         prompt = "이미지에서 모든 사람의 얼굴(머리 전체) 위치를 찾아서 [ymin, xmin, ymax, xmax] 좌표 리스트로 응답해줘. JSON 형식: {\"faces\": [[ymin, xmin, ymax, xmax], ...]}"
-        response = client.models.generate_content(
-            model=model_name, contents=[prompt, pil_img],
+        
+        # Retry 적용 함수 호출
+        response = call_gemini_api_safe(
+            client, model_name, [prompt, pil_img],
             config=genai.types.GenerateContentConfig(response_mime_type="application/json")
         )
         face_data = json.loads(response.text)
@@ -156,8 +177,7 @@ def apply_face_blur_ai(img_file):
             left, top = int(xmin * w / 1000), int(ymin * h / 1000)
             right, bottom = int(xmax * w / 1000), int(ymax * h / 1000)
             
-            # 안전장치: 이미지 하단 10% 영역 제외
-            if top > h * 0.9:
+            if top > h * 0.9: # 하단 10% 영역 제외
                 continue
                 
             rw, rh = right - left, bottom - top
@@ -248,7 +268,6 @@ EXPORT_COLUMNS = [
     '개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록'
 ]
 
-# 폰트 등록 (현재 폴더의 malgun.ttf 우선 로드 -> 실패 시 Windows 기본 경로 차선 로드)
 FONT_NAME = 'Helvetica'
 font_paths = ['malgun.ttf', 'c:/Windows/Fonts/malgun.ttf']
 
@@ -282,8 +301,8 @@ def generate_ai_summary(export_df, facility_name, client):
     
     high_cnt = len(export_df[export_df['위험등급'] == '높음']) if '위험등급' in export_df.columns else 0
     med_cnt = len(export_df[export_df['위험등급'] == '보통']) if '위험등급' in export_df.columns else 0
-    low_cnt = len(export_df[export_df['위험등급'] == '낮음']) if '위험등급' in export_df.columns else 0
-    vlow_cnt = len(export_df[export_df['위험등급'] == '매우 낮음']) if '위험등급' in export_df.columns else 0
+    low_cnt = len(export_df[export_df['위험등급'] == '낮음']) if '낮음' in export_df.columns else 0
+    vlow_cnt = len(export_df[export_df['위험등급'] == '매우 낮음']) if '매우 낮음' in export_df.columns else 0
 
     risk_details_text = ""
     if '유해위험요인' in export_df.columns and '감소대책' in export_df.columns:
@@ -297,20 +316,31 @@ def generate_ai_summary(export_df, facility_name, client):
     )
 
     try:
-        response = client.models.generate_content(
-            model=model_name,
-            contents=prompt
-        )
+        # 안전한 Retry 호출 함수 적용
+        response = call_gemini_api_safe(client, model_name, prompt)
         return response.text
     except Exception as e:
-        return f"AI 분석 결과 생성 중 오류가 발생했습니다: {str(e)}"
+        # 오류 발생 시 에러 코드가 보고서 본문에 들어가는 것을 방지하고 대체 문구 반환
+        return "※ AI 총평 생성 중 일시적인 서버 과부하가 발생하여 통계 데이터 기반 표준 총평으로 대체합니다."
 
 def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, get_image_bytes_func):
     buffer = io.BytesIO()
+    
+    # 기본 문서를 A4 세로로 생성
     doc = SimpleDocTemplate(
-        buffer, pagesize=landscape(A4),
+        buffer, pagesize=portrait(A4),
         rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20
     )
+
+    # A4/A3 템플릿 정의
+    frame_a4 = Frame(20, 20, 555.27, 801.89, id='normal_a4')
+    template_a4 = PageTemplate(id='A4_Portrait', frames=frame_a4, pagesize=portrait(A4))
+
+    frame_a3 = Frame(20, 20, 1150.55, 801.89, id='normal_a3')
+    template_a3 = PageTemplate(id='A3_Landscape', frames=frame_a3, pagesize=landscape(A3))
+
+    doc.addPageTemplates([template_a4, template_a3])
+
     story = []
 
     styles = getSampleStyleSheet()
@@ -323,7 +353,7 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
         fontName=FONT_NAME, fontSize=8, leading=11
     )
 
-    # PAGE 1: 요약 보고서
+    # --- PAGE 1: 요약 보고서 (A4 세로) ---
     story.append(Paragraph(f"<b>2026년 {facility_name} 위험성평가 결과 보고서</b>", title_style))
     story.append(Spacer(1, 10))
 
@@ -335,38 +365,53 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
                 story.append(Paragraph(clean_line, body_style))
                 story.append(Spacer(1, 3))
 
-    story.append(PageBreak())
+    # --- PAGE 2~: A3 가로 페이지로 전환 (올바른 스위칭 방식) ---
+    story.append(NextPageTemplate('A3_Landscape')) # 다음 페이지부터 A3 가로 템플릿 적용
+    story.append(PageBreak()) # 즉시 다음 페이지로 이동 (1번만 호출!)
 
-    # PAGE 2~: 세부 현황 표
     story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
     story.append(Spacer(1, 8))
 
+# --- PAGE 2~: A3 가로 페이지로 전환 ---
+    story.append(NextPageTemplate('A3_Landscape'))
+    story.append(PageBreak())
+
+    story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
+    story.append(Spacer(1, 8))
+
+    # 1. 헤더(컬럼) 정의
     headers = [col for col in export_cols if col in export_df.columns]
-    table_data = [[Paragraph(f"<b>{h}</b>", body_style) for h in headers]]
+    for col in export_df.columns:
+        if col not in headers:
+            headers.append(col)
+
+    # 2. 표 데이터(table_data) 구성
+    header_paragraphs = [Paragraph(f"<b>{h}</b>", body_style) for h in headers]
+    table_data = [header_paragraphs]
 
     for _, row in export_df.iterrows():
-        row_data = []
+        row_cells = []
         for col_name in headers:
             val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
-            if "사진" in col_name and val.startswith("http"):
-                img_bytes = get_image_bytes_func(val)
-                if img_bytes:
-                    try:
-                        img_io = io.BytesIO(img_bytes)
-                        rl_img = RLImage(img_io, width=50, height=35)
-                        row_data.append(rl_img)
-                    except Exception:
-                        row_data.append(Paragraph("", body_style))
-                else:
-                    row_data.append(Paragraph("", body_style))
+            val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            
+            # 사진 링크인 경우 처리 (선택 사항)
+            if "사진" in str(col_name) and val.startswith("http"):
+                row_cells.append(Paragraph("사진 첨부", body_style))
             else:
-                clean_val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                row_data.append(Paragraph(clean_val, body_style))
-        table_data.append(row_data)
+                row_cells.append(Paragraph(val, body_style))
+        table_data.append(row_cells)
 
-    num_cols = len(headers)
-    col_width = max(40, int(800 / num_cols)) if num_cols > 0 else 50
-    actual_widths = [col_width] * num_cols
+    # 3. 열 너비 비율 정의
+    COLUMN_RATIOS = {
+        '타임스탬프': 0.03, '시설명': 0.04, '담당 부서': 0.05, '장소': 0.05, '유해위험요인': 0.05,
+        '위험상황': 0.18, '빈도': 0.025, '강도': 0.025, '점수': 0.025, '위험등급': 0.035,
+        '감소대책': 0.18, '관련근거': 0.12, '사진 기록': 0.04,
+        '개선후 빈도': 0.025, '개선후 강도': 0.025, '개선후 점수': 0.025, '개선후 위험등급': 0.035, '개선후 사진기록': 0.04
+    }
+
+    usable_width = 1150.0
+    actual_widths = [usable_width * COLUMN_RATIOS.get(h, 0.05) for h in headers]
 
     pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
     pdf_table.setStyle(TableStyle([
@@ -380,6 +425,30 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     ]))
 
     story.append(pdf_table)
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+    pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
+    pdf_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+        ('FONTNAME', (0, 0), (-1, -1), FONT_NAME),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+    ]))
+
+    story.append(pdf_table)
+    
+    # Custom Build Flow로 A4 -> A3 템플릿 스위칭 처리
+    def switch_to_a3(canvas, doc):
+        canvas.setPageSize(landscape(A3))
+
+# doc.build 실행 (onFirstPage 람다 제거)
     doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
@@ -523,7 +592,7 @@ def create_hwpx_with_images(df):
     output.seek(0)
     return output.getvalue()
 
-# --- [스타일링] ---
+# --- [스타일링 및 헤더] ---
 st.markdown("""
     <style>
     div.stButton > button {
@@ -541,7 +610,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- [헤더 레이아웃] ---
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
     if os.path.exists("kywa_logo.png"):
@@ -562,7 +630,6 @@ with header_col2:
 
 st.divider()
 
-# 세션 초기화
 if "analysis_results" not in st.session_state: st.session_state.analysis_results = None
 if "final_data" not in st.session_state: st.session_state.final_data = None
 if "eval_after_data" not in st.session_state: st.session_state.eval_after_data = None
@@ -653,7 +720,7 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                         )
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
 
-# --- [사이드바 메뉴 선택] ---
+# --- [사이드바 메뉴] ---
 with st.sidebar:
     st.markdown("### 📌 메뉴 선택")
     selected_tab = st.radio(
@@ -704,8 +771,9 @@ if selected_tab == "📝 점검 입력":
                     st.session_state.final_secure_image = processed_bytes
 
                 try:
-                    response = client.models.generate_content(
-                        model=model_name, contents=content,
+                    # Retry 적용 안전 호출
+                    response = call_gemini_api_safe(
+                        client, model_name, content,
                         config={"response_mime_type": "application/json", "temperature": 0.0}
                     )
                     if response:
@@ -714,7 +782,7 @@ if selected_tab == "📝 점검 입력":
                         st.success("✅ 분석 완료!")
                         st.rerun()
                 except Exception as e:
-                    st.error(f"❌ 분석 실패: {e}")
+                    st.error(f"❌ 분석 실패 (서버 트래픽 과부하 등): {e}")
 
     if st.session_state.analysis_results:
         st.markdown("### 📋 AI 위험성평가 결과")
@@ -853,8 +921,9 @@ elif selected_tab == "📊 결과 조회":
                         JSON 형식: {{"p_after": 1, "s_after": 1, "score_after": 1, "grade_after": "매우 낮음"}}
                         """
                         try:
-                            eval_res = client.models.generate_content(
-                                model=model_name, contents=[prompt_eval],
+                            # Retry 적용 안전 호출
+                            eval_res = call_gemini_api_safe(
+                                client, model_name, [prompt_eval],
                                 config={"response_mime_type": "application/json"}
                             )
                             st.session_state.eval_after_data = json.loads(eval_res.text.strip())
