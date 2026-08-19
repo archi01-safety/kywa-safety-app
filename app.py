@@ -225,7 +225,8 @@ PDF_AI_PROMPT_TEMPLATE = """
 위 데이터를 바탕으로 개요 및 주요 유해위험요인 분야별 비율과 전문적인 분석 총평을 공공기관 보고서 격식에 맞게 작성해 주세요.
 """
 
-def generate_ai_summary(export_df, facility_name, model):
+# --- [generate_ai_summary 함수 수정] ---
+def generate_ai_summary(export_df, facility_name, client):
     total_cnt = len(export_df)
     plan_cnt = len(export_df[export_df['감소대책'].notna() & (export_df['감소대책'] != '')]) if '감소대책' in export_df.columns else 0
     complete_cnt = len(export_df[export_df['개선후 위험등급'].notna() & (export_df['개선후 위험등급'] != '')]) if '개선후 위험등급' in export_df.columns else 0
@@ -247,38 +248,18 @@ def generate_ai_summary(export_df, facility_name, model):
     )
 
     try:
-        response = model.generate_content(prompt)
+        # client.models.generate_content 로 구체적 호출
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt
+        )
         return response.text
     except Exception as e:
         return f"AI 분석 결과 생성 중 오류가 발생했습니다: {str(e)}"
 
-def get_image_bytes_from_link(link_str):
-    if not isinstance(link_str, str) or "http" not in link_str:
-        return None
-    try:
-        file_id = None
-        if "id=" in link_str:
-            file_id = link_str.split("id=")[1].split("&")[0]
-        elif "/d/" in link_str:
-            file_id = link_str.split("/d/")[1].split("/")[0]
 
-        if file_id and drive_service:
-            request = drive_service.files().get_media(fileId=file_id)
-            fh = io.BytesIO()
-            downloader = MediaIoBaseDownload(fh, request)
-            done = False
-            while not done:
-                _, done = downloader.next_chunk()
-            return fh.getvalue()
-        else:
-            res = requests.get(link_str, timeout=5)
-            if res.status_code == 200:
-                return res.content
-    except Exception:
-        pass
-    return None
-
-def create_pdf_with_ai_summary(export_df, facility_name, model, export_cols, get_image_bytes_func):
+# --- [create_pdf_with_ai_summary 함수 수정] ---
+def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, get_image_bytes_func):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
         buffer, pagesize=landscape(A4),
@@ -300,8 +281,8 @@ def create_pdf_with_ai_summary(export_df, facility_name, model, export_cols, get
     story.append(Paragraph(f"<b>2026년 {facility_name} 위험성평가 결과 보고서</b>", title_style))
     story.append(Spacer(1, 10))
 
-    if model:
-        ai_summary_text = generate_ai_summary(export_df, facility_name, model)
+    if client:
+        ai_summary_text = generate_ai_summary(export_df, facility_name, client)
         for line in ai_summary_text.split('\n'):
             if line.strip():
                 clean_line = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
@@ -337,7 +318,6 @@ def create_pdf_with_ai_summary(export_df, facility_name, model, export_cols, get
                 row_data.append(Paragraph(clean_val, body_style))
         table_data.append(row_data)
 
-    # 가변 열 너비 계산 (A4 가로 폭 802pt 기준)
     num_cols = len(headers)
     col_width = max(40, int(800 / num_cols)) if num_cols > 0 else 50
     actual_widths = [col_width] * num_cols
@@ -357,6 +337,7 @@ def create_pdf_with_ai_summary(export_df, facility_name, model, export_cols, get
     doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
+
 
 def create_excel_with_images(df):
     wb = Workbook()
@@ -946,7 +927,7 @@ elif selected_tab == "📥 내보내기":
                                 file_bytes = create_pdf_with_ai_summary(
                                     export_df=export_df,
                                     facility_name=fac_name_str,
-                                    model=client.models if client else None,
+                                    client=client,  # <-- client.models 대신 client 자체를 전달!
                                     export_cols=EXPORT_COLUMNS,
                                     get_image_bytes_func=get_image_bytes_from_link
                                 )
