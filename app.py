@@ -11,6 +11,7 @@ import requests
 import io
 import datetime
 import base64
+import re
 import pandas as pd
 import numpy as np
 import cv2
@@ -67,6 +68,44 @@ if "GEMINI_API_KEY" in st.secrets:
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
 # --- [유틸리티 함수들] ---
+
+def get_image_bytes_from_link(url_or_id):
+    """
+    구글 드라이브 링크/일반 이미지 URL을 수신하여 
+    PIL을 활용해 300px 이하로 압축 및 축소된 JPEG 바이트를 반환합니다.
+    """
+    if not url_or_id or not isinstance(url_or_id, str):
+        return None
+    
+    url = url_or_id.strip()
+    if not url.startswith("http"):
+        return None
+
+    # 구글 드라이브 공유 URL일 경우 직접 다운로드 URL로 변환
+    drive_id_match = re.search(r'd/([a-zA-Z0-9_-]+)', url) or re.search(r'id=([a-zA-Z0-9_-]+)', url)
+    if drive_id_match:
+        file_id = drive_id_match.group(1)
+        download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    else:
+        download_url = url
+
+    try:
+        response = requests.get(download_url, timeout=7, headers={'User-Agent': 'Mozilla/5.0'})
+        if response.status_code == 200:
+            img_raw = Image.open(io.BytesIO(response.content))
+            
+            # 300px 이하로 썸네일 축소 (비율 유지)
+            img_raw.thumbnail((300, 300), Image.Resampling.LANCZOS)
+            
+            # RGB 변환 및 압축 저장
+            buffer = io.BytesIO()
+            img_raw.convert("RGB").save(buffer, format="JPEG", quality=75)
+            buffer.seek(0)
+            return buffer.getvalue()
+    except Exception:
+        pass
+    return None
+
 def compress_image(uploaded_file):
     image = Image.open(uploaded_file)
     image.thumbnail((1280, 1280))
@@ -116,6 +155,11 @@ def apply_face_blur_ai(img_file):
             ymin, xmin, ymax, xmax = box
             left, top = int(xmin * w / 1000), int(ymin * h / 1000)
             right, bottom = int(xmax * w / 1000), int(ymax * h / 1000)
+            
+            # 안전장치: 이미지 하단 10% 영역 제외
+            if top > h * 0.9:
+                continue
+                
             rw, rh = right - left, bottom - top
             if rw <= 0 or rh <= 0: continue
             face_roi = image[top:bottom, left:right]
@@ -225,7 +269,6 @@ PDF_AI_PROMPT_TEMPLATE = """
 위 데이터를 바탕으로 개요 및 주요 유해위험요인 분야별 비율과 전문적인 분석 총평을 공공기관 보고서 격식에 맞게 작성해 주세요.
 """
 
-# --- [generate_ai_summary 함수 수정] ---
 def generate_ai_summary(export_df, facility_name, client):
     total_cnt = len(export_df)
     plan_cnt = len(export_df[export_df['감소대책'].notna() & (export_df['감소대책'] != '')]) if '감소대책' in export_df.columns else 0
@@ -248,7 +291,6 @@ def generate_ai_summary(export_df, facility_name, client):
     )
 
     try:
-        # client.models.generate_content 로 구체적 호출
         response = client.models.generate_content(
             model=model_name,
             contents=prompt
@@ -257,8 +299,6 @@ def generate_ai_summary(export_df, facility_name, client):
     except Exception as e:
         return f"AI 분석 결과 생성 중 오류가 발생했습니다: {str(e)}"
 
-
-# --- [create_pdf_with_ai_summary 함수 수정] ---
 def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, get_image_bytes_func):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
@@ -338,7 +378,6 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     buffer.seek(0)
     return buffer.getvalue()
 
-
 def create_excel_with_images(df):
     wb = Workbook()
     ws = wb.active
@@ -382,8 +421,8 @@ def create_excel_with_images(df):
                     try:
                         img_io = io.BytesIO(img_bytes)
                         img = OpenpyxlImage(img_io)
-                        img.width = 132
-                        img.height = 104
+                        img.width = 100
+                        img.height = 75
                         cell_address = f"{get_column_letter(col_idx)}{row_idx}"
                         ws.add_image(img, cell_address)
                         cell.value = ""
@@ -607,7 +646,6 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                             xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', dragmode=False 
                         )
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
-
 
 # --- [사이드바 메뉴 선택] ---
 with st.sidebar:
@@ -927,7 +965,7 @@ elif selected_tab == "📥 내보내기":
                                 file_bytes = create_pdf_with_ai_summary(
                                     export_df=export_df,
                                     facility_name=fac_name_str,
-                                    client=client,  # <-- client.models 대신 client 자체를 전달!
+                                    client=client,
                                     export_cols=EXPORT_COLUMNS,
                                     get_image_bytes_func=get_image_bytes_from_link
                                 )
