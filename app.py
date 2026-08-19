@@ -248,12 +248,18 @@ EXPORT_COLUMNS = [
     '개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록'
 ]
 
-# 폰트 등록
-try:
-    pdfmetrics.registerFont(TTFont('MalgunGothic', 'c:/Windows/Fonts/malgun.ttf'))
-    FONT_NAME = 'MalgunGothic'
-except Exception:
-    FONT_NAME = 'Helvetica'
+# 폰트 등록 (현재 폴더의 malgun.ttf 우선 로드 -> 실패 시 Windows 기본 경로 차선 로드)
+FONT_NAME = 'Helvetica'
+font_paths = ['malgun.ttf', 'c:/Windows/Fonts/malgun.ttf']
+
+for fpath in font_paths:
+    if os.path.exists(fpath):
+        try:
+            pdfmetrics.registerFont(TTFont('MalgunGothic', fpath))
+            FONT_NAME = 'MalgunGothic'
+            break
+        except Exception:
+            pass
 
 PDF_AI_PROMPT_TEMPLATE = """
 다음은 {facility_name}의 위험성평가 데이터 통계 및 상세 내역입니다.
