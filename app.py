@@ -22,14 +22,13 @@ import xml.etree.ElementTree as ET
 import google.genai as genai
 import openpyxl
 
-# PDF 관련 라이브러리 (A3/A4 혼용 구현을 위한 PageTemplate 추가)
+# PDF 관련 라이브러리
 from reportlab.lib.pagesizes import A4, A3, landscape, portrait
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Frame, PageTemplate, Image as RLImage
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Frame, PageTemplate, NextPageTemplate
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Frame, PageTemplate, Image as RLImage, NextPageTemplate
 
 # Retry 및 예외 처리 라이브러리
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
@@ -163,7 +162,6 @@ def apply_face_blur_ai(img_file):
 
         prompt = "이미지에서 모든 사람의 얼굴(머리 전체) 위치를 찾아서 [ymin, xmin, ymax, xmax] 좌표 리스트로 응답해줘. JSON 형식: {\"faces\": [[ymin, xmin, ymax, xmax], ...]}"
         
-        # Retry 적용 함수 호출
         response = call_gemini_api_safe(
             client, model_name, [prompt, pil_img],
             config=genai.types.GenerateContentConfig(response_mime_type="application/json")
@@ -280,6 +278,7 @@ for fpath in font_paths:
         except Exception:
             pass
 
+# --- [AI 프롬프트 수정: 서두 문구 금지 및 마크다운 표 지양] ---
 PDF_AI_PROMPT_TEMPLATE = """
 다음은 {facility_name}의 위험성평가 데이터 통계 및 상세 내역입니다.
 
@@ -291,8 +290,49 @@ PDF_AI_PROMPT_TEMPLATE = """
 [상세 내역]
 {risk_details}
 
-위 데이터를 바탕으로 개요 및 주요 유해위험요인 분야별 비율과 전문적인 분석 총평을 공공기관 보고서 격식에 맞게 작성해 주세요.
+[작성 규칙]
+1. 절대로 "공공기관 및 공공사업장 보고서 표준 양식..." 같은 인사말이나 서두 안내 문구를 작성하지 마세요.
+2. 바로 "# [보고] {facility_name} 사업장 위험성평가 결과 분석 및 개선대책" 제목부터 시작하세요.
+3. 마크다운 표(|---|) 형태는 절대로 사용하지 마시고, 개조식 문장(○, -, ☐)으로만 간결하게 작성해 주세요.
+4. 항목 제목은 #, ##, ### 및 **강조**를 적절히 활용하여 작성하세요.
 """
+
+# --- [마크다운 -> ReportLab 태그 변환 및 서두 제거 파서] ---
+def clean_markdown_for_reportlab(text):
+    # 인사말 문구 강제 제거
+    text = re.sub(r"^.*?보고서입니다\.\n?", "", text, flags=re.DOTALL)
+    
+    lines = text.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # 마크다운 표(|) 및 구분선 제거
+        if line.startswith('|') or '---|' in line:
+            continue
+            
+        # 마크다운 제목(#)을 Font 크기 태그로 변환
+        if line.startswith('# '):
+            line = f"<font size=13><b>{line.replace('# ', '').strip()}</b></font>"
+        elif line.startswith('## '):
+            line = f"<font size=11><b>{line.replace('## ', '').strip()}</b></font>"
+        elif line.startswith('### '):
+            line = f"<font size=10><b>{line.replace('### ', '').strip()}</b></font>"
+            
+        # 마크다운 볼드(**) 변환
+        line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+        
+        # 특수문자 이스케이프 및 XML 태그 복원
+        line = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        line = line.replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
+        line = line.replace("&lt;font size=13&gt;", "<font size=13>").replace("&lt;font size=11&gt;", "<font size=11>").replace("&lt;font size=10&gt;", "<font size=10>").replace("&lt;/font&gt;", "</font>")
+        
+        cleaned_lines.append(line)
+        
+    return cleaned_lines
 
 def generate_ai_summary(export_df, facility_name, client):
     total_cnt = len(export_df)
@@ -316,23 +356,21 @@ def generate_ai_summary(export_df, facility_name, client):
     )
 
     try:
-        # 안전한 Retry 호출 함수 적용
         response = call_gemini_api_safe(client, model_name, prompt)
         return response.text
-    except Exception as e:
-        # 오류 발생 시 에러 코드가 보고서 본문에 들어가는 것을 방지하고 대체 문구 반환
+    except Exception:
         return "※ AI 총평 생성 중 일시적인 서버 과부하가 발생하여 통계 데이터 기반 표준 총평으로 대체합니다."
 
+# --- [PDF 생성 함수 수정: A4 -> A3 레이아웃 밀림 방지 및 스타일 최적화] ---
 def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, get_image_bytes_func):
     buffer = io.BytesIO()
     
-    # 기본 문서를 A4 세로로 생성
+    # 기본 A4 세로 문서 설정
     doc = SimpleDocTemplate(
         buffer, pagesize=portrait(A4),
         rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20
     )
 
-    # A4/A3 템플릿 정의
     frame_a4 = Frame(20, 20, 555.27, 801.89, id='normal_a4')
     template_a4 = PageTemplate(id='A4_Portrait', frames=frame_a4, pagesize=portrait(A4))
 
@@ -346,47 +384,43 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     styles = getSampleStyleSheet()
     title_style = ParagraphStyle(
         'CustomTitle', parent=styles['Heading1'],
-        fontName=FONT_NAME, fontSize=16, leading=20, alignment=1, spaceAfter=15
+        fontName=FONT_NAME, fontSize=15, leading=18, alignment=1, spaceAfter=10
     )
     body_style = ParagraphStyle(
         'CustomBody', parent=styles['Normal'],
         fontName=FONT_NAME, fontSize=8, leading=11
     )
+    table_cell_style = ParagraphStyle(
+        'TableCell', parent=styles['Normal'],
+        fontName=FONT_NAME, fontSize=7, leading=9, alignment=1
+    )
 
     # --- PAGE 1: 요약 보고서 (A4 세로) ---
     story.append(Paragraph(f"<b>2026년 {facility_name} 위험성평가 결과 보고서</b>", title_style))
-    story.append(Spacer(1, 10))
-
-    if client:
-        ai_summary_text = generate_ai_summary(export_df, facility_name, client)
-        for line in ai_summary_text.split('\n'):
-            if line.strip():
-                clean_line = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                story.append(Paragraph(clean_line, body_style))
-                story.append(Spacer(1, 3))
-
-    # --- PAGE 2~: A3 가로 페이지로 전환 (올바른 스위칭 방식) ---
-    story.append(NextPageTemplate('A3_Landscape')) # 다음 페이지부터 A3 가로 템플릿 적용
-    story.append(PageBreak()) # 즉시 다음 페이지로 이동 (1번만 호출!)
-
-    story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
     story.append(Spacer(1, 8))
 
-# --- PAGE 2~: A3 가로 페이지로 전환 ---
+    if client:
+        raw_ai_text = generate_ai_summary(export_df, facility_name, client)
+        cleaned_lines = clean_markdown_for_reportlab(raw_ai_text)
+        
+        for line in cleaned_lines:
+            story.append(Paragraph(line, body_style))
+            story.append(Spacer(1, 2))
+
+    # --- PAGE 2: A3 가로 페이지로 전환 및 첨부 표 배치 ---
     story.append(NextPageTemplate('A3_Landscape'))
     story.append(PageBreak())
 
     story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 5))
 
-    # 1. 헤더(컬럼) 정의
+    # 1. 헤더 및 표 데이터 구성
     headers = [col for col in export_cols if col in export_df.columns]
     for col in export_df.columns:
         if col not in headers:
             headers.append(col)
 
-    # 2. 표 데이터(table_data) 구성
-    header_paragraphs = [Paragraph(f"<b>{h}</b>", body_style) for h in headers]
+    header_paragraphs = [Paragraph(f"<b>{h}</b>", table_cell_style) for h in headers]
     table_data = [header_paragraphs]
 
     for _, row in export_df.iterrows():
@@ -395,16 +429,15 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
             val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
             val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
             
-            # 사진 링크인 경우 처리 (선택 사항)
             if "사진" in str(col_name) and val.startswith("http"):
-                row_cells.append(Paragraph("사진 첨부", body_style))
+                row_cells.append(Paragraph("사진 첨부", table_cell_style))
             else:
-                row_cells.append(Paragraph(val, body_style))
+                row_cells.append(Paragraph(val, table_cell_style))
         table_data.append(row_cells)
 
-    # 3. 열 너비 비율 정의
+    # 2. A3 너비(1150pt) 기준 열 비율 산정
     COLUMN_RATIOS = {
-        '타임스탬프': 0.03, '시설명': 0.04, '담당 부서': 0.05, '장소': 0.05, '유해위험요인': 0.05,
+        '타임스탬프': 0.04, '시설명': 0.03, '담당 부서': 0.05, '장소': 0.05, '유해위험요인': 0.05,
         '위험상황': 0.18, '빈도': 0.025, '강도': 0.025, '점수': 0.025, '위험등급': 0.035,
         '감소대책': 0.18, '관련근거': 0.12, '사진 기록': 0.04,
         '개선후 빈도': 0.025, '개선후 강도': 0.025, '개선후 점수': 0.025, '개선후 위험등급': 0.035, '개선후 사진기록': 0.04
@@ -413,6 +446,7 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     usable_width = 1150.0
     actual_widths = [usable_width * COLUMN_RATIOS.get(h, 0.05) for h in headers]
 
+    # 3. Table 생성 및 패딩 축소 (2페이지 내 밀림 방지)
     pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
     pdf_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
@@ -420,35 +454,14 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
-        ('FONTNAME', (0, 0), (-1, -1), FONT_NAME),
-        ('FONTSIZE', (0, 0), (-1, -1), 7),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
     ]))
 
     story.append(pdf_table)
 
-    doc.build(story)
-    buffer.seek(0)
-    return buffer.getvalue()
-
-
-    pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
-    pdf_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
-        ('FONTNAME', (0, 0), (-1, -1), FONT_NAME),
-        ('FONTSIZE', (0, 0), (-1, -1), 7),
-    ]))
-
-    story.append(pdf_table)
-    
-    # Custom Build Flow로 A4 -> A3 템플릿 스위칭 처리
-    def switch_to_a3(canvas, doc):
-        canvas.setPageSize(landscape(A3))
-
-# doc.build 실행 (onFirstPage 람다 제거)
     doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
@@ -771,7 +784,6 @@ if selected_tab == "📝 점검 입력":
                     st.session_state.final_secure_image = processed_bytes
 
                 try:
-                    # Retry 적용 안전 호출
                     response = call_gemini_api_safe(
                         client, model_name, content,
                         config={"response_mime_type": "application/json", "temperature": 0.0}
@@ -921,7 +933,6 @@ elif selected_tab == "📊 결과 조회":
                         JSON 형식: {{"p_after": 1, "s_after": 1, "score_after": 1, "grade_after": "매우 낮음"}}
                         """
                         try:
-                            # Retry 적용 안전 호출
                             eval_res = call_gemini_api_safe(
                                 client, model_name, [prompt_eval],
                                 config={"response_mime_type": "application/json"}
