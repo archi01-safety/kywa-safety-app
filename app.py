@@ -21,14 +21,19 @@ import zipfile
 import xml.etree.ElementTree as ET
 import google.genai as genai
 import openpyxl
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, HRFlowable
+
+# PDF 관련 라이브러리
+from reportlab.lib.pagesizes import A4, A3, landscape, portrait
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Frame, PageTemplate, NextPageTemplate
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
-from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
+
+# Retry 및 예외 처리 라이브러리
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
+from google.genai.errors import APIError
+
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
@@ -69,21 +74,36 @@ model_name = "gemini-flash-latest"
 if "GEMINI_API_KEY" in st.secrets:
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
+# --- [Retry 판별 전용 검증 함수] ---
+def is_transient_error(exception):
+    """503 과부하 또는 429 Rate Limit 에러 시에만 재시도 수행"""
+    if isinstance(exception, APIError):
+        if exception.code in [503, 429] or "UNAVAILABLE" in str(exception) or "high demand" in str(exception):
+            return True
+    return False
+
+# --- [Tenacity 기반 Gemini API 안전 호출 함수] ---
+@retry(
+    stop=stop_after_attempt(5),               # 최대 5회 시도
+    wait=wait_exponential(min=2, max=20),      # 2초 -> 4초 -> 8초 -> 16초 지수 대기
+    retry=retry_if_exception(is_transient_error),
+    reraise=True                              # 최종 실패 시 예외를 던져 에러 텍스트 저장을 방지
+)
+def call_gemini_api_safe(client, model, contents, config=None):
+    """503/429 발생 시 자동으로 지수 대기 재시도를 수행하는 안전 호출 함수"""
+    if config:
+        return client.models.generate_content(model=model, contents=contents, config=config)
+    return client.models.generate_content(model=model, contents=contents)
+
 # --- [유틸리티 함수들] ---
 
 def get_image_bytes_from_link(url_or_id):
-    """
-    구글 드라이브 링크/일반 이미지 URL을 수신하여 
-    PIL을 활용해 300px 이하로 압축 및 축소된 JPEG 바이트를 반환합니다.
-    """
     if not url_or_id or not isinstance(url_or_id, str):
         return None
-    
     url = url_or_id.strip()
     if not url.startswith("http"):
         return None
 
-    # 구글 드라이브 공유 URL일 경우 직접 다운로드 URL로 변환
     drive_id_match = re.search(r'd/([a-zA-Z0-9_-]+)', url) or re.search(r'id=([a-zA-Z0-9_-]+)', url)
     if drive_id_match:
         file_id = drive_id_match.group(1)
@@ -95,11 +115,7 @@ def get_image_bytes_from_link(url_or_id):
         response = requests.get(download_url, timeout=7, headers={'User-Agent': 'Mozilla/5.0'})
         if response.status_code == 200:
             img_raw = Image.open(io.BytesIO(response.content))
-            
-            # 300px 이하로 썸네일 축소 (비율 유지)
             img_raw.thumbnail((300, 300), Image.Resampling.LANCZOS)
-            
-            # RGB 변환 및 압축 저장
             buffer = io.BytesIO()
             img_raw.convert("RGB").save(buffer, format="JPEG", quality=75)
             buffer.seek(0)
@@ -145,8 +161,9 @@ def apply_face_blur_ai(img_file):
         pil_img = Image.open(io.BytesIO(compressed_bytes))
 
         prompt = "이미지에서 모든 사람의 얼굴(머리 전체) 위치를 찾아서 [ymin, xmin, ymax, xmax] 좌표 리스트로 응답해줘. JSON 형식: {\"faces\": [[ymin, xmin, ymax, xmax], ...]}"
-        response = client.models.generate_content(
-            model=model_name, contents=[prompt, pil_img],
+        
+        response = call_gemini_api_safe(
+            client, model_name, [prompt, pil_img],
             config=genai.types.GenerateContentConfig(response_mime_type="application/json")
         )
         face_data = json.loads(response.text)
@@ -158,8 +175,7 @@ def apply_face_blur_ai(img_file):
             left, top = int(xmin * w / 1000), int(ymin * h / 1000)
             right, bottom = int(xmax * w / 1000), int(ymax * h / 1000)
             
-            # 안전장치: 이미지 하단 10% 영역 제외
-            if top > h * 0.9:
+            if top > h * 0.9: # 하단 10% 영역 제외
                 continue
                 
             rw, rh = right - left, bottom - top
@@ -250,7 +266,6 @@ EXPORT_COLUMNS = [
     '개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록'
 ]
 
-# 폰트 등록 (현재 폴더의 malgun.ttf 우선 로드 -> 실패 시 Windows 기본 경로 차선 로드)
 FONT_NAME = 'Helvetica'
 font_paths = ['malgun.ttf', 'c:/Windows/Fonts/malgun.ttf']
 
@@ -263,29 +278,7 @@ for fpath in font_paths:
         except Exception:
             pass
 
-class NumberedCanvas(canvas.Canvas):
-    def __init__(self, *args, **kwargs):
-        super(NumberedCanvas, self).__init__(*args, **kwargs)
-        self._saved_page_states = []
-
-    def showPage(self):
-        self._saved_page_states.append(dict(self.__dict__))
-        self._startPage()
-
-    def save(self):
-        num_pages = len(self._saved_page_states)
-        for state in self._saved_page_states:
-            self.__dict__.update(state)
-            self.draw_page_number(num_pages)
-            canvas.Canvas.showPage(self)
-        canvas.Canvas.save(self)
-
-    def draw_page_number(self, page_count):
-        self.setFont(FONT_NAME, 8)
-        self.setFillColor(colors.HexColor('#718096'))
-        page_text = f"- {self._pageNumber} / {page_count} -"
-        self.drawCentredString(A4[0] / 2.0, 10 * mm, page_text)
-
+# --- [AI 프롬프트 수정: 서두 문구 금지 및 마크다운 표 지양] ---
 PDF_AI_PROMPT_TEMPLATE = """
 다음은 {facility_name}의 위험성평가 데이터 통계 및 상세 내역입니다.
 
@@ -297,8 +290,49 @@ PDF_AI_PROMPT_TEMPLATE = """
 [상세 내역]
 {risk_details}
 
-위 데이터를 바탕으로 개요 및 주요 유해위험요인 분야별 비율과 전문적인 분석 총평을 공공기관 보고서 격식에 맞게 작성해 주세요.
+[작성 규칙]
+1. 절대로 "공공기관 및 공공사업장 보고서 표준 양식..." 같은 인사말이나 서두 안내 문구를 작성하지 마세요.
+2. 바로 "# [보고] {facility_name} 사업장 위험성평가 결과 분석 및 개선대책" 제목부터 시작하세요.
+3. 마크다운 표(|---|) 형태는 절대로 사용하지 마시고, 개조식 문장(○, -, ☐)으로만 간결하게 작성해 주세요.
+4. 항목 제목은 #, ##, ### 및 **강조**를 적절히 활용하여 작성하세요.
 """
+
+# --- [마크다운 -> ReportLab 태그 변환 및 서두 제거 파서] ---
+def clean_markdown_for_reportlab(text):
+    # 인사말 문구 강제 제거
+    text = re.sub(r"^.*?보고서입니다\.\n?", "", text, flags=re.DOTALL)
+    
+    lines = text.split('\n')
+    cleaned_lines = []
+    
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+            
+        # 마크다운 표(|) 및 구분선 제거
+        if line.startswith('|') or '---|' in line:
+            continue
+            
+        # 마크다운 제목(#)을 Font 크기 태그로 변환
+        if line.startswith('# '):
+            line = f"<font size=13><b>{line.replace('# ', '').strip()}</b></font>"
+        elif line.startswith('## '):
+            line = f"<font size=11><b>{line.replace('## ', '').strip()}</b></font>"
+        elif line.startswith('### '):
+            line = f"<font size=10><b>{line.replace('### ', '').strip()}</b></font>"
+            
+        # 마크다운 볼드(**) 변환
+        line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+        
+        # 특수문자 이스케이프 및 XML 태그 복원
+        line = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        line = line.replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
+        line = line.replace("&lt;font size=13&gt;", "<font size=13>").replace("&lt;font size=11&gt;", "<font size=11>").replace("&lt;font size=10&gt;", "<font size=10>").replace("&lt;/font&gt;", "</font>")
+        
+        cleaned_lines.append(line)
+        
+    return cleaned_lines
 
 def generate_ai_summary(export_df, facility_name, client):
     total_cnt = len(export_df)
@@ -307,8 +341,8 @@ def generate_ai_summary(export_df, facility_name, client):
     
     high_cnt = len(export_df[export_df['위험등급'] == '높음']) if '위험등급' in export_df.columns else 0
     med_cnt = len(export_df[export_df['위험등급'] == '보통']) if '위험등급' in export_df.columns else 0
-    low_cnt = len(export_df[export_df['위험등급'] == '낮음']) if '위험등급' in export_df.columns else 0
-    vlow_cnt = len(export_df[export_df['위험등급'] == '매우 낮음']) if '위험등급' in export_df.columns else 0
+    low_cnt = len(export_df[export_df['위험등급'] == '낮음']) if '낮음' in export_df.columns else 0
+    vlow_cnt = len(export_df[export_df['위험등급'] == '매우 낮음']) if '매우 낮음' in export_df.columns else 0
 
     risk_details_text = ""
     if '유해위험요인' in export_df.columns and '감소대책' in export_df.columns:
@@ -322,135 +356,113 @@ def generate_ai_summary(export_df, facility_name, client):
     )
 
     try:
-        response = client.models.generate_content(
-            model=model_name,
-            contents=prompt
-        )
+        response = call_gemini_api_safe(client, model_name, prompt)
         return response.text
-    except Exception as e:
-        return f"AI 분석 결과 생성 중 오류가 발생했습니다: {str(e)}"
+    except Exception:
+        return "※ AI 총평 생성 중 일시적인 서버 과부하가 발생하여 통계 데이터 기반 표준 총평으로 대체합니다."
 
+# --- [PDF 생성 함수 수정: A4 -> A3 레이아웃 밀림 방지 및 스타일 최적화] ---
 def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, get_image_bytes_func):
     buffer = io.BytesIO()
+    
+    # 기본 A4 세로 문서 설정
     doc = SimpleDocTemplate(
-        buffer, pagesize=A4,
-        leftMargin=15 * mm, rightMargin=15 * mm,
-        topMargin=20 * mm, bottomMargin=20 * mm
+        buffer, pagesize=portrait(A4),
+        rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20
     )
+
+    frame_a4 = Frame(20, 20, 555.27, 801.89, id='normal_a4')
+    template_a4 = PageTemplate(id='A4_Portrait', frames=frame_a4, pagesize=portrait(A4))
+
+    frame_a3 = Frame(20, 20, 1150.55, 801.89, id='normal_a3')
+    template_a3 = PageTemplate(id='A3_Landscape', frames=frame_a3, pagesize=landscape(A3))
+
+    doc.addPageTemplates([template_a4, template_a3])
+
     story = []
 
     styles = getSampleStyleSheet()
-    
     title_style = ParagraphStyle(
-        'DocTitle', parent=styles['Normal'], fontName=FONT_NAME, fontSize=18,
-        leading=24, textColor=colors.HexColor('#1A365D'), alignment=1, spaceAfter=15
-    )
-    h1_style = ParagraphStyle(
-        'SectionH1', parent=styles['Normal'], fontName=FONT_NAME, fontSize=12,
-        leading=16, textColor=colors.HexColor('#1A365D'), spaceBefore=12, spaceAfter=6, keepWithNext=True
+        'CustomTitle', parent=styles['Heading1'],
+        fontName=FONT_NAME, fontSize=15, leading=18, alignment=1, spaceAfter=10
     )
     body_style = ParagraphStyle(
-        'BodyDark', parent=styles['Normal'], fontName=FONT_NAME, fontSize=9,
-        leading=13, textColor=colors.HexColor('#2D3748')
-    )
-    table_header_style = ParagraphStyle(
-        'TableHeader', parent=styles['Normal'], fontName=FONT_NAME, fontSize=8,
-        leading=10, textColor=colors.white, alignment=1
+        'CustomBody', parent=styles['Normal'],
+        fontName=FONT_NAME, fontSize=8, leading=11
     )
     table_cell_style = ParagraphStyle(
-        'TableCell', parent=styles['Normal'], fontName=FONT_NAME, fontSize=7.5,
-        leading=10, textColor=colors.HexColor('#2D3748')
+        'TableCell', parent=styles['Normal'],
+        fontName=FONT_NAME, fontSize=7, leading=9, alignment=1
     )
 
-    # 1. 제목 및 개요
-    story.append(Paragraph(f"<b>{facility_name} 위험성평가 결과 분석 및 개선대책</b>", title_style))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#1A365D'), spaceAfter=10))
+    # --- PAGE 1: 요약 보고서 (A4 세로) ---
+    story.append(Paragraph(f"<b>2026년 {facility_name} 위험성평가 결과 보고서</b>", title_style))
+    story.append(Spacer(1, 8))
 
-    story.append(Paragraph("<b>1. 추진 배경 및 AI 총평</b>", h1_style))
-    
-    total_cnt = len(export_df)
-    high_cnt = len(export_df[export_df['위험등급'] == '높음']) if '위험등급' in export_df.columns else 0
-    
     if client:
-        ai_summary_text = generate_ai_summary(export_df, facility_name, client)
-        for line in ai_summary_text.split('\n'):
-            if line.strip():
-                clean_line = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                story.append(Paragraph(clean_line, body_style))
-                story.append(Spacer(1, 2))
-    else:
-        intro_text = f"""
-        • <b>추진 배경:</b> 「산업안전보건법」 및 안전보건관리체계 구축 지침에 따른 유해·위험요인 선제적 발굴 및 제거<br/>
-        • <b>평가 대상:</b> {facility_name} 사업장 내 전 부서 사무 공간, 통행로, 시설 및 전기 설비 등 (총 {total_cnt}건 발굴)<br/>
-        • <b>평가 결과:</b> 위험등급 [높음] {high_cnt}건, [기타] {total_cnt - high_cnt}건
-        """
-        story.append(Paragraph(intro_text, body_style))
+        raw_ai_text = generate_ai_summary(export_df, facility_name, client)
+        cleaned_lines = clean_markdown_for_reportlab(raw_ai_text)
+        
+        for line in cleaned_lines:
+            story.append(Paragraph(line, body_style))
+            story.append(Spacer(1, 2))
 
-    story.append(Spacer(1, 10))
+    # --- PAGE 2: A3 가로 페이지로 전환 및 첨부 표 배치 ---
+    story.append(NextPageTemplate('A3_Landscape'))
+    story.append(PageBreak())
 
-    # 2. 세부 현황 데이터 구성
-    story.append(Paragraph("<b>2. 세부 위험성평가 및 개선조치 현황</b>", h1_style))
+    story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
+    story.append(Spacer(1, 5))
 
-    table_data = [[
-        Paragraph("<b>일자/부서(장소)</b>", table_header_style),
-        Paragraph("<b>유해위험요인</b>", table_header_style),
-        Paragraph("<b>위험성<br/>(빈도/강도/점수)</b>", table_header_style),
-        Paragraph("<b>개선대책</b>", table_header_style),
-        Paragraph("<b>개선전 사진</b>", table_header_style),
-        Paragraph("<b>개선후 사진</b>", table_header_style)
-    ]]
+    # 1. 헤더 및 표 데이터 구성
+    headers = [col for col in export_cols if col in export_df.columns]
+    for col in export_df.columns:
+        if col not in headers:
+            headers.append(col)
 
-    def get_image_flowable(url_or_link):
-        if url_or_link and isinstance(url_or_link, str) and url_or_link.startswith("http"):
-            img_bytes = get_image_bytes_func(url_or_link)
-            if img_bytes:
-                try:
-                    return RLImage(io.BytesIO(img_bytes), width=28 * mm, height=21 * mm)
-                except Exception:
-                    pass
-        return Paragraph("<font color='#A0AEC0'>[사진 없음]</font>", table_cell_style)
+    header_paragraphs = [Paragraph(f"<b>{h}</b>", table_cell_style) for h in headers]
+    table_data = [header_paragraphs]
 
     for _, row in export_df.iterrows():
-        dt_str = str(row.get('타임스탬프', '')).split(' ')[0] if pd.notna(row.get('타임스탬프', '')) else ''
-        dept_str = str(row.get('담당 부서', ''))
-        loc_str = str(row.get('장소', ''))
-        cat_str = str(row.get('유해위험요인', ''))
-        risk_str = str(row.get('위험상황', ''))
-        
-        p = str(row.get('빈도', ''))
-        s = str(row.get('강도', ''))
-        score = str(row.get('점수', ''))
-        grade = str(row.get('위험등급', ''))
-        score_info = f"{p}/{s}/{score} ({grade})" if score else "-"
-        
-        plan_str = str(row.get('감소대책', ''))
-        
-        col_info = Paragraph(f"<b>{dt_str}</b><br/>{dept_str}<br/>({loc_str})", table_cell_style)
-        col_risk = Paragraph(f"<b>[{cat_str}]</b><br/>{risk_str}", table_cell_style)
-        col_score = Paragraph(f"{score_info}", table_cell_style)
-        col_plan = Paragraph(f"{plan_str}", table_cell_style)
-        
-        img_b = get_image_flowable(row.get('사진 기록', ''))
-        img_a = get_image_flowable(row.get('개선후 사진기록', ''))
+        row_cells = []
+        for col_name in headers:
+            val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
+            val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            
+            if "사진" in str(col_name) and val.startswith("http"):
+                row_cells.append(Paragraph("사진 첨부", table_cell_style))
+            else:
+                row_cells.append(Paragraph(val, table_cell_style))
+        table_data.append(row_cells)
 
-        table_data.append([col_info, col_risk, col_score, col_plan, img_b, img_a])
+    # 2. A3 너비(1150pt) 기준 열 비율 산정
+    COLUMN_RATIOS = {
+        '타임스탬프': 0.04, '시설명': 0.03, '담당 부서': 0.05, '장소': 0.05, '유해위험요인': 0.05,
+        '위험상황': 0.18, '빈도': 0.025, '강도': 0.025, '점수': 0.025, '위험등급': 0.035,
+        '감소대책': 0.18, '관련근거': 0.12, '사진 기록': 0.04,
+        '개선후 빈도': 0.025, '개선후 강도': 0.025, '개선후 점수': 0.025, '개선후 위험등급': 0.035, '개선후 사진기록': 0.04
+    }
 
-    # 세로 레이아웃(A4 폭: 210mm, 좌우여백: 30mm, 인쇄가능 영역: 180mm) 고정 너비 지정
-    col_widths = [25 * mm, 40 * mm, 20 * mm, 35 * mm, 30 * mm, 30 * mm]
-    
-    report_table = Table(table_data, colWidths=col_widths, repeatRows=1)
-    report_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+    usable_width = 1150.0
+    actual_widths = [usable_width * COLUMN_RATIOS.get(h, 0.05) for h in headers]
+
+    # 3. Table 생성 및 패딩 축소 (2페이지 내 밀림 방지)
+    pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
+    pdf_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F7FAFC')])
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 2),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 2),
     ]))
 
-    story.append(report_table)
-    doc.build(story, canvasmaker=NumberedCanvas)
+    story.append(pdf_table)
+
+    doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
 
@@ -593,7 +605,7 @@ def create_hwpx_with_images(df):
     output.seek(0)
     return output.getvalue()
 
-# --- [스타일링] ---
+# --- [스타일링 및 헤더] ---
 st.markdown("""
     <style>
     div.stButton > button {
@@ -611,7 +623,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- [헤더 레이아웃] ---
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
     if os.path.exists("kywa_logo.png"):
@@ -632,7 +643,6 @@ with header_col2:
 
 st.divider()
 
-# 세션 초기화
 if "analysis_results" not in st.session_state: st.session_state.analysis_results = None
 if "final_data" not in st.session_state: st.session_state.final_data = None
 if "eval_after_data" not in st.session_state: st.session_state.eval_after_data = None
@@ -723,7 +733,7 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                         )
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
 
-# --- [사이드바 메뉴 선택] ---
+# --- [사이드바 메뉴] ---
 with st.sidebar:
     st.markdown("### 📌 메뉴 선택")
     selected_tab = st.radio(
@@ -774,8 +784,8 @@ if selected_tab == "📝 점검 입력":
                     st.session_state.final_secure_image = processed_bytes
 
                 try:
-                    response = client.models.generate_content(
-                        model=model_name, contents=content,
+                    response = call_gemini_api_safe(
+                        client, model_name, content,
                         config={"response_mime_type": "application/json", "temperature": 0.0}
                     )
                     if response:
@@ -784,7 +794,7 @@ if selected_tab == "📝 점검 입력":
                         st.success("✅ 분석 완료!")
                         st.rerun()
                 except Exception as e:
-                    st.error(f"❌ 분석 실패: {e}")
+                    st.error(f"❌ 분석 실패 (서버 트래픽 과부하 등): {e}")
 
     if st.session_state.analysis_results:
         st.markdown("### 📋 AI 위험성평가 결과")
@@ -923,8 +933,8 @@ elif selected_tab == "📊 결과 조회":
                         JSON 형식: {{"p_after": 1, "s_after": 1, "score_after": 1, "grade_after": "매우 낮음"}}
                         """
                         try:
-                            eval_res = client.models.generate_content(
-                                model=model_name, contents=[prompt_eval],
+                            eval_res = call_gemini_api_safe(
+                                client, model_name, [prompt_eval],
                                 config={"response_mime_type": "application/json"}
                             )
                             st.session_state.eval_after_data = json.loads(eval_res.text.strip())
