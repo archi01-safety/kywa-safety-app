@@ -372,19 +372,64 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
     story.append(Spacer(1, 8))
 
-    # A3 Landscape 전체 사용 가능 폭 = 1150 pt 기준 열 너비 비율 산정 (총합 100%)
+# --- PAGE 2~: A3 가로 페이지로 전환 ---
+    story.append(NextPageTemplate('A3_Landscape'))
+    story.append(PageBreak())
+
+    story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
+    story.append(Spacer(1, 8))
+
+    # 1. 헤더(컬럼) 정의
+    headers = [col for col in export_cols if col in export_df.columns]
+    for col in export_df.columns:
+        if col not in headers:
+            headers.append(col)
+
+    # 2. 표 데이터(table_data) 구성
+    header_paragraphs = [Paragraph(f"<b>{h}</b>", body_style) for h in headers]
+    table_data = [header_paragraphs]
+
+    for _, row in export_df.iterrows():
+        row_cells = []
+        for col_name in headers:
+            val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
+            val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            
+            # 사진 링크인 경우 처리 (선택 사항)
+            if "사진" in str(col_name) and val.startswith("http"):
+                row_cells.append(Paragraph("사진 첨부", body_style))
+            else:
+                row_cells.append(Paragraph(val, body_style))
+        table_data.append(row_cells)
+
+    # 3. 열 너비 비율 정의
     COLUMN_RATIOS = {
         '타임스탬프': 0.03, '시설명': 0.04, '담당 부서': 0.05, '장소': 0.05, '유해위험요인': 0.05,
-        '위험상황': 0.18,  # [핵심] 넓은 너비
-        '빈도': 0.025, '강도': 0.025, '점수': 0.025, '위험등급': 0.035,
-        '감소대책': 0.18,  # [핵심] 넓은 너비
-        '관련근거': 0.12,  # [핵심] 넓은 너비
-        '사진 기록': 0.04,
+        '위험상황': 0.18, '빈도': 0.025, '강도': 0.025, '점수': 0.025, '위험등급': 0.035,
+        '감소대책': 0.18, '관련근거': 0.12, '사진 기록': 0.04,
         '개선후 빈도': 0.025, '개선후 강도': 0.025, '개선후 점수': 0.025, '개선후 위험등급': 0.035, '개선후 사진기록': 0.04
     }
 
     usable_width = 1150.0
     actual_widths = [usable_width * COLUMN_RATIOS.get(h, 0.05) for h in headers]
+
+    pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
+    pdf_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+        ('FONTNAME', (0, 0), (-1, -1), FONT_NAME),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+    ]))
+
+    story.append(pdf_table)
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
 
     pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
     pdf_table.setStyle(TableStyle([
