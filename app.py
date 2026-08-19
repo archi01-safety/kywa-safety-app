@@ -22,13 +22,11 @@ import xml.etree.ElementTree as ET
 import google.genai as genai
 import openpyxl
 from reportlab.lib.pagesizes import A4, landscape
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image as RLImage, HRFlowable
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image as RLImage
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
-from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
@@ -263,29 +261,6 @@ for fpath in font_paths:
         except Exception:
             pass
 
-class NumberedCanvas(canvas.Canvas):
-    def __init__(self, *args, **kwargs):
-        super(NumberedCanvas, self).__init__(*args, **kwargs)
-        self._saved_page_states = []
-
-    def showPage(self):
-        self._saved_page_states.append(dict(self.__dict__))
-        self._startPage()
-
-    def save(self):
-        num_pages = len(self._saved_page_states)
-        for state in self._saved_page_states:
-            self.__dict__.update(state)
-            self.draw_page_number(num_pages)
-            canvas.Canvas.showPage(self)
-        canvas.Canvas.save(self)
-
-    def draw_page_number(self, page_count):
-        self.setFont(FONT_NAME, 8)
-        self.setFillColor(colors.HexColor('#718096'))
-        page_text = f"- {self._pageNumber} / {page_count} -"
-        self.drawCentredString(A4[0] / 2.0, 10 * mm, page_text)
-
 PDF_AI_PROMPT_TEMPLATE = """
 다음은 {facility_name}의 위험성평가 데이터 통계 및 상세 내역입니다.
 
@@ -333,123 +308,79 @@ def generate_ai_summary(export_df, facility_name, client):
 def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, get_image_bytes_func):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(
-        buffer, pagesize=A4,
-        leftMargin=15 * mm, rightMargin=15 * mm,
-        topMargin=20 * mm, bottomMargin=20 * mm
+        buffer, pagesize=landscape(A4),
+        rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20
     )
     story = []
 
     styles = getSampleStyleSheet()
-    
     title_style = ParagraphStyle(
-        'DocTitle', parent=styles['Normal'], fontName=FONT_NAME, fontSize=18,
-        leading=24, textColor=colors.HexColor('#1A365D'), alignment=1, spaceAfter=15
-    )
-    h1_style = ParagraphStyle(
-        'SectionH1', parent=styles['Normal'], fontName=FONT_NAME, fontSize=12,
-        leading=16, textColor=colors.HexColor('#1A365D'), spaceBefore=12, spaceAfter=6, keepWithNext=True
+        'CustomTitle', parent=styles['Heading1'],
+        fontName=FONT_NAME, fontSize=16, leading=20, alignment=1, spaceAfter=15
     )
     body_style = ParagraphStyle(
-        'BodyDark', parent=styles['Normal'], fontName=FONT_NAME, fontSize=9,
-        leading=13, textColor=colors.HexColor('#2D3748')
-    )
-    table_header_style = ParagraphStyle(
-        'TableHeader', parent=styles['Normal'], fontName=FONT_NAME, fontSize=8,
-        leading=10, textColor=colors.white, alignment=1
-    )
-    table_cell_style = ParagraphStyle(
-        'TableCell', parent=styles['Normal'], fontName=FONT_NAME, fontSize=7.5,
-        leading=10, textColor=colors.HexColor('#2D3748')
+        'CustomBody', parent=styles['Normal'],
+        fontName=FONT_NAME, fontSize=8, leading=11
     )
 
-    # 1. 제목 및 개요
-    story.append(Paragraph(f"<b>{facility_name} 위험성평가 결과 분석 및 개선대책</b>", title_style))
-    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#1A365D'), spaceAfter=10))
+    # PAGE 1: 요약 보고서
+    story.append(Paragraph(f"<b>2026년 {facility_name} 위험성평가 결과 보고서</b>", title_style))
+    story.append(Spacer(1, 10))
 
-    story.append(Paragraph("<b>1. 추진 배경 및 평가 개요</b>", h1_style))
-    
-    total_cnt = len(export_df)
-    high_cnt = len(export_df[export_df['위험등급'] == '높음']) if '위험등급' in export_df.columns else 0
-    
     if client:
         ai_summary_text = generate_ai_summary(export_df, facility_name, client)
         for line in ai_summary_text.split('\n'):
             if line.strip():
                 clean_line = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 story.append(Paragraph(clean_line, body_style))
-                story.append(Spacer(1, 2))
-    else:
-        intro_text = f"""
-        • <b>추진 배경:</b> 「산업안전보건법」 및 안전보건관리체계 구축 지침에 따른 유해·위험요인 선제적 발굴 및 제거<br/>
-        • <b>평가 대상:</b> {facility_name} 사업장 내 전 부서 사무 공간, 통행로, 시설 및 전기 설비 등 (총 {total_cnt}건 발굴)<br/>
-        • <b>평가 결과:</b> 위험등급 [높음] {high_cnt}건, [기타] {total_cnt - high_cnt}건
-        """
-        story.append(Paragraph(intro_text, body_style))
+                story.append(Spacer(1, 3))
 
-    story.append(Spacer(1, 10))
+    story.append(PageBreak())
 
-    # 2. 세부 현황 데이터 구성
-    story.append(Paragraph("<b>2. 세부 위험성평가 및 개선조치 현황</b>", h1_style))
+    # PAGE 2~: 세부 현황 표
+    story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
+    story.append(Spacer(1, 8))
 
-    table_data = [[
-        Paragraph("<b>일자/부서</b>", table_header_style),
-        Paragraph("<b>위험요인 및 장소</b>", table_header_style),
-        Paragraph("<b>위험성<br/>(빈도/강도/점수)</b>", table_header_style),
-        Paragraph("<b>개선대책 및 관련근거</b>", table_header_style),
-        Paragraph("<b>개선전 사진</b>", table_header_style),
-        Paragraph("<b>개선후 사진</b>", table_header_style)
-    ]]
-
-    def get_image_flowable(url_or_link):
-        if url_or_link and isinstance(url_or_link, str) and url_or_link.startswith("http"):
-            img_bytes = get_image_bytes_func(url_or_link)
-            if img_bytes:
-                try:
-                    return RLImage(io.BytesIO(img_bytes), width=28 * mm, height=21 * mm)
-                except Exception:
-                    pass
-        return Paragraph("<font color='#A0AEC0'>[사진 없음]</font>", table_cell_style)
+    headers = [col for col in export_cols if col in export_df.columns]
+    table_data = [[Paragraph(f"<b>{h}</b>", body_style) for h in headers]]
 
     for _, row in export_df.iterrows():
-        dt_str = str(row.get('타임스탬프', '')).split(' ')[0] if pd.notna(row.get('타임스탬프', '')) else ''
-        dept_str = str(row.get('담당 부서', ''))
-        loc_str = str(row.get('장소', ''))
-        cat_str = str(row.get('유해위험요인', ''))
-        risk_str = str(row.get('위험상황', ''))
-        
-        p = str(row.get('빈도', ''))
-        s = str(row.get('강도', ''))
-        score = str(row.get('점수', ''))
-        grade = str(row.get('위험등급', ''))
-        score_info = f"{p}/{s}/{score} ({grade})" if score else "-"
-        
-        plan_str = str(row.get('감소대책', ''))
-        
-        col_info = Paragraph(f"<b>{dt_str}</b><br/>{dept_str}<br/>({loc_str})", table_cell_style)
-        col_risk = Paragraph(f"<b>[{cat_str}]</b><br/>{risk_str}", table_cell_style)
-        col_score = Paragraph(f"{score_info}", table_cell_style)
-        col_plan = Paragraph(f"{plan_str}", table_cell_style)
-        
-        img_b = get_image_flowable(row.get('사진 기록', ''))
-        img_a = get_image_flowable(row.get('개선후 사진기록', ''))
+        row_data = []
+        for col_name in headers:
+            val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
+            if "사진" in col_name and val.startswith("http"):
+                img_bytes = get_image_bytes_func(val)
+                if img_bytes:
+                    try:
+                        img_io = io.BytesIO(img_bytes)
+                        rl_img = RLImage(img_io, width=50, height=35)
+                        row_data.append(rl_img)
+                    except Exception:
+                        row_data.append(Paragraph("", body_style))
+                else:
+                    row_data.append(Paragraph("", body_style))
+            else:
+                clean_val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                row_data.append(Paragraph(clean_val, body_style))
+        table_data.append(row_data)
 
-        table_data.append([col_info, col_risk, col_score, col_plan, img_b, img_a])
+    num_cols = len(headers)
+    col_width = max(40, int(800 / num_cols)) if num_cols > 0 else 50
+    actual_widths = [col_width] * num_cols
 
-    col_widths = [25 * mm, 40 * mm, 20 * mm, 35 * mm, 30 * mm, 30 * mm]
-    
-    report_table = Table(table_data, colWidths=col_widths, repeatRows=1)
-    report_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1A365D')),
+    pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
+    pdf_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E0')),
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F7FAFC')])
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+        ('FONTNAME', (0, 0), (-1, -1), FONT_NAME),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
     ]))
 
-    story.append(report_table)
-    doc.build(story, canvasmaker=NumberedCanvas)
+    story.append(pdf_table)
+    doc.build(story)
     buffer.seek(0)
     return buffer.getvalue()
 
