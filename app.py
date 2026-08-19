@@ -392,10 +392,10 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     story.append(Paragraph("<b>2. 세부 위험성평가 및 개선조치 현황</b>", h1_style))
 
     table_data = [[
-        Paragraph("<b>일자/부서(장소)</b>", table_header_style),
-        Paragraph("<b>유해위험요인</b>", table_header_style),
+        Paragraph("<b>일자/부서</b>", table_header_style),
+        Paragraph("<b>위험요인 및 장소</b>", table_header_style),
         Paragraph("<b>위험성<br/>(빈도/강도/점수)</b>", table_header_style),
-        Paragraph("<b>개선대책</b>", table_header_style),
+        Paragraph("<b>개선대책 및 관련근거</b>", table_header_style),
         Paragraph("<b>개선전 사진</b>", table_header_style),
         Paragraph("<b>개선후 사진</b>", table_header_style)
     ]]
