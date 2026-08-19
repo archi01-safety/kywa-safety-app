@@ -21,8 +21,8 @@ import zipfile
 import xml.etree.ElementTree as ET
 import google.genai as genai
 import openpyxl
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image as RLImage, HRFlowable
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, HRFlowable
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -366,7 +366,7 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     story.append(Paragraph(f"<b>{facility_name} 위험성평가 결과 분석 및 개선대책</b>", title_style))
     story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor('#1A365D'), spaceAfter=10))
 
-    story.append(Paragraph("<b>1. 추진 배경 및 평가 개요</b>", h1_style))
+    story.append(Paragraph("<b>1. 추진 배경 및 AI 총평</b>", h1_style))
     
     total_cnt = len(export_df)
     high_cnt = len(export_df[export_df['위험등급'] == '높음']) if '위험등급' in export_df.columns else 0
@@ -392,10 +392,10 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
     story.append(Paragraph("<b>2. 세부 위험성평가 및 개선조치 현황</b>", h1_style))
 
     table_data = [[
-        Paragraph("<b>일자/부서(장소)</b>", table_header_style),
-        Paragraph("<b>유해위험요인</b>", table_header_style),
+        Paragraph("<b>일자/부서</b>", table_header_style),
+        Paragraph("<b>위험요인 및 장소</b>", table_header_style),
         Paragraph("<b>위험성<br/>(빈도/강도/점수)</b>", table_header_style),
-        Paragraph("<b>개선대책</b>", table_header_style),
+        Paragraph("<b>개선대책 및 관련근거</b>", table_header_style),
         Paragraph("<b>개선전 사진</b>", table_header_style),
         Paragraph("<b>개선후 사진</b>", table_header_style)
     ]]
@@ -435,6 +435,7 @@ def create_pdf_with_ai_summary(export_df, facility_name, client, export_cols, ge
 
         table_data.append([col_info, col_risk, col_score, col_plan, img_b, img_a])
 
+    # 세로 레이아웃(A4 폭: 210mm, 좌우여백: 30mm, 인쇄가능 영역: 180mm) 고정 너비 지정
     col_widths = [25 * mm, 40 * mm, 20 * mm, 35 * mm, 30 * mm, 30 * mm]
     
     report_table = Table(table_data, colWidths=col_widths, repeatRows=1)
