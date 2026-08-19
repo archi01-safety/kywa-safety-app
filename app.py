@@ -20,6 +20,12 @@ import zipfile
 import xml.etree.ElementTree as ET
 import google.genai as genai
 import openpyxl
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image as RLImage
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
@@ -150,7 +156,6 @@ def append_row_to_sheet(row_data):
         return False
 
 def update_action_result_to_sheet(row_idx, action_data):
-    """구글 시트의 해당 행 N~R열(개선 후 데이터)을 업데이트"""
     try:
         actual_row = row_idx + 2
         range_name = f"'{SHEET_NAME}'!N{actual_row}:R{actual_row}"
@@ -164,7 +169,6 @@ def update_action_result_to_sheet(row_idx, action_data):
         st.error(f"개선조치 업데이트 실패: {e}")
         return False
 
-# --- [대시보드 데이터 로드 함수] ---
 def load_dashboard_data():
     sheet_url = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv&gid=413707311"
     try:
@@ -174,7 +178,6 @@ def load_dashboard_data():
             df['타임스탬프'] = pd.to_datetime(df['타임스탬프'], format='mixed', errors='coerce')
             df = df.dropna(subset=['타임스탬프'])
         
-        # 1번 수정: 구글 시트 실제 열 이름(N~R열)에 맞춰 기본값 자동 생성
         needed_cols = ['개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록']
         for col in needed_cols:
             if col not in df.columns:
@@ -184,13 +187,72 @@ def load_dashboard_data():
     except Exception:
         return None
 
+def get_risk_grade(score):
+    if score <= 3: return "매우 낮음"
+    elif score <= 6: return "낮음"
+    elif score <= 9: return "보통"
+    elif score <= 12: return "높음"
+    else: return "매우 높음"
 
 # =========================================================
-# 📥 [내보내기 전용 유틸리티 함수 3종]
+# 📥 [내보내기 전용 유틸리티 함수 3종 및 컬럼 상수]
 # =========================================================
+
+EXPORT_COLUMNS = [
+    '타임스탬프', '시설명', '담당 부서', '장소', '유해위험요인', '위험상황', 
+    '빈도', '강도', '점수', '위험등급', '감소대책', '관련근거', '사진 기록', 
+    '개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록'
+]
+
+# 폰트 등록
+try:
+    pdfmetrics.registerFont(TTFont('MalgunGothic', 'c:/Windows/Fonts/malgun.ttf'))
+    FONT_NAME = 'MalgunGothic'
+except Exception:
+    FONT_NAME = 'Helvetica'
+
+PDF_AI_PROMPT_TEMPLATE = """
+다음은 {facility_name}의 위험성평가 데이터 통계 및 상세 내역입니다.
+
+[데이터 통계]
+- 총 유해위험요인: {total_cnt}건
+- 감소대책 수립: {plan_cnt}건 / 개선조치 완료: {complete_cnt}건
+- 위험등급 현황: 높음({high_cnt}건), 보통({med_cnt}건), 낮음({low_cnt}건), 매우 낮음({vlow_cnt}건)
+
+[상세 내역]
+{risk_details}
+
+위 데이터를 바탕으로 개요 및 주요 유해위험요인 분야별 비율과 전문적인 분석 총평을 공공기관 보고서 격식에 맞게 작성해 주세요.
+"""
+
+def generate_ai_summary(export_df, facility_name, model):
+    total_cnt = len(export_df)
+    plan_cnt = len(export_df[export_df['감소대책'].notna() & (export_df['감소대책'] != '')]) if '감소대책' in export_df.columns else 0
+    complete_cnt = len(export_df[export_df['개선후 위험등급'].notna() & (export_df['개선후 위험등급'] != '')]) if '개선후 위험등급' in export_df.columns else 0
+    
+    high_cnt = len(export_df[export_df['위험등급'] == '높음']) if '위험등급' in export_df.columns else 0
+    med_cnt = len(export_df[export_df['위험등급'] == '보통']) if '위험등급' in export_df.columns else 0
+    low_cnt = len(export_df[export_df['위험등급'] == '낮음']) if '위험등급' in export_df.columns else 0
+    vlow_cnt = len(export_df[export_df['위험등급'] == '매우 낮음']) if '위험등급' in export_df.columns else 0
+
+    risk_details_text = ""
+    if '유해위험요인' in export_df.columns and '감소대책' in export_df.columns:
+        risk_details_list = export_df[['유해위험요인', '감소대책']].to_dict(orient='records')
+        risk_details_text = "\n".join([f"- 요인: {r.get('유해위험요인', '')} / 대책: {r.get('감소대책', '')}" for r in risk_details_list])
+
+    prompt = PDF_AI_PROMPT_TEMPLATE.format(
+        facility_name=facility_name, total_cnt=total_cnt, plan_cnt=plan_cnt,
+        complete_cnt=complete_cnt, high_cnt=high_cnt, med_cnt=med_cnt,
+        low_cnt=low_cnt, vlow_cnt=vlow_cnt, risk_details=risk_details_text
+    )
+
+    try:
+        response = model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        return f"AI 분석 결과 생성 중 오류가 발생했습니다: {str(e)}"
 
 def get_image_bytes_from_link(link_str):
-    """구글 드라이브 웹 링크 또는 URL에서 이미지 바이너리를 추출하는 함수"""
     if not isinstance(link_str, str) or "http" not in link_str:
         return None
     try:
@@ -216,22 +278,91 @@ def get_image_bytes_from_link(link_str):
         pass
     return None
 
+def create_pdf_with_ai_summary(export_df, facility_name, model, export_cols, get_image_bytes_func):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=landscape(A4),
+        rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20
+    )
+    story = []
 
-# 내보내기 전용 전체 17개 표준 컬럼 목록
-EXPORT_COLUMNS = [
-    '타임스탬프', '시설명', '담당 부서', '장소', '유해위험요인', '위험상황', 
-    '빈도', '강도', '점수', '위험등급', '감소대책', '관련근거', '사진 기록', 
-    '개선후 빈도', '개선후 강도', '개선후 점수', '개선후 위험등급', '개선후 사진기록'
-]
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle', parent=styles['Heading1'],
+        fontName=FONT_NAME, fontSize=16, leading=20, alignment=1, spaceAfter=15
+    )
+    body_style = ParagraphStyle(
+        'CustomBody', parent=styles['Normal'],
+        fontName=FONT_NAME, fontSize=8, leading=11
+    )
 
+    # PAGE 1: 요약 보고서
+    story.append(Paragraph(f"<b>2026년 {facility_name} 위험성평가 결과 보고서</b>", title_style))
+    story.append(Spacer(1, 10))
+
+    if model:
+        ai_summary_text = generate_ai_summary(export_df, facility_name, model)
+        for line in ai_summary_text.split('\n'):
+            if line.strip():
+                clean_line = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                story.append(Paragraph(clean_line, body_style))
+                story.append(Spacer(1, 3))
+
+    story.append(PageBreak())
+
+    # PAGE 2~: 세부 현황 표
+    story.append(Paragraph("<b>[첨부] 세부 위험성평가 및 개선조치 현황</b>", title_style))
+    story.append(Spacer(1, 8))
+
+    headers = [col for col in export_cols if col in export_df.columns]
+    table_data = [[Paragraph(f"<b>{h}</b>", body_style) for h in headers]]
+
+    for _, row in export_df.iterrows():
+        row_data = []
+        for col_name in headers:
+            val = str(row.get(col_name, '')) if pd.notna(row.get(col_name, '')) else ''
+            if "사진" in col_name and val.startswith("http"):
+                img_bytes = get_image_bytes_func(val)
+                if img_bytes:
+                    try:
+                        img_io = io.BytesIO(img_bytes)
+                        rl_img = RLImage(img_io, width=50, height=35)
+                        row_data.append(rl_img)
+                    except Exception:
+                        row_data.append(Paragraph("", body_style))
+                else:
+                    row_data.append(Paragraph("", body_style))
+            else:
+                clean_val = val.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                row_data.append(Paragraph(clean_val, body_style))
+        table_data.append(row_data)
+
+    # 가변 열 너비 계산 (A4 가로 폭 802pt 기준)
+    num_cols = len(headers)
+    col_width = max(40, int(800 / num_cols)) if num_cols > 0 else 50
+    actual_widths = [col_width] * num_cols
+
+    pdf_table = Table(table_data, colWidths=actual_widths, repeatRows=1)
+    pdf_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#4F81BD')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CCCCCC')),
+        ('FONTNAME', (0, 0), (-1, -1), FONT_NAME),
+        ('FONTSIZE', (0, 0), (-1, -1), 7),
+    ]))
+
+    story.append(pdf_table)
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 def create_excel_with_images(df):
-    """행 높이 80, 열 너비 16.6 규격에 지정 이미지 크기(132x104) 적용 엑셀 생성 함수"""
     wb = Workbook()
     ws = wb.active
     ws.title = "위험성평가_개선현황"
 
-    # EXPORT_COLUMNS 목록 순서대로 데이터프레임 헤더 구성
     headers = [col for col in EXPORT_COLUMNS if col in df.columns]
     for col in df.columns:
         if col not in headers:
@@ -242,10 +373,8 @@ def create_excel_with_images(df):
     header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
     header_font = Font(name="맑은 고딕", size=11, bold=True, color="FFFFFF")
     thin_border = Border(
-        left=Side(style='thin', color='CCCCCC'),
-        right=Side(style='thin', color='CCCCCC'),
-        top=Side(style='thin', color='CCCCCC'),
-        bottom=Side(style='thin', color='CCCCCC')
+        left=Side(style='thin', color='CCCCCC'), right=Side(style='thin', color='CCCCCC'),
+        top=Side(style='thin', color='CCCCCC'), bottom=Side(style='thin', color='CCCCCC')
     )
 
     for col_num in range(1, len(headers) + 1):
@@ -258,7 +387,7 @@ def create_excel_with_images(df):
     photo_cols = [i for i, col in enumerate(headers) if "사진" in str(col)]
 
     for row_idx, (_, row) in enumerate(df.iterrows(), start=2):
-        ws.row_dimensions[row_idx].height = 80  # 행 높이 80pt
+        ws.row_dimensions[row_idx].height = 80
         for col_idx, col_name in enumerate(headers, start=1):
             value = row.get(col_name, '')
             cell = ws.cell(row=row_idx, column=col_idx, value=str(value) if pd.notna(value) else "")
@@ -266,32 +395,25 @@ def create_excel_with_images(df):
             cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
             cell.border = thin_border
 
-            # 🔥 요청사항 1: 사진 크기 지정 (width=132, height=104)
             if (col_idx - 1) in photo_cols and pd.notna(value) and str(value).startswith("http"):
                 img_bytes = get_image_bytes_from_link(str(value))
                 if img_bytes:
                     try:
                         img_io = io.BytesIO(img_bytes)
                         img = OpenpyxlImage(img_io)
-                        img.width = 132   # 지정값 적용
-                        img.height = 104  # 지정값 적용
+                        img.width = 132
+                        img.height = 104
                         cell_address = f"{get_column_letter(col_idx)}{row_idx}"
                         ws.add_image(img, cell_address)
                         cell.value = ""
                     except Exception:
                         pass
 
-    # 열 너비 개별 및 자동 설정
     for col in ws.columns:
         col_letter = get_column_letter(col[0].column)
         col_name = str(headers[col[0].column - 1]).strip()
         
-        # 1. 사진 관련 열 너비 지정 (16.6)
-        if "사진" in col_name:
-            ws.column_dimensions[col_letter].width = 16.6
-            
-        # 2. 지정 항목별 열 너비 설정
-        elif col_name in ['타임스탬프', '장소']:
+        if "사진" in col_name or col_name in ['타임스탬프', '장소']:
             ws.column_dimensions[col_letter].width = 16.6
         elif col_name == '유해위험요인':
             ws.column_dimensions[col_letter].width = 15.0
@@ -303,8 +425,6 @@ def create_excel_with_images(df):
             ws.column_dimensions[col_letter].width = 30.0
         elif col_name == '개선후 위험등급':
             ws.column_dimensions[col_letter].width = 15.0
-            
-        # 3. 기타 미지정 열 (글자 수 기반 자동 계산, 최소 너비 12)
         else:
             max_len = max(len(str(cell.value or '')) for cell in col)
             ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
@@ -314,9 +434,7 @@ def create_excel_with_images(df):
     output.seek(0)
     return output.getvalue()
 
-
 def create_hwpx_with_images(df):
-    """한글(.hwpx) 표 생성기 (17개 전 컬럼 반영)"""
     output = io.BytesIO()
 
     headers = [col for col in EXPORT_COLUMNS if col in df.columns]
@@ -354,14 +472,11 @@ def create_hwpx_with_images(df):
 <hh:head xmlns:hh="http://www.hancom.com/hwpml/2011/head"/>"""
         zf.writestr('Contents/header.xml', header_xml)
 
-        rows_xml = ""
-        # 헤더 행
-        rows_xml += "<hp:tr>"
+        rows_xml = "<hp:tr>"
         for h in headers:
             rows_xml += f"<hp:tc><hp:p><hp:t>{h}</hp:t></hp:p></hp:tc>"
         rows_xml += "</hp:tr>"
 
-        # 데이터 행
         for _, row in df.iterrows():
             rows_xml += "<hp:tr>"
             for col_name in headers:
@@ -400,7 +515,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- [헤더 레이아웃 (로고 크기 및 링크 클릭 복원)] ---
+# --- [헤더 레이아웃] ---
 header_col1, header_col2 = st.columns([1, 4])
 with header_col1:
     if os.path.exists("kywa_logo.png"):
@@ -426,7 +541,7 @@ if "analysis_results" not in st.session_state: st.session_state.analysis_results
 if "final_data" not in st.session_state: st.session_state.final_data = None
 if "eval_after_data" not in st.session_state: st.session_state.eval_after_data = None
 
-# --- [대시보드 출력 함수 (Plotly ID 중복 해결)] ---
+# --- [대시보드 출력 함수] ---
 def render_dashboard(dashboard_data, key_suffix="default"):
     if dashboard_data is not None:
         if '타임스탬프' in dashboard_data.columns:
@@ -438,7 +553,6 @@ def render_dashboard(dashboard_data, key_suffix="default"):
             st.warning("📅 2026년도 데이터가 아직 없습니다. 데이터를 첫 번째로 전송해 보세요!")
         else:
             st.subheader("📊 실시간 점검 데이터 현황 (2026년)")
-            
             total_count = len(yearly_data)
             m1, m2 = st.columns(2)
             
@@ -473,22 +587,18 @@ def render_dashboard(dashboard_data, key_suffix="default"):
 
             with g_col1:
                 with st.container(border=True):
-                    # 유형 구분 열 자동 탐색
                     target_col_cat = "위험요인 분류" if "위험요인 분류" in yearly_data.columns else (yearly_data.columns[4] if len(yearly_data.columns) >= 5 else None)
                     if target_col_cat:
                         st.write(f"**⚠️ {target_col_cat} 현황**")
                         if not yearly_data[target_col_cat].dropna().empty:
                             yearly_data[target_col_cat] = yearly_data[target_col_cat].astype(str).str.strip()
-                            
                             fig_pie = px.pie(
                                 yearly_data, names=target_col_cat, hole=0.3,
                                 color=target_col_cat, color_discrete_map=CATEGORY_COLOR_MAP
                             )
                             fig_pie.update_traces(
-                                textinfo='percent+value', 
-                                texttemplate='%{percent:.0%}<br>(%{value}건)',
-                                insidetextorientation='horizontal',
-                                textfont_size=11
+                                textinfo='percent+value', texttemplate='%{percent:.0%}<br>(%{value}건)',
+                                insidetextorientation='horizontal', textfont_size=11
                             )
                             fig_pie.update_layout(
                                 margin=dict(t=20, b=60, l=0, r=0), height=400, showlegend=True,
@@ -516,17 +626,21 @@ def render_dashboard(dashboard_data, key_suffix="default"):
                             xaxis_title=None, yaxis_title=None, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', dragmode=False 
                         )
                         st.plotly_chart(fig_bar, use_container_width=True, config={'displayModeBar': False}, key=f"bar_{key_suffix}")
-# --- [메인 탭 구획] ---
-tab1, tab2, tab3 = st.tabs([
-    "📝 AI 위험성평가", 
-    "🛠️ 개선조치 등록 (담당자용)", 
-    "📊 종합 대시보드 (관리자용)"
-])
+
+
+# --- [사이드바 메뉴 선택] ---
+with st.sidebar:
+    st.markdown("### 📌 메뉴 선택")
+    selected_tab = st.radio(
+        label="이동할 화면을 선택하세요",
+        options=["📝 점검 입력", "📊 결과 조회", "📥 내보내기"],
+        label_visibility="collapsed"
+    )
 
 # ==========================================
-# [탭 1] AI 위험성평가
+# 1️⃣ [메뉴 1] 점검 입력
 # ==========================================
-with tab1:
+if selected_tab == "📝 점검 입력":
     col1, col2 = st.columns([1, 1])
     with col1:
         st.markdown("### **🏢 점검 대상 정보**")
@@ -645,15 +759,14 @@ with tab1:
                     st.success(f"✅ {success_count}건의 데이터가 성공적으로 전송되었습니다!")
                     st.balloons()
 
-    # 탭 1 하단 대시보드
     st.write("---")
     dashboard_data = load_dashboard_data()
     render_dashboard(dashboard_data, key_suffix="tab1")
 
 # ==========================================
-# [탭 2] 개선조치 등록 (담당자용)
+# 2️⃣ [메뉴 2] 결과 조회 및 개선조치
 # ==========================================
-with tab2:
+elif selected_tab == "📊 결과 조회":
     st.markdown("### 🛠️ 현장 개선조치 결과 등록")
     st.info("시설을 선택하고 '미완료' 건을 조회하여 조치 결과 사진 및 내용을 입력하세요.")
 
@@ -662,10 +775,8 @@ with tab2:
         st.warning("⚠️ 불러올 점검 데이터가 없습니다.")
     else:
         target_fac = st.selectbox("• 시설명 선택", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], key="t2_fac")
-        
         fac_df = dashboard_data[dashboard_data['시설명'] == target_fac].copy()
 
-        # 데이터 타입을 문자열로 정제하여 필터링
         uncompleted_df = fac_df[
             fac_df['개선후 위험등급'].isna() | 
             (fac_df['개선후 위험등급'].astype(str).str.strip() == '') | 
@@ -726,86 +837,60 @@ with tab2:
                         except Exception as e:
                             st.error(f"❌ 재분석 실패: {e}")
 
-# --- [위험등급 자동 산출 함수] (조건문 외부 상단에 배치) ---
-def get_risk_grade(score):
-    if score <= 3:
-        return "매우 낮음"
-    elif score <= 6:
-        return "낮음"
-    elif score <= 9:
-        return "보통"
-    elif score <= 12:
-        return "높음"
-    else:
-        return "매우 높음"
+    if st.session_state.eval_after_data:
+        res_a = st.session_state.eval_after_data
+        st.markdown("##### 📊 AI 개선 후 위험도 재산출 결과")
+        
+        if "p_after_val" not in st.session_state:
+            st.session_state.p_after_val = int(res_a.get("p_after", 1))
+        if "s_after_val" not in st.session_state:
+            st.session_state.s_after_val = int(res_a.get("s_after", 1))
 
-# ==========================================
-# [탭 2] 내 AI 재분석 결과 표시 섹션
-# ==========================================
-if st.session_state.eval_after_data:
-    res_a = st.session_state.eval_after_data
-    st.markdown("##### 📊 AI 개선 후 위험도 재산출 결과")
-    
-    # 세션에 초기값 저장 (초기 1회만 적용)
-    if "p_after_val" not in st.session_state:
-        st.session_state.p_after_val = int(res_a.get("p_after", 1))
-    if "s_after_val" not in st.session_state:
-        st.session_state.s_after_val = int(res_a.get("s_after", 1))
+        r_col1, r_col2, r_col3, r_col4 = st.columns(4)
+        p_after = r_col1.number_input("개선후 빈도", min_value=1, max_value=5, value=st.session_state.p_after_val, key="num_p_after")
+        s_after = r_col2.number_input("개선후 강도", min_value=1, max_value=4, value=st.session_state.s_after_val, key="num_s_after")
+        
+        score_after = p_after * s_after
+        grade_after = get_risk_grade(score_after)
+        
+        r_col3.metric("개선후 점수", f"{score_after} 점")
+        r_col4.metric("개선후 위험등급", grade_after)
 
-    r_col1, r_col2, r_col3, r_col4 = st.columns(4)
-    
-    # 1. 빈도 및 강도 수동 입력 (+/- 버튼)
-    p_after = r_col1.number_input("개선후 빈도", min_value=1, max_value=5, value=st.session_state.p_after_val, key="num_p_after")
-    s_after = r_col2.number_input("개선후 강도", min_value=1, max_value=4, value=st.session_state.s_after_val, key="num_s_after")
-    
-    # 2. 실시간 점수 및 위험등급 계산
-    score_after = p_after * s_after
-    grade_after = get_risk_grade(score_after)  # 점수에 따른 등급 자동 연동
-    
-    # 3. 실시간 결과 표시
-    r_col3.metric("개선후 점수", f"{score_after} 점")
-    r_col4.metric("개선후 위험등급", grade_after)
+        st.write("")
+        if st.button("📤 개선조치 최종 제출 (구글 시트 저장)", use_container_width=True, key="btn_save_action"):
+            with st.spinner("구글 시트에 조치결과를 반영 중입니다..."):
+                act_photo_link = "사진 없음"
+                if 'action_img' in locals() and action_img:
+                    act_photo_bytes = apply_face_blur_ai(action_img)
+                    now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    act_photo_link = upload_to_drive(f"AFTER_{target_fac}_{now_str}.jpg", act_photo_bytes)
 
-    st.write("")
-    if st.button("📤 개선조치 최종 제출 (구글 시트 저장)", use_container_width=True, key="btn_save_action"):
-        with st.spinner("구글 시트에 조치결과를 반영 중입니다..."):
-            act_photo_link = "사진 없음"
-            if action_img:
-                act_photo_bytes = apply_face_blur_ai(action_img)
-                now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                act_photo_link = upload_to_drive(f"AFTER_{target_fac}_{now_str}.jpg", act_photo_bytes)
+                action_row_data = [
+                    p_after, s_after, score_after, grade_after, act_photo_link
+                ]
 
-            action_row_data = [
-                p_after, s_after, score_after, grade_after, act_photo_link
-            ]
+                if update_action_result_to_sheet(selected_row_idx, action_row_data):
+                    st.success(f"✅ 조치결과(점수: {score_after}점 / 등급: {grade_after})가 성공적으로 구글 시트(N~R열)에 업데이트되었습니다!")
+                    st.session_state.eval_after_data = None
+                    if "p_after_val" in st.session_state: del st.session_state.p_after_val
+                    if "s_after_val" in st.session_state: del st.session_state.s_after_val
+                    st.balloons()
 
-            if update_action_result_to_sheet(selected_row_idx, action_row_data):
-                st.success(f"✅ 조치결과(점수: {score_after}점 / 등급: {grade_after})가 성공적으로 구글 시트(N~R열)에 업데이트되었습니다!")
-                
-                # 제출 완료 후 세션 데이터 초기화
-                st.session_state.eval_after_data = None
-                if "p_after_val" in st.session_state: del st.session_state.p_after_val
-                if "s_after_val" in st.session_state: del st.session_state.s_after_val
-                
-                st.balloons()
-
-    # 탭 2 하단 대시보드
     st.write("---")
     render_dashboard(dashboard_data, key_suffix="tab2")
 
 # ==========================================
-# [탭 3] 종합 대시보드 (관리자용)
+# 3️⃣ [메뉴 3] 내보내기 (관리자용)
 # ==========================================
-with tab3:
-    st.markdown("### 📊 관리자 전용 종합 대시보드")
+elif selected_tab == "📥 내보내기":
+    st.markdown("### 📊 관리자 전용 종합 대시보드 및 보고서 출력")
     admin_pw = st.text_input("🔑 관리자 비밀번호 입력", type="password")
     
-    if admin_pw == "1234":  # 초기 관리자 비밀번호
+    if admin_pw == "1234":
         st.success("🔓 관리자 인증 성공")
         dashboard_data = load_dashboard_data()
         
         if dashboard_data is not None and not dashboard_data.empty:
-            # 하단 통합 시각화 대시보드
             render_dashboard(dashboard_data, key_suffix="tab3")
             
             st.divider()
@@ -815,20 +900,17 @@ with tab3:
             st.divider()
             st.markdown("#### 📥 보고서 및 데이터 맞춤 내보내기")
             
-            # 4번 수정: 설정 변경 시 자동실행되지 않도록 버튼 기반 생성 프로세스 구현
             with st.container(border=True):
                 st.markdown("##### **[내보내기 설정]**")
                 exp_col1, exp_col2 = st.columns(2)
                 
-                # Step 1: 문서 포맷 선택
                 with exp_col1:
                     export_type = st.radio(
                         "1️⃣ 내보낼 파일 형식 선택",
-                        ["📊 엑셀 문서 (.xlsx)", "📄 한글 문서 (.hwpx)"],
+                        ["📊 엑셀 문서 (.xlsx)", "📄 한글 문서 (.hwpx)", "📄 PDF 보고서 (.pdf)"],
                         key="exp_type"
                     )
                 
-                # Step 2: 시설 범위 선택
                 facility_options = ["전체"] + ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"]
                 with exp_col2:
                     selected_exp_fac = st.selectbox(
@@ -839,9 +921,7 @@ with tab3:
 
                 st.write("")
                 
-                # Step 3: [문서 생성하기] 버튼 (버튼을 클릭해야만 비로소 작업 시작)
                 if st.button("🚀 선택한 조건으로 문서 생성하기", use_container_width=True, type="primary", key="btn_generate_doc"):
-                    # 데이터 필터링 적용
                     if selected_exp_fac == "전체":
                         export_df = dashboard_data.copy()
                     else:
@@ -856,13 +936,23 @@ with tab3:
                                 file_bytes = create_excel_with_images(export_df)
                                 file_name = f"KYWA_위험성평가_보고서_{fac_name_str}_{today_str}.xlsx"
                                 mime_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                        else:
+                        elif "한글" in export_type:
                             with st.spinner("📄 한글(.hwpx) 표 및 데이터 생성 중..."):
                                 file_bytes = create_hwpx_with_images(export_df)
                                 file_name = f"KYWA_위험성평가_보고서_{fac_name_str}_{today_str}.hwpx"
                                 mime_type = "application/hwp+zip"
+                        else: # PDF 보고서
+                            with st.spinner("📄 AI 총평 포함 PDF 보고서 생성 중..."):
+                                file_bytes = create_pdf_with_ai_summary(
+                                    export_df=export_df,
+                                    facility_name=fac_name_str,
+                                    model=client.models if client else None,
+                                    export_cols=EXPORT_COLUMNS,
+                                    get_image_bytes_func=get_image_bytes_from_link
+                                )
+                                file_name = f"KYWA_위험성평가_보고서_{fac_name_str}_{today_str}.pdf"
+                                mime_type = "application/pdf"
 
-                        # 세션에 생성된 파일 저장
                         st.session_state.export_file_bytes = file_bytes
                         st.session_state.export_file_name = file_name
                         st.session_state.export_file_mime = mime_type
@@ -870,7 +960,6 @@ with tab3:
                     else:
                         st.warning("⚠️ 선택한 시설의 점검 데이터가 없습니다.")
 
-                # Step 4: 생성 완료된 문서 다운로드 버튼 표시
                 if "export_file_bytes" in st.session_state and st.session_state.export_file_bytes:
                     st.write("")
                     st.download_button(
@@ -883,7 +972,6 @@ with tab3:
 
     elif admin_pw:
         st.error("❌ 비밀번호가 올바르지 않습니다.")
-
 
 # --- [푸터(Footer) 섹션] ---
 st.write("") 
