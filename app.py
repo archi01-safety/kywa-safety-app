@@ -755,10 +755,10 @@ if st.session_state.analysis_results:
     st.session_state.final_data = edited_df.to_dict('records')
 
 # ------------------------------------------------------------------
-# 💡 KOSHA GUIDE (자율 안전보건가이드) 연동 섹션 (분석 전/후 분기 처리)
+# 💡 KOSHA GUIDE (기술지원규정) 연동 섹션 (분석 전/후 분기 처리)
 # ------------------------------------------------------------------
 st.write("")
-with st.expander("📚 **관련 KOSHA GUIDE (자율 안전보건가이드) 조회 및 다운로드**", expanded=True):
+with st.expander("📚 **관련 KOSHA GUIDE (기술지원규정) 조회 및 다운로드**", expanded=True):
     st.caption("※ 산업안전보건공단 Open API 연동: 법적 최소 기준 외에 현장에 바로 적용 가능한 자율 기술지침 원문 제공")
     
     # 🛠️ [수정 포인트] 분석 완료 여부에 따른 화면 분기
