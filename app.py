@@ -70,7 +70,7 @@ if "gcp_service_account" in st.secrets:
 
 # Gemini API 클라이언트 초기화
 client = None
-model_name = "gemini-flash-latest"
+model_name = "gemini-3.6-flash"
 if "GEMINI_API_KEY" in st.secrets:
     client = genai.Client(api_key=st.secrets["GEMINI_API_KEY"])
 
