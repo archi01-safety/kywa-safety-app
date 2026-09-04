@@ -796,12 +796,18 @@ if selected_tab == "📝 점검 입력(전 직원)":
                 except Exception as e:
                     st.error(f"❌ 분석 실패 (서버 트래픽 과부하 등): {e}")
 
-    if st.session_state.analysis_results:
+if st.session_state.analysis_results:
         st.markdown("### 📋 AI 위험성평가 결과")
         df = pd.DataFrame(st.session_state.analysis_results)
+
+        # 전송 여부 선택 컬럼(기본값 True) 추가
+        if "send_check" not in df.columns:
+            df.insert(0, "send_check", True)
+
         edited_df = st.data_editor(
             df,
             column_config={
+                "send_check": st.column_config.CheckboxColumn("전송선택", default=True, width="small"),
                 "category": st.column_config.TextColumn("분류", disabled=True),
                 "location": st.column_config.TextColumn("📍장소(편집가능)", width="medium"),
                 "scenario": st.column_config.TextColumn("✅ 위험상황(편집가능)", width="medium"),
@@ -815,7 +821,13 @@ if selected_tab == "📝 점검 입력(전 직원)":
             disabled=["category", "p", "s", "score", "grade", "law"],
             hide_index=True, key="t1_editor"
         )
+
+        # 전체 결과 저장은 유지
         st.session_state.final_data = edited_df.to_dict('records')
+
+        # 전송 체크박스가 선택된 항목만 별도로 추출하여 저장
+        selected_records = edited_df[edited_df["send_check"] == True].to_dict('records')
+        st.session_state.selected_data_to_send = selected_records
 
     st.write("")
     with st.expander("📚 **관련 KOSHA GUIDE (자율 안전보건가이드) 조회 및 다운로드**", expanded=True):
@@ -851,8 +863,11 @@ if selected_tab == "📝 점검 입력(전 직원)":
                 if "final_secure_image" in st.session_state and st.session_state.final_secure_image:
                     photo_link = upload_to_drive(f"{selected_facility}_{timestamp_str}.jpg", st.session_state.final_secure_image)
 
+                # 선택된 데이터 가져오기 (체크박스로 선택된 항목만 필터링)
+                target_data = st.session_state.get("selected_data_to_send", st.session_state.final_data)
+
                 success_count = 0
-                for row in st.session_state.final_data:
+                for row in target_data:
                     sheet_row = [
                         current_time, selected_facility, selected_dept,
                         row.get("location"), row.get("category"), row.get("scenario"),
@@ -860,6 +875,7 @@ if selected_tab == "📝 점검 입력(전 직원)":
                         row.get("solution"), row.get("law"), photo_link
                     ]
                     if append_row_to_sheet(sheet_row): success_count += 1
+
                 if success_count > 0:
                     st.success(f"✅ {success_count}건의 데이터가 성공적으로 전송되었습니다!")
                     st.balloons()
