@@ -894,6 +894,19 @@ if selected_tab == "📝 점검 입력(전 직원)":
 # ==========================================
 elif selected_tab == "📊 개선조치 및 재평가(담당자)":
     st.markdown("### 🛠️ 현장 개선조치 결과 등록")
+    
+    # 담당자 비밀번호 검증 추가
+    staff_pw = st.text_input("🔑 담당자 비밀번호 입력", type="password", key="t2_pw")
+    if staff_pw == "5678":  # 원하시는 담당자 비밀번호로 변경
+        st.success("🔓 담당자 인증 성공")
+        st.info("시설을 선택하고 '미완료' 건을 조회하여 조치 결과 사진 및 내용을 입력하세요.")
+
+        # --- 기존 개선조치 및 재평가 코드 위치 ---
+
+    elif staff_pw:
+        st.error("❌ 비밀번호가 올바르지 않습니다.")
+
+    st.markdown("### 🛠️ 현장 개선조치 결과 등록")
     st.info("시설을 선택하고 '미완료' 건을 조회하여 조치 결과 사진 및 내용을 입력하세요.")
 
     dashboard_data = load_dashboard_data()
