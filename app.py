@@ -799,7 +799,7 @@ if selected_tab == "📝 점검 입력(전 직원)":
 if st.session_state.analysis_results:
         st.markdown("### 📋 AI 위험성평가 결과")
         df = pd.DataFrame(st.session_state.analysis_results)
-
+        
         # 전송 여부 선택 컬럼(기본값 True) 추가
         if "send_check" not in df.columns:
             df.insert(0, "send_check", True)
@@ -821,10 +821,10 @@ if st.session_state.analysis_results:
             disabled=["category", "p", "s", "score", "grade", "law"],
             hide_index=True, key="t1_editor"
         )
-
+        
         # 전체 결과 저장은 유지
         st.session_state.final_data = edited_df.to_dict('records')
-
+        
         # 전송 체크박스가 선택된 항목만 별도로 추출하여 저장
         selected_records = edited_df[edited_df["send_check"] == True].to_dict('records')
         st.session_state.selected_data_to_send = selected_records
