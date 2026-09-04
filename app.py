@@ -796,7 +796,8 @@ if selected_tab == "📝 점검 입력(전 직원)":
                 except Exception as e:
                     st.error(f"❌ 분석 실패 (서버 트래픽 과부하 등): {e}")
 
-if st.session_state.analysis_results:
+    # --- [AI 위험성평가 결과 편집 및 KOSHA GUIDE 조회] ---
+    if st.session_state.analysis_results:
         st.markdown("### 📋 AI 위험성평가 결과")
         df = pd.DataFrame(st.session_state.analysis_results)
         
@@ -829,57 +830,61 @@ if st.session_state.analysis_results:
         selected_records = edited_df[edited_df["send_check"] == True].to_dict('records')
         st.session_state.selected_data_to_send = selected_records
 
-    st.write("")
-    with st.expander("📚 **관련 KOSHA GUIDE (자율 안전보건가이드) 조회 및 다운로드**", expanded=True):
-        if 'edited_df' in locals() and edited_df is not None and not edited_df.empty:
-            search_kw = "추락"
-            first_row = edited_df.iloc[0]
-            full_text = f"{first_row.get('scenario','')} {first_row.get('law','')}"
-            for kw in ['용접', '비계', '사다리', '지게차', '크레인', '개구부', '난간', '추락', '감전', '화재']:
-                if kw in full_text: search_kw = kw; break
-            guides = search_kosha_guide(search_kw)
-            if guides:
-                st.success(f"키워드 **'{search_kw}'** 관련 코샤가이드 {len(guides)}건이 검색되었습니다.")
-                for g in guides:
-                    c1, c2 = st.columns([3, 1])
-                    c1.markdown(f"• **[{g.get('techGdlnNo','')}]** {g.get('techGdlnNm','')}")
-                    if g.get('fileDownloadUrl'): c2.link_button("📥 지침 다운로드", g.get('fileDownloadUrl'), use_container_width=True)
-            else: st.info(f"키워드 '{search_kw}' 검색 결과가 없습니다.")
-        else:
-            st.info("💡 위험성평가 분석을 실행하시면, 맞춤형 KOSHA GUIDE 원문 다운로드 링크가 제공됩니다.")
+        st.write("")
+        with st.expander("📚 **관련 KOSHA GUIDE (자율 안전보건가이드) 조회 및 다운로드**", expanded=True):
+            if edited_df is not None and not edited_df.empty:
+                search_kw = "추락"
+                first_row = edited_df.iloc[0]
+                full_text = f"{first_row.get('scenario','')} {first_row.get('law','')}"
+                for kw in ['용접', '비계', '사다리', '지게차', '크레인', '개구부', '난간', '추락', '감전', '화재']:
+                    if kw in full_text:
+                        search_kw = kw
+                        break
+                guides = search_kosha_guide(search_kw)
+                if guides:
+                    st.success(f"키워드 **'{search_kw}'** 관련 코샤가이드 {len(guides)}건이 검색되었습니다.")
+                    for g in guides:
+                        c1, c2 = st.columns([3, 1])
+                        c1.markdown(f"• **[{g.get('techGdlnNo','')}]** {g.get('techGdlnNm','')}")
+                        if g.get('fileDownloadUrl'):
+                            c2.link_button("📥 지침 다운로드", g.get('fileDownloadUrl'), use_container_width=True)
+                else:
+                    st.info(f"키워드 '{search_kw}' 검색 결과가 없습니다.")
+            else:
+                st.info("💡 위험성평가 분석을 실행하시면, 맞춤형 KOSHA GUIDE 원문 다운로드 링크가 제공됩니다.")
 
-    st.write("")
-    if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True, key="btn_send_t1"):
-        if sheets_service is None:
-            st.error("⚠️ GCP 서비스 연동이 필요합니다.")
-        elif not st.session_state.get("final_data"):
-            st.error("⚠️ 전송할 데이터가 없습니다.")
-        else:
-            with st.spinner("🚀 데이터 전송 중..."):
-                now_kst = datetime.datetime.now() + datetime.timedelta(hours=9)
-                current_time = now_kst.strftime("%Y-%m-%d %H:%M:%S")
-                timestamp_str = now_kst.strftime("%Y%m%d_%H%M%S")
-                photo_link = "사진 없음"
-                if "final_secure_image" in st.session_state and st.session_state.final_secure_image:
-                    photo_link = upload_to_drive(f"{selected_facility}_{timestamp_str}.jpg", st.session_state.final_secure_image)
+        st.write("")
+        if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True, key="btn_send_t1"):
+            if sheets_service is None:
+                st.error("⚠️ GCP 서비스 연동이 필요합니다.")
+            elif not st.session_state.get("final_data"):
+                st.error("⚠️ 전송할 데이터가 없습니다.")
+            else:
+                with st.spinner("🚀 데이터 전송 중..."):
+                    now_kst = datetime.datetime.now() + datetime.timedelta(hours=9)
+                    current_time = now_kst.strftime("%Y-%m-%d %H:%M:%S")
+                    timestamp_str = now_kst.strftime("%Y%m%d_%H%M%S")
+                    photo_link = "사진 없음"
+                    if "final_secure_image" in st.session_state and st.session_state.final_secure_image:
+                        photo_link = upload_to_drive(f"{selected_facility}_{timestamp_str}.jpg", st.session_state.final_secure_image)
 
-                # 선택된 데이터 가져오기 (체크박스로 선택된 항목만 필터링)
-                target_data = st.session_state.get("selected_data_to_send", st.session_state.final_data)
+                    # 선택된 데이터 가져오기 (체크박스로 선택된 항목만 필터링)
+                    target_data = st.session_state.get("selected_data_to_send", st.session_state.final_data)
 
-                success_count = 0
-                for row in target_data:
-                    sheet_row = [
-                        current_time, selected_facility, selected_dept,
-                        row.get("location"), row.get("category"), row.get("scenario"),
-                        row.get("p"), row.get("s"), row.get("score"), row.get("grade"),
-                        row.get("solution"), row.get("law"), photo_link
-                    ]
-                    if append_row_to_sheet(sheet_row): success_count += 1
+                    success_count = 0
+                    for row in target_data:
+                        sheet_row = [
+                            current_time, selected_facility, selected_dept,
+                            row.get("location"), row.get("category"), row.get("scenario"),
+                            row.get("p"), row.get("s"), row.get("score"), row.get("grade"),
+                            row.get("solution"), row.get("law"), photo_link
+                        ]
+                        if append_row_to_sheet(sheet_row):
+                            success_count += 1
 
-                if success_count > 0:
-                    st.success(f"✅ {success_count}건의 데이터가 성공적으로 전송되었습니다!")
-                    st.balloons()
-
+                    if success_count > 0:
+                        st.success(f"✅ {success_count}건의 데이터가 성공적으로 전송되었습니다!")
+                        st.balloons()
     st.write("---")
     dashboard_data = load_dashboard_data()
     render_dashboard(dashboard_data, key_suffix="tab1")
