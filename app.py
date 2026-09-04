@@ -895,123 +895,120 @@ if selected_tab == "📝 점검 입력(전 직원)":
 elif selected_tab == "📊 개선조치 및 재평가(담당자)":
     st.markdown("### 🛠️ 현장 개선조치 결과 등록")
     
-    # 담당자 비밀번호 검증 추가
+    # 담당자 비밀번호 검증
     staff_pw = st.text_input("🔑 담당자 비밀번호 입력", type="password", key="t2_pw")
-    if staff_pw == "5678":  # 원하시는 담당자 비밀번호로 변경
+    if staff_pw == "1234":  # 원하시는 담당자 비밀번호 설정
         st.success("🔓 담당자 인증 성공")
         st.info("시설을 선택하고 '미완료' 건을 조회하여 조치 결과 사진 및 내용을 입력하세요.")
 
-    st.markdown("### 🛠️ 현장 개선조치 결과 등록")
-    st.info("시설을 선택하고 '미완료' 건을 조회하여 조치 결과 사진 및 내용을 입력하세요.")
-
-    dashboard_data = load_dashboard_data()
-    if dashboard_data is None or dashboard_data.empty:
-        st.warning("⚠️ 불러올 점검 데이터가 없습니다.")
-    else:
-        target_fac = st.selectbox("• 시설명 선택", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], key="t2_fac")
-        fac_df = dashboard_data[dashboard_data['시설명'] == target_fac].copy()
-
-        uncompleted_df = fac_df[
-            fac_df['개선후 위험등급'].isna() | 
-            (fac_df['개선후 위험등급'].astype(str).str.strip() == '') | 
-            (fac_df['개선후 위험등급'].astype(str).str.strip() == 'nan')
-        ]
-
-        if uncompleted_df.empty:
-            st.success(f"🎉 [{target_fac}] 시설은 개선 조치가 필요한 항목이 없습니다.")
+        dashboard_data = load_dashboard_data()
+        if dashboard_data is None or dashboard_data.empty:
+            st.warning("⚠️ 불러올 점검 데이터가 없습니다.")
         else:
-            options = {}
-            for idx, row in uncompleted_df.iterrows():
-                label = f"[{row.get('타임스탬프', '일시미상')}] {row.get('장소', '장소미상')} - {str(row.get('위험상황', ''))[:20]}..."
-                options[label] = idx
+            target_fac = st.selectbox("• 시설명 선택", ["중앙", "평창", "우주", "바이오", "해양", "미래", "생태", "본원"], key="t2_fac")
+            fac_df = dashboard_data[dashboard_data['시설명'] == target_fac].copy()
 
-            selected_label = st.selectbox("• 미완료 위험성평가 건 선택", list(options.keys()))
-            selected_row_idx = options[selected_label]
-            target_item = uncompleted_df.loc[selected_row_idx]
+            uncompleted_df = fac_df[
+                fac_df['개선후 위험등급'].isna() | 
+                (fac_df['개선후 위험등급'].astype(str).str.strip() == '') | 
+                (fac_df['개선후 위험등급'].astype(str).str.strip() == 'nan')
+            ]
 
-            st.divider()
-            st.markdown("#### 📌 선택된 평가건 상세 내용 (개선 전)")
-            c1, c2, c3 = st.columns(3)
-            c1.write(f"**📍 장소:** {target_item.get('장소', '-')}")
-            c2.write(f"**⚠️ 위험상황:** {target_item.get('위험상황', '-')}")
-            c3.write(f"**🚨 기존 위험등급:** {target_item.get('위험등급', '-')} ({target_item.get('점수', '-')}점)")
+            if uncompleted_df.empty:
+                st.success(f"🎉 [{target_fac}] 시설은 개선 조치가 필요한 항목이 없습니다.")
+            else:
+                options = {}
+                for idx, row in uncompleted_df.iterrows():
+                    label = f"[{row.get('타임스탬프', '일시미상')}] {row.get('장소', '장소미상')} - {str(row.get('위험상황', ''))[:20]}..."
+                    options[label] = idx
 
-            st.divider()
-            st.markdown("#### 📝 개선 후 조치사항 입력")
+                selected_label = st.selectbox("• 미완료 위험성평가 건 선택", list(options.keys()))
+                selected_row_idx = options[selected_label]
+                target_item = uncompleted_df.loc[selected_row_idx]
+
+                st.divider()
+                st.markdown("#### 📌 선택된 평가건 상세 내용 (개선 전)")
+                c1, c2, c3 = st.columns(3)
+                c1.write(f"**📍 장소:** {target_item.get('장소', '-')}")
+                c2.write(f"**⚠️ 위험상황:** {target_item.get('위험상황', '-')}")
+                c3.write(f"**🚨 기존 위험등급:** {target_item.get('위험등급', '-')} ({target_item.get('점수', '-')}점)")
+
+                st.divider()
+                st.markdown("#### 📝 개선 후 조치사항 입력")
+                
+                act_col1, act_col2 = st.columns(2)
+                with act_col1:
+                    action_text = st.text_area("• 개선조치 상세 내용 입력", placeholder="예: 난간 보강 조치 완료 및 이중 안전고리 설치", height=120)
+                with act_col2:
+                    action_img = st.file_uploader("📸 개선 후 사진 업로드", type=['png', 'jpg', 'jpeg'], key="t2_act_img")
+                    if action_img: st.image(action_img, caption="개선 후 사진", width=250)
+
+                if st.button("🛠️ 조치결과 AI 분석 (빈도/강도 재산출)", use_container_width=True, key="btn_eval_after"):
+                    if not action_text.strip():
+                        st.warning("⚠️ 개선 조치 상세 내용을 입력해야 AI 분석이 가능합니다.")
+                    else:
+                        with st.spinner("✨ KYWA AI가 개선 후 위험도를 재평가 중입니다..."):
+                            prompt_eval = f"""
+                            당신은 안전관리 전문가입니다.
+                            [기존 위험상황: {target_item.get('위험상황')}]
+                            [기존 위험등급: {target_item.get('위험등급')}, 점수: {target_item.get('점수')}]
+                            [개선 조치 내용: {action_text}]
+
+                            위 조치로 인해 감소된 개선 후의 위험도를 평가하세요.
+                            빈도(p_after: 1~5), 강도(s_after: 1~4)를 정하고, 점수(score_after = p * s), 위험등급(grade_after)을 산출하세요.
+                            JSON 형식: {{"p_after": 1, "s_after": 1, "score_after": 1, "grade_after": "매우 낮음"}}
+                            """
+                            try:
+                                eval_res = call_gemini_api_safe(
+                                    client, model_name, [prompt_eval],
+                                    config={"response_mime_type": "application/json"}
+                                )
+                                st.session_state.eval_after_data = json.loads(eval_res.text.strip())
+                                st.success("✅ 개선 후 위험도 재산출 완료!")
+                            except Exception as e:
+                                st.error(f"❌ 재분석 실패: {e}")
+
+        if st.session_state.eval_after_data:
+            res_a = st.session_state.eval_after_data
+            st.markdown("##### 📊 KYWA AI 개선 후 위험도 재산출 결과(+ - 클릭으로 변경 가능)")
             
-            act_col1, act_col2 = st.columns(2)
-            with act_col1:
-                action_text = st.text_area("• 개선조치 상세 내용 입력", placeholder="예: 난간 보강 조치 완료 및 이중 안전고리 설치", height=120)
-            with act_col2:
-                action_img = st.file_uploader("📸 개선 후 사진 업로드", type=['png', 'jpg', 'jpeg'], key="t2_act_img")
-                if action_img: st.image(action_img, caption="개선 후 사진", width=250)
+            if "p_after_val" not in st.session_state:
+                st.session_state.p_after_val = int(res_a.get("p_after", 1))
+            if "s_after_val" not in st.session_state:
+                st.session_state.s_after_val = int(res_a.get("s_after", 1))
 
-            if st.button("🛠️ 조치결과 AI 분석 (빈도/강도 재산출)", use_container_width=True, key="btn_eval_after"):
-                if not action_text.strip():
-                    st.warning("⚠️ 개선 조치 상세 내용을 입력해야 AI 분석이 가능합니다.")
-                else:
-                    with st.spinner("✨ KYWA AI가 개선 후 위험도를 재평가 중입니다..."):
-                        prompt_eval = f"""
-                        당신은 안전관리 전문가입니다.
-                        [기존 위험상황: {target_item.get('위험상황')}]
-                        [기존 위험등급: {target_item.get('위험등급')}, 점수: {target_item.get('점수')}]
-                        [개선 조치 내용: {action_text}]
+            r_col1, r_col2, r_col3, r_col4 = st.columns(4)
+            p_after = r_col1.number_input("개선후 빈도", min_value=1, max_value=5, value=st.session_state.p_after_val, key="num_p_after")
+            s_after = r_col2.number_input("개선후 강도", min_value=1, max_value=4, value=st.session_state.s_after_val, key="num_s_after")
+            
+            score_after = p_after * s_after
+            grade_after = get_risk_grade(score_after)
+            
+            r_col3.metric("개선후 점수", f"{score_after} 점")
+            r_col4.metric("개선후 위험등급", grade_after)
 
-                        위 조치로 인해 감소된 개선 후의 위험도를 평가하세요.
-                        빈도(p_after: 1~5), 강도(s_after: 1~4)를 정하고, 점수(score_after = p * s), 위험등급(grade_after)을 산출하세요.
-                        JSON 형식: {{"p_after": 1, "s_after": 1, "score_after": 1, "grade_after": "매우 낮음"}}
-                        """
-                        try:
-                            eval_res = call_gemini_api_safe(
-                                client, model_name, [prompt_eval],
-                                config={"response_mime_type": "application/json"}
-                            )
-                            st.session_state.eval_after_data = json.loads(eval_res.text.strip())
-                            st.success("✅ 개선 후 위험도 재산출 완료!")
-                        except Exception as e:
-                            st.error(f"❌ 재분석 실패: {e}")
+            st.write("")
+            if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True, key="btn_save_action"):
+                with st.spinner("🚀 데이터 전송 및 조치결과를 반영 중입니다..."):
+                    act_photo_link = "사진 없음"
+                    if 'action_img' in locals() and action_img:
+                        act_photo_bytes = apply_face_blur_ai(action_img)
+                        now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                        act_photo_link = upload_to_drive(f"AFTER_{target_fac}_{now_str}.jpg", act_photo_bytes)
 
-    if st.session_state.eval_after_data:
-        res_a = st.session_state.eval_after_data
-        st.markdown("##### 📊 KYWA AI 개선 후 위험도 재산출 결과(+ - 클릭으로 변경 가능)")
-        
-        if "p_after_val" not in st.session_state:
-            st.session_state.p_after_val = int(res_a.get("p_after", 1))
-        if "s_after_val" not in st.session_state:
-            st.session_state.s_after_val = int(res_a.get("s_after", 1))
+                    action_row_data = [
+                        p_after, s_after, score_after, grade_after, act_photo_link
+                    ]
 
-        r_col1, r_col2, r_col3, r_col4 = st.columns(4)
-        p_after = r_col1.number_input("개선후 빈도", min_value=1, max_value=5, value=st.session_state.p_after_val, key="num_p_after")
-        s_after = r_col2.number_input("개선후 강도", min_value=1, max_value=4, value=st.session_state.s_after_val, key="num_s_after")
-        
-        score_after = p_after * s_after
-        grade_after = get_risk_grade(score_after)
-        
-        r_col3.metric("개선후 점수", f"{score_after} 점")
-        r_col4.metric("개선후 위험등급", grade_after)
+                    if update_action_result_to_sheet(selected_row_idx, action_row_data):
+                        st.success(f"✅ 조치결과(점수: {score_after}점 / 등급: {grade_after})가 KYWA AI 안전센터 DB에 반영되었습니다!")
+                        st.session_state.eval_after_data = None
+                        if "p_after_val" in st.session_state: del st.session_state.p_after_val
+                        if "s_after_val" in st.session_state: del st.session_state.s_after_val
+                        st.balloons()
 
-        st.write("")
-        if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True, key="btn_save_action"):
-            with st.spinner("🚀 데이터 전송 및 조치결과를 반영 중입니다..."):
-                act_photo_link = "사진 없음"
-                if 'action_img' in locals() and action_img:
-                    act_photo_bytes = apply_face_blur_ai(action_img)
-                    now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                    act_photo_link = upload_to_drive(f"AFTER_{target_fac}_{now_str}.jpg", act_photo_bytes)
-
-                action_row_data = [
-                    p_after, s_after, score_after, grade_after, act_photo_link
-                ]
-
-                if update_action_result_to_sheet(selected_row_idx, action_row_data):
-                    st.success(f"✅ 조치결과(점수: {score_after}점 / 등급: {grade_after})가 KYWA AI 안전센터 DB에 반영되었습니다!")
-                    st.session_state.eval_after_data = None
-                    if "p_after_val" in st.session_state: del st.session_state.p_after_val
-                    if "s_after_val" in st.session_state: del st.session_state.s_after_val
-                    st.balloons()
-
-    st.write("---")
-    render_dashboard(dashboard_data, key_suffix="tab2")
+        st.write("---")
+        render_dashboard(dashboard_data, key_suffix="tab2")
 
     elif staff_pw:
         st.error("❌ 비밀번호가 올바르지 않습니다.")
