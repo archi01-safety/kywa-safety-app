@@ -738,14 +738,14 @@ with st.sidebar:
     st.markdown("### 📌 메뉴 선택")
     selected_tab = st.radio(
         label="이동할 화면을 선택하세요",
-        options=["📝 점검 입력", "📊 결과 조회", "📥 내보내기"],
+        options=["📝 점검 입력(전 직원)", "📊 개선조치 및 재평가(담당자)", "📥 결과보고서(관리자)"],
         label_visibility="collapsed"
     )
 
 # ==========================================
 # 1️⃣ [메뉴 1] 점검 입력
 # ==========================================
-if selected_tab == "📝 점검 입력":
+if selected_tab == "📝 점검 입력(전 직원)":
     col1, col2 = st.columns([1, 1])
     with col1:
         st.markdown("### **🏢 점검 대상 정보**")
@@ -871,7 +871,7 @@ if selected_tab == "📝 점검 입력":
 # ==========================================
 # 2️⃣ [메뉴 2] 결과 조회 및 개선조치
 # ==========================================
-elif selected_tab == "📊 결과 조회":
+elif selected_tab == "📊 개선조치 및 재평가(담당자)":
     st.markdown("### 🛠️ 현장 개선조치 결과 등록")
     st.info("시설을 선택하고 '미완료' 건을 조회하여 조치 결과 사진 및 내용을 입력하세요.")
 
@@ -921,7 +921,7 @@ elif selected_tab == "📊 결과 조회":
                 if not action_text.strip():
                     st.warning("⚠️ 개선 조치 상세 내용을 입력해야 AI 분석이 가능합니다.")
                 else:
-                    with st.spinner("✨ Gemini AI가 개선 후 위험도를 재평가 중입니다..."):
+                    with st.spinner("✨ KYWA AI가 개선 후 위험도를 재평가 중입니다..."):
                         prompt_eval = f"""
                         당신은 안전관리 전문가입니다.
                         [기존 위험상황: {target_item.get('위험상황')}]
@@ -938,13 +938,13 @@ elif selected_tab == "📊 결과 조회":
                                 config={"response_mime_type": "application/json"}
                             )
                             st.session_state.eval_after_data = json.loads(eval_res.text.strip())
-                            st.success("✅ AI 재분석 완료!")
+                            st.success("✅ 개선 후 위험도 재산출 완료!")
                         except Exception as e:
                             st.error(f"❌ 재분석 실패: {e}")
 
     if st.session_state.eval_after_data:
         res_a = st.session_state.eval_after_data
-        st.markdown("##### 📊 AI 개선 후 위험도 재산출 결과")
+        st.markdown("##### 📊 KYWA AI 개선 후 위험도 재산출 결과(+ - 클릭으로 변경 가능)")
         
         if "p_after_val" not in st.session_state:
             st.session_state.p_after_val = int(res_a.get("p_after", 1))
@@ -962,8 +962,8 @@ elif selected_tab == "📊 결과 조회":
         r_col4.metric("개선후 위험등급", grade_after)
 
         st.write("")
-        if st.button("📤 개선조치 최종 제출 (구글 시트 저장)", use_container_width=True, key="btn_save_action"):
-            with st.spinner("구글 시트에 조치결과를 반영 중입니다..."):
+        if st.button("✅ KYWA AI 안전센터로 데이터 최종 전송", use_container_width=True, key="btn_save_action"):
+            with st.spinner("🚀 데이터 전송 및 조치결과를 반영 중입니다..."):
                 act_photo_link = "사진 없음"
                 if 'action_img' in locals() and action_img:
                     act_photo_bytes = apply_face_blur_ai(action_img)
@@ -975,7 +975,7 @@ elif selected_tab == "📊 결과 조회":
                 ]
 
                 if update_action_result_to_sheet(selected_row_idx, action_row_data):
-                    st.success(f"✅ 조치결과(점수: {score_after}점 / 등급: {grade_after})가 성공적으로 구글 시트(N~R열)에 업데이트되었습니다!")
+                    st.success(f"✅ 조치결과(점수: {score_after}점 / 등급: {grade_after})가 KYWA AI 안전센터 DB에 반영되었습니다!")
                     st.session_state.eval_after_data = None
                     if "p_after_val" in st.session_state: del st.session_state.p_after_val
                     if "s_after_val" in st.session_state: del st.session_state.s_after_val
@@ -987,7 +987,7 @@ elif selected_tab == "📊 결과 조회":
 # ==========================================
 # 3️⃣ [메뉴 3] 내보내기 (관리자용)
 # ==========================================
-elif selected_tab == "📥 내보내기":
+elif selected_tab == "📥 결과보고서(담당자)":
     st.markdown("### 📊 관리자 전용 종합 대시보드 및 보고서 출력")
     admin_pw = st.text_input("🔑 관리자 비밀번호 입력", type="password")
     
@@ -1076,7 +1076,7 @@ elif selected_tab == "📥 내보내기":
                     )
 
     elif admin_pw:
-        st.error("❌ 비밀번호가 올바르지 않습니다.")
+        st.error("❌ 비밀번호가 올바르지 않습니다. 필요시 관리자에게 문의 바랍니다.")
 
 # --- [푸터(Footer) 섹션] ---
 st.write("") 
