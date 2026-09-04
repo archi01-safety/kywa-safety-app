@@ -860,7 +860,7 @@ if selected_tab == "📝 점검 입력(전 직원)":
             elif not st.session_state.get("final_data"):
                 st.error("⚠️ 전송할 데이터가 없습니다.")
             else:
-                with st.spinner("🚀 데이터 전송 중..."):
+                with st.spinner("🚀 KYWA AI 안전센터로 데이터 전송 중..."):
                     now_kst = datetime.datetime.now() + datetime.timedelta(hours=9)
                     current_time = now_kst.strftime("%Y-%m-%d %H:%M:%S")
                     timestamp_str = now_kst.strftime("%Y%m%d_%H%M%S")
