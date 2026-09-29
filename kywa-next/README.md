@@ -1,6 +1,8 @@
 # KYWA Safety · Next.js 개발 앱
 
-기존 Streamlit을 유지하면서 `Next.js 정적 화면 + FastAPI`를 하나의 Render 무료 Docker 서비스로 실행합니다. 목표 주소는 **https://kywa-safety.onrender.com**이며, `v2` 접미사는 사용하지 않습니다. 실제 주소는 Render에서 서비스 생성 후 확인해야 합니다.
+기존 Streamlit을 유지하면서 `Next.js 정적 화면 + FastAPI`를 하나의 Render 무료 Docker 서비스로 실행합니다. 2026-09-29 **https://kywa-safety.onrender.com**에 체험 환경을 배포했습니다. `v2` 접미사는 사용하지 않습니다.
+
+개발 PR: https://github.com/archi01-safety/kywa-safety-app/pull/1 · 최초 Linux 검사: https://github.com/archi01-safety/kywa-safety-app/actions/runs/36525400277
 
 ## 구현 범위
 
@@ -147,6 +149,6 @@ npx playwright install chromium
 npm run test:e2e
 ```
 
-`deploy/ci.yml`을 저장소 루트의 `.github/workflows/kywa-next-ci.yml`로 추가하면 Python 테스트, Next.js 빌드, Docker 이미지 빌드를 실행합니다. `deploy/health-check.yml`도 필요한 경우 루트 `.github/workflows`에 추가합니다. 기존 워크플로는 덮어쓰지 않습니다.
+`deploy/ci.yml`을 저장소 루트의 `.github/workflows/kywa-next-ci.yml`에도 등록했습니다. Python 테스트, Next.js 빌드, PC·모바일 Playwright E2E, Docker 이미지 빌드를 실행합니다. `deploy/health-check.yml`도 루트 `.github/workflows/kywa-render-health.yml`로 등록했습니다. 기존 워크플로는 덮어쓰지 않았습니다.
 
-실제 Google OAuth, Sheets/Drive 권한, Gemini 모델, KOSHA 키 및 Render 배포는 각 계정 연결 후 현장 샘플로 확인해야 합니다. `docs-validation.md`에 이번 로컬 검증 결과와 남은 확인 항목을 기록합니다.
+실제 Google OAuth, Sheets/Drive 권한, Gemini 모델, KOSHA 키는 각 계정 연결 후 현장 샘플로 확인해야 합니다. Render 체험 배포와 Linux 자동 검사는 완료했습니다. `docs-validation.md`에 검증 결과와 남은 확인 항목을 기록합니다.

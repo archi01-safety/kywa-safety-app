@@ -1,4 +1,4 @@
-# 로컬 구현·검증 기록
+# 구현·배포 검증 기록
 
 검증일: 2026-09-29. 대상은 `kywa-next`의 합성 데이터 환경입니다.
 
@@ -15,6 +15,10 @@
 | 시트 이관 | 원래 등급·A:M 보존, 이관 반복, 기존 S:W 충돌 중단 확인 |
 | 브라우저 직접 조작 | 텍스트 분석 → 수정·선택 제출 → 체험 관리자 로그인 → 재평가 값 조정 → 완료·이력 확인 |
 | 모바일 직접 확인 | 390px 입력 화면에서 가로 넘침 없음, 모바일 계정 버튼 표시 |
+| Linux GitHub Actions | Python 41개, Next.js 빌드, PC·모바일 E2E 2개, Docker 빌드 통과 |
+| Render 배포 | Free / Singapore / Docker, https://kywa-safety.onrender.com, `/healthz` 200 및 Live 확인 |
+
+원격 코드: [초안 PR #1](https://github.com/archi01-safety/kywa-safety-app/pull/1), 개발 브랜치 `codex/kywa-next`. 기존 main은 병합하지 않았습니다. 최초 배포 커밋은 `3b560c5`, CI 검증 커밋은 `393d87c`이며 두 커밋의 앱 코드는 동일하고 루트 GitHub 워크플로만 추가됐습니다. [Linux 검사 실행 기록](https://github.com/archi01-safety/kywa-safety-app/actions/runs/36525400277)에서 전체 성공을 확인했습니다.
 
 ## 보고서 성능 참고
 
@@ -29,13 +33,11 @@
 
 ## 실제 연결 후 확인할 항목
 
-- GitHub 로그인과 저장소 쓰기, Render 로그인 및 서비스 생성. 원격 업로드·배포는 아직 수행하지 않았습니다.
 - Google OAuth 승인 계정, 개발 시트 쓰기·이력 기록, 비공개 Drive 업로드/읽기.
 - 실제 Gemini 응답 및 선택 모델 사용 가능 여부, KOSHA API의 실제 검색 결과·다운로드 URL.
-- Linux Docker 이미지 빌드. 현재 PC에는 Docker가 없어 CI/Render에서 확인해야 합니다.
 - Render 무료 서비스의 7일 관찰 및 운영 전환. 현재 결과는 7일 관찰을 포함하지 않습니다.
 - HWPX: 정상 샘플·원문 참고자료 제공 후 별도 구현.
 
-Playwright 자동 E2E 2개(PC·모바일)는 이 Windows 호스트에서 Chromium 기동 시간 초과로 실행을 완료하지 못했습니다. 기본 headless-shell과 일반 Chromium 채널 모두 기동 단계에서 멈췄으며, 앱 테스트 본문은 실행되지 않았습니다. 테스트 파일과 CI 설정은 제공하되 **자동 E2E 통과로 표시하지 않습니다**. Codex 내장 브라우저를 통한 직접 조작은 위 표와 같이 확인했습니다. Linux CI에서 자동 E2E를 다시 실행해야 합니다.
+Playwright 자동 E2E는 이 Windows 호스트에서 Chromium 기동 시간 초과로 실행을 완료하지 못했습니다. 이후 **Linux CI에서 PC·모바일 2개 모두 통과**했습니다. 검사 범위는 분석·수정·선택 제출, 개선조치·재평가·완료·재개, 이력, Excel/PDF 다운로드, 새로고침, 모바일 가로 넘침, 로그아웃·담당자 보고서 제한입니다.
 
 의존성 경고: Starlette/Authlib에서 httpx 관련 예정된 변경 경고가 발생합니다. 현재 기능 검사에는 영향을 주지 않았으며, 잠금 파일 갱신 시 검토해야 합니다.
