@@ -57,6 +57,42 @@ def test_health_does_not_touch_repository(context, monkeypatch):
     assert response.headers['cache-control'] == 'no-store'
 
 
+def test_public_overview_is_aggregate_only_and_refreshes_after_submit(context):
+    c, app, repo, _ = context
+    data = c.get('/api/overview').json()
+    assert data['total'] == 4 and data['completed'] == 1
+    assert sum(item['count'] for item in data['categories']) == 4
+    assert sum(item['count'] for item in data['facilities']) == 4
+    serialized = json.dumps(data, ensure_ascii=False)
+    for forbidden in ('photo_id', 'photo_url', 'scenario', 'department', 'actor', 'demo-admin', '사무실 복도'):
+        assert forbidden not in serialized
+    assert c.get('/api/assessments').status_code == 401
+    assert c.post('/api/assessments', json=initial(c)).status_code == 200
+    assert c.get('/api/overview').json()['total'] == 5
+    assert c.get('/api/overview?year=1999').status_code == 422
+    assert c.get('/api/overview?year=0').status_code == 422
+
+
+def test_overview_year_filter_and_cache(context, monkeypatch):
+    c, app, repo, _ = context
+    record = repo.records()[0]
+    record['created_at'] = '2025-12-31T23:59:59+09:00'
+    repo.apply([record], [])
+    assert c.get('/api/overview?year=2025').json()['total'] == 1
+    monkeypatch.setattr(repo, 'records', lambda: pytest.fail('cached overview must not reread Sheets'))
+    assert c.get('/api/overview?year=2024').json()['total'] == 0
+    assert 2025 in c.get('/api/overview?year=2024').json()['years']
+
+
+def test_analysis_recommends_guide_keywords_from_all_items(context):
+    c, _, _, _ = context
+    data = c.post('/api/analyses', data={'facility':'중앙', 'department':'협력부(국립청소년시설)',
+                                      'description':'난간 파손\n감전 위험'}).json()
+    assert data['guide_keywords'] == ['난간', '감전']
+    from backend.overview import guide_keywords
+    assert guide_keywords([{'scenario':'특이사항 없음'}]) == []
+
+
 def test_anonymous_csrf_and_staff_scope(context):
     c,app,repo,_=context
     assert c.get('/api/assessments').status_code == 401
