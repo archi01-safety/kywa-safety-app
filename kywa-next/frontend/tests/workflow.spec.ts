@@ -9,11 +9,11 @@ test('evaluation, reassessment, completion, history and reports', async ({ page 
   const location = `${info.project.name} 자동 검증 2층 난간`;
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('2층 난간 손상\n바닥 미끄러움');
   await page.getByRole('button', { name: 'AI 위험성 분석하기', exact: true }).click();
-  await expect(page.getByRole('article')).toHaveCount(2);
-  await page.getByRole('article').first().getByLabel('장소', { exact: true }).fill(location);
+  await expect(page.locator('.evaluation-row')).toHaveCount(2);
+  await page.locator('.evaluation-row').first().getByLabel('장소', { exact: true }).fill(location);
   await page.getByRole('checkbox', { name: '02 · 시설 안전' }).uncheck();
   await page.getByRole('button', { name: '선택한 평가 제출', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('1건을 제출했습니다');
+  await expect(page.locator('.message[role="status"]')).toContainText('1건을 제출했습니다');
   await page.getByRole('button', { name: '개선조치 · 재평가', exact: true }).click();
   await page.getByRole('button', { name: '관리자로 체험하기', exact: true }).click();
   await page.getByRole('button').filter({ has: page.getByRole('heading', { name: location, exact: true }) }).click();
