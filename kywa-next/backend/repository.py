@@ -148,6 +148,13 @@ class SheetsRepository:
                                     e.get('text', ''), json.dumps(e, ensure_ascii=False)]) for e in events]
                 requests.append({'appendCells': {'sheetId': ids[self.settings.history_sheet_name],
                                                 'rows': event_rows, 'fields': 'userEnteredValue'}})
+            # Show risk numbers as integers without filling empty post-action cells.
+            for start, end in ((6, 9), (13, 16)):
+                requests.append({'repeatCell': {
+                    'range': {'sheetId': ids[self.settings.sheet_name], 'startRowIndex': 1,
+                              'startColumnIndex': start, 'endColumnIndex': end},
+                    'cell': {'userEnteredFormat': {'numberFormat': {'type': 'NUMBER', 'pattern': '0'}}},
+                    'fields': 'userEnteredFormat.numberFormat'}})
             # Do not blindly retry writes. A repeated request first checks its saved operation id.
             svc.batchUpdate(spreadsheetId=self.settings.spreadsheet_id, body={'requests': requests}).execute()
 

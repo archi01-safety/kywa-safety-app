@@ -4,6 +4,7 @@ import hmac
 import logging
 import secrets
 import threading
+import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import date
@@ -21,6 +22,8 @@ from .domain import (FACILITIES, DEPARTMENTS, CATEGORIES, POLICY, now, risk, dig
 from .repository import DemoRepository, SheetsRepository, DriveStore, RepositoryError
 from .services import Drafts, RateLimiter, AIService, ServiceError, prepare_image, kosha_search
 from . import reports
+from .pin_auth import PinAuth, PinLocked, SESSION_SECONDS
+from .overview import summarize, guide_keywords
 
 log = logging.getLogger('kywa')
 
@@ -50,12 +53,15 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     drive = drive or DriveStore(cfg)
     ai = ai or AIService(cfg)
     drafts, limits = Drafts(), RateLimiter()
+    overview_cache, overview_lock = {}, threading.Lock()
+    pin_auth = PinAuth(cfg.admin_pin_hash) if cfg.auth_mode == 'pin' else None
     expensive, memory_lock = threading.BoundedSemaphore(2), threading.BoundedSemaphore(1)
     app = FastAPI(title='KYWA Safety API', docs_url='/api/docs' if cfg.demo else None, redoc_url=None,
                   openapi_url='/api/openapi.json' if cfg.demo else None)
     app.state.repo, app.state.drafts, app.state.settings = repo, drafts, cfg
+    app.state.pin_auth = pin_auth
     app.add_middleware(SessionMiddleware, secret_key=cfg.session_secret, session_cookie='kywa_session',
-                       max_age=28800, same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
+                       max_age=SESSION_SECONDS if pin_auth else 28800, same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
     app.add_middleware(BodySizeLimit)
     oauth = OAuth()
     oauth.register(name='google', client_id=cfg.google_client_id, client_secret=cfg.google_client_secret,
@@ -64,6 +70,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     @app.middleware('http')
     async def security_headers(request, call_next):
+        if cfg.local_workspace and (not request.client or request.client.host not in {'127.0.0.1', '::1'}):
+            return JSONResponse({'detail': '로컬 시험 공간은 이 PC에서만 접근할 수 있습니다.'}, status_code=403)
         # Reject oversized multipart bodies before python-multipart can spool to disk.
         length = request.headers.get('content-length')
         if length and (not length.isdigit() or int(length) > 11 * 1024 * 1024):
@@ -106,6 +114,11 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             raise HTTPException(403, '세션을 새로고침한 뒤 다시 시도하세요.')
 
     def user(request, admin=False):
+        if pin_auth:
+            if not pin_auth.valid(request.session.get('pin_session', '')):
+                raise HTTPException(401, '관리자 비밀번호를 입력하세요. 로그인은 1시간 동안 유지됩니다.')
+            # Shared PIN does not establish ownership of a Google email address.
+            return {'email': 'pin-admin', 'name': '전체 시설 관리자', 'role': 'admin', 'facilities': FACILITIES}
         email = request.session.get('email', '')
         if cfg.demo and email.startswith('demo-'):
             role = 'admin' if email == 'demo-admin@kywa.local' else 'staff'
@@ -174,18 +187,40 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             account = user(request)
         except HTTPException:
             account = None
-        return {'mode': cfg.app_env, 'csrf': request.session['csrf'], 'user': account,
+        return {'mode': cfg.app_env, 'local_workspace': cfg.local_workspace, 'auth_mode': cfg.auth_mode,
+                'csrf': request.session['csrf'], 'user': account,
                 'facilities': FACILITIES, 'departments': DEPARTMENTS, 'categories': CATEGORIES,
                 'policy': POLICY, 'report_max_rows': cfg.report_max_rows}
 
+    @app.get('/api/overview')
+    def overview(request: Request, year: int | None = None):
+        year = int(now()[:4]) if year is None else year
+        if not 2000 <= year <= 2100:
+            raise HTTPException(422, '조회 연도를 확인하세요.')
+        if not limits.allow('overview:' + session(request), 30, 60):
+            raise HTTPException(429, '잠시 후 다시 조회하세요.')
+        with overview_lock:
+            if time.monotonic() >= overview_cache.get('expires', 0):
+                records = repo.records()
+                years = {year} | {int(r['created_at'][:4]) for r in records
+                                 if str(r.get('created_at', ''))[:4].isdigit()}
+                overview_cache['data'] = {y: summarize(records, y) for y in years}
+                overview_cache['expires'] = time.monotonic() + 30
+            return overview_cache['data'].get(year, dict(summarize([], year), years=sorted(
+                set(overview_cache['data']) | {year}, reverse=True)))
+
     @app.get('/api/auth/google')
     async def login(request: Request):
+        if pin_auth:
+            raise HTTPException(404)
         if cfg.demo:
             raise HTTPException(400, '체험 모드에서는 체험 계정을 사용하세요.')
         return await oauth.google.authorize_redirect(request, cfg.app_base_url.rstrip('/') + '/api/auth/google/callback')
 
     @app.get('/api/auth/google/callback')
     async def callback(request: Request):
+        if pin_auth:
+            raise HTTPException(404)
         try:
             token = await oauth.google.authorize_access_token(request)
             info = token.get('userinfo', {})
@@ -202,15 +237,35 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     @app.post('/api/auth/demo')
     def demo_login(request: Request, role: str = Form('admin')):
         mutation(request)
-        if not cfg.demo or role not in {'admin', 'staff'}:
+        if pin_auth or not cfg.demo or role not in {'admin', 'staff'}:
             raise HTTPException(404)
         request.session['email'] = f'demo-{role}@kywa.local'
         request.session['name'] = '체험 관리자' if role == 'admin' else '중앙 담당자'
         return {'ok': True}
 
+    @app.post('/api/auth/pin')
+    def pin_login(request: Request, pin: str = Form(..., max_length=64)):
+        mutation(request)
+        if not pin_auth:
+            raise HTTPException(404)
+        try:
+            token = pin_auth.login(pin)
+        except PinLocked as exc:
+            raise HTTPException(429, '비밀번호 입력 오류가 반복되어 잠시 잠겼습니다. 15분 후 다시 시도하세요.',
+                                headers={'Retry-After': str(exc.seconds)}) from None
+        if not token:
+            raise HTTPException(401, '비밀번호가 올바르지 않습니다.')
+        pin_auth.revoke(request.session.get('pin_session', ''))
+        request.session.clear()
+        session(request)
+        request.session['pin_session'] = token
+        return {'ok': True}
+
     @app.post('/api/auth/logout')
     def logout(request: Request):
         mutation(request)
+        if pin_auth:
+            pin_auth.revoke(request.session.get('pin_session', ''))
         request.session.clear()
         return {'ok': True}
 
@@ -261,7 +316,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             value = {'type': 'initial', 'facility': facility, 'department': department, 'description': description,
                      'items': results, 'photo': photo}
             key = drafts.put(session(request), value)
-            return {'draft_id': key, 'items': results, 'photo_url': f'/api/drafts/{key}/photo' if photo else ''}
+            return {'draft_id': key, 'items': results, 'guide_keywords': guide_keywords(results),
+                    'photo_url': f'/api/drafts/{key}/photo' if photo else ''}
         finally:
             expensive.release()
 
@@ -291,6 +347,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                     photo_id=photo_id, after=None, policy=POLICY, status='접수', revision=1,
                     operation_id=data.request_id, submit_hash=body_hash, submit_owner=digest(session(request))))
             repo.apply(records, [])
+            overview_cache['expires'] = 0
             return {'ids': [r['id'] for r in records], 'replayed': False}
 
     @app.get('/api/assessments')
@@ -358,6 +415,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             event = dict(id=data.request_id, record_id=record_id, at=now(), actor=account['email'],
                          kind='완료' if data.complete else '조치 저장', text=draft['text'], after=after, body_hash=body_hash)
             repo.apply([record], [event])
+            overview_cache['expires'] = 0
             return {'item': public_record(record), 'replayed': False}
 
     @app.post('/api/assessments/{record_id}/state')
@@ -376,6 +434,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             event = dict(id=data.request_id, record_id=record_id, at=now(), actor=account['email'],
                          kind='상태 변경', text=data.status, body_hash=digest(data.model_dump()))
             repo.apply([record], [event])
+            overview_cache['expires'] = 0
             return {'item': public_record(record)}
 
     @app.get('/api/guides')
