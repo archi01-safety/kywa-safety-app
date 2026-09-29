@@ -10,6 +10,8 @@
 - 사진 또는 설명 분석 → 항목 선택·내용 수정 → 제출 → 조치 기록 → 재평가 → 담당자 확인 완료 → 다시 열기 및 이력 조회.
 - Gemini 구조화 응답 검증, 서버에서 점수·등급 산정, KOSHA 키워드 검색과 원문 링크.
 - Google 로그인 및 승인 계정 목록. 담당자는 지정 시설만, 관리자는 전체 조회·보고서 출력.
+- 선택 가능한 4자리 관리자 비밀번호 로그인: 관리 탭·사진·보고서를 서버에서 보호하며, 5회 오류 시 15분 잠금과 1시간 세션 만료를 적용합니다. 로컬 사본은 이 방식을 사용합니다. 설정은 `SETUP-GUIDE.ko.md`를 참고하세요.
+- 모든 탭 하단에 데이터 이용 안내·운영 방침·AI 결과 검토 안내·안전경영부 연락처를 표시합니다.
 - 개발용 Sheets/Drive 분리, 비공개 사진, CSRF 검증, 재시도 시 중복 저장 방지, 수정 버전 충돌 검사.
 - Excel/PDF: 조회 조건, 최초 평가 당시 등급 집계, 최신 조치내용 및 개선 전후 사진. 전체 변경 이력은 앱에서 조회합니다.
 - HWPX는 사용자가 제공할 정상 양식과 참고자료를 받은 후 연동합니다. 현재 버튼은 준비 중입니다.
@@ -53,6 +55,10 @@ Blueprint 대신 New Web Service로 만들 때도 Root Directory=`kywa-next`, Ru
 
 ## 실제 API 연결 (개발 데이터부터)
 
+서비스 계정 JSON 준비, Render Gemini 키 등록, 확정된 관리자 계정과 로컬 운영 사본 사용법은 [SETUP-GUIDE.ko.md](SETUP-GUIDE.ko.md)에 정리했습니다. 현재 개발은 사용자 요청에 따라 `local-data/workbook-test`의 XLSX 사본 129건과 로컬 사진을 사용합니다. `.venv/Scripts/python.exe scripts/start_workbook_test.py`로 시작하고 `http://localhost:8001`에서 시험합니다. 이때 실제 Google API 인증정보는 필요하지 않으며 AI는 가상 응답입니다. 아래 별도 Google 시험 저장소 설정은 실제 API 연결을 검증할 때 사용합니다.
+
+2026-09-29 사용자가 제공한 운영 시트·서비스 계정·KOSHA 정보와 다음 배포 반영 사항은 [DEPLOYMENT-NOTES.md](DEPLOYMENT-NOTES.md)에 기록했습니다.
+
 Render Environment에 `.env.example`의 값을 등록합니다. 비밀값을 GitHub나 채팅에 붙여 넣지 마세요.
 
 | 설정 | 내용 |
@@ -61,12 +67,13 @@ Render Environment에 `.env.example`의 값을 등록합니다. 비밀값을 Git
 | `APP_BASE_URL` | `https://kywa-safety.onrender.com` |
 | `SESSION_SECRET` | 32자 이상 별도 난수. 변경하면 기존 로그인 세션이 무효화됩니다. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | 웹 애플리케이션용 Google OAuth 클라이언트 |
+| `AUTH_MODE`, `ADMIN_PIN_HASH` | 비밀번호 방식은 `pin`과 `scripts/set_admin_pin.py`로 생성한 해시. 이 경우 Google OAuth 클라이언트는 불필요 |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | 서비스 계정 JSON 전체를 서버 환경변수로 등록 |
 | `SPREADSHEET_ID` | 별도 개발용 스프레드시트 ID |
 | `SHEET_NAME` | 기본 `설문지 응답 시트1` |
 | `HISTORY_SHEET_NAME` | 기본 `조치이력` |
 | `DRIVE_FOLDER_ID` | 별도 개발용 사진 폴더 ID |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | 사용 가능한 모델과 키. 기본 모델은 `gemini-2.5-flash`, 계정에서 사용 가능 여부 확인 |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | 사용 가능한 모델과 키. 첨부 운영 코드와 같은 `gemini-3.6-flash`를 기본으로 설정, 계정에서 사용 가능 여부 확인 |
 | `KOSHA_API_KEY` | 안전보건공단 기술지침 API 키 |
 | `ACCESS_ACCOUNTS_JSON` | 아래 형태의 승인 계정 및 시설 범위 |
 
@@ -151,4 +158,4 @@ npm run test:e2e
 
 `deploy/ci.yml`을 저장소 루트의 `.github/workflows/kywa-next-ci.yml`에도 등록했습니다. Python 테스트, Next.js 빌드, PC·모바일 Playwright E2E, Docker 이미지 빌드를 실행합니다. `deploy/health-check.yml`도 루트 `.github/workflows/kywa-render-health.yml`로 등록했습니다. 기존 워크플로는 덮어쓰지 않았습니다.
 
-실제 Google OAuth, Sheets/Drive 권한, Gemini 모델, KOSHA 키는 각 계정 연결 후 현장 샘플로 확인해야 합니다. Render 체험 배포와 Linux 자동 검사는 완료했습니다. `docs-validation.md`에 검증 결과와 남은 확인 항목을 기록합니다.
+실제 Google OAuth, Sheets/Drive 권한, Gemini 모델은 각 계정 연결 후 현장 샘플로 확인해야 합니다. KOSHA 키는 2026-09-29 실제 검색과 원문 PDF 다운로드를 검증했습니다. Render 체험 배포와 이전 버전의 Linux 자동 검사는 완료했습니다. `docs-validation.md`에 로컬 추가 변경의 검증 결과와 남은 확인 항목을 기록합니다.
