@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: kywa-safety
+    runtime: docker
+    plan: free
+    region: singapore
+    repo: https://github.com/archi01-safety/kywa-safety-app
+    branch: codex/kywa-next
+    rootDir: kywa-next
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeployTrigger: off
+    envVars:
+      - key: APP_ENV
+        value: demo
+      - key: APP_BASE_URL
+        value: https://kywa-safety.onrender.com
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: REPORT_MAX_ROWS
+        value: "100"
