@@ -10,6 +10,7 @@ test('evaluation, reassessment, completion, history and reports', async ({ page 
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('2층 난간 손상\n바닥 미끄러움');
   await page.getByRole('button', { name: 'AI 위험성 분석하기', exact: true }).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(2);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
   await page.locator('.evaluation-row').first().getByLabel('장소', { exact: true }).fill(location);
   await page.getByRole('checkbox', { name: '02 · 시설 안전' }).uncheck();
   await page.getByRole('button', { name: '선택한 평가 제출', exact: true }).click();
