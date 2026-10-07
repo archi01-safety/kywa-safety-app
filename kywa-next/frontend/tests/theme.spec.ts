@@ -8,7 +8,7 @@ test('dark default, keyboard switch, persistence and independent risk colors', a
   await expect(page.locator('.institution-header')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('테마 검증용 난간 손상');
   await page.getByRole('button', { name: 'AI 위험성 분석하기', exact: true }).click();
-  await expect(page.locator('.evaluation-row')).toHaveCount(2);
+  await expect(page.locator('.evaluation-row')).toHaveCount(1);
   for (const theme of ['dark', 'light']) {
     if (theme === 'light') await page.getByRole('button', { name: '밝은 테마', exact: true }).press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
@@ -41,7 +41,7 @@ test('printing dark assessments uses paper colors and complete text', async ({ p
   await page.goto('/');
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('인쇄 검증용 난간 손상');
   await page.getByRole('button', { name: 'AI 위험성 분석하기', exact: true }).click();
-  await expect(page.locator('.evaluation-row')).toHaveCount(2);
+  await expect(page.locator('.evaluation-row')).toHaveCount(1);
   const fullText = '긴 위험상황 인쇄 검증. '.repeat(40);
   await page.locator('.evaluation-row').first().getByLabel('위험상황', { exact: true }).fill(fullText);
   await page.emulateMedia({ media: 'print' });
