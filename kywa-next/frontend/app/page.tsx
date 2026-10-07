@@ -6,6 +6,8 @@ import { ArrowDownToLine, ArrowRight, ArrowUpRight, Check, CheckCircle2, Chevron
 import { AssessmentResults } from "./assessment-results";
 import { PublicOverview } from "./public-overview";
 import { Guides } from "./guides";
+import { brand } from "./brand";
+import { ThemeToggle } from "./theme-toggle";
 
 type User = { name: string; email: string; role: string; facilities: string[] };
 type Bootstrap = { mode: string; auth_mode: "google" | "pin"; local_workspace: boolean; csrf: string; user: User | null; facilities: string[]; departments: string[]; policy: string; report_max_rows: number };
@@ -103,24 +105,25 @@ export default function Home() {
   const pendingCount = records.length - completeCount;
 
   return <div className="app-shell">
+    <header className="institution-header"><a className="brand" href="/#inspect" onClick={e => { e.preventDefault(); navigate("inspect"); }}><img src={brand.logo} alt={`${brand.name} ${brand.shortName}`} /><span>SAFETY MANAGEMENT</span></a><div className="topbar-right"><ThemeToggle />{boot?.user && <button className="icon-button mobile-account" aria-label="현재 계정 로그아웃" title={boot.user.name} disabled={!!busy} onClick={() => run("로그아웃 중", async () => { await api("/auth/logout", {}); await bootstrap(); setSelectedId(""); })}><LogOut size={16} /></button>}<span className={`environment ${boot?.mode === "production" ? "live" : ""}`}><i />{!boot ? "연결 중" : boot.mode === "demo" ? "체험 환경" : boot.mode === "development" ? "개발 환경" : "운영 환경"}</span></div></header>
     <aside className="sidebar">
-      <a className="brand" href="/#inspect" onClick={e => { e.preventDefault(); navigate("inspect"); }}><img src="/kywa_logo.png" alt="한국청소년활동진흥원 KYWA" /><span>SAFETY MANAGEMENT</span></a>
+
       <div className="workspace-label">안전한 일터, 함께 만드는 변화</div>
       <nav aria-label="주 메뉴">
         <button className={tab === "inspect" ? "active" : ""} onClick={() => navigate("inspect")}><Sparkles size={19} />AI 위험성평가<ChevronRight size={15} /></button>
         <button className={tab === "actions" ? "active" : ""} onClick={() => navigate("actions")}><ClipboardCheck size={19} />개선조치 · 재평가<ChevronRight size={15} /></button>
         <button className={tab === "reports" ? "active" : ""} onClick={() => navigate("reports")}><FileBarChart2 size={19} />결과보고서<ChevronRight size={15} /></button>
       </nav>
-      <div className="sidebar-guide"><ShieldCheck size={27} /><strong>작은 발견이<br />더 큰 안전으로.</strong><p>위험요인 발견부터 개선까지<br />현장의 안전을 함께 관리합니다.</p><span>한국청소년활동진흥원</span></div>
+      <div className="sidebar-guide"><ShieldCheck size={27} /><strong>작은 발견이<br />더 큰 안전으로.</strong><p>위험요인 발견부터 개선까지<br />현장의 안전을 함께 관리합니다.</p><span>{brand.name}</span></div>
       <div className="account-area">{boot?.user ? <><div className="avatar">{boot.user.name[0]}</div><div><strong>{boot.user.name}</strong><small>{boot.user.role === "admin" ? "관리자" : "시설 담당자"}</small></div><button className="icon-button" aria-label="로그아웃" disabled={!!busy} onClick={() => run("로그아웃 중", async () => { await api("/auth/logout", {}); await bootstrap(); setSelectedId(""); })}><LogOut size={17} /></button></> : <><div className="avatar"><LogIn size={19} /></div><div><strong>현장 참여자</strong><small>누구나 평가를 제출할 수 있어요</small></div></>}</div>
     </aside>
     <div className="main-wrap">
-      <header className="topbar"><div><span className="breadcrumb">안전경영</span><ChevronRight size={13} /><strong>{tab === "inspect" ? "AI 위험성평가" : tab === "actions" ? "개선조치 · 재평가" : "결과보고서"}</strong></div><div className="topbar-right">{boot?.user && <button className="icon-button mobile-account" aria-label="현재 계정 로그아웃" title={boot.user.name} disabled={!!busy} onClick={() => run("로그아웃 중", async () => { await api("/auth/logout", {}); await bootstrap(); setSelectedId(""); })}><LogOut size={16} /></button>}<span className={`environment ${boot?.mode === "production" ? "live" : ""}`}><i />{!boot ? "연결 중" : boot.mode === "demo" ? "체험 환경" : boot.mode === "development" ? "개발 환경" : "운영 환경"}</span></div></header>
+      <div className="breadcrumb-bar"><div><span className="breadcrumb">안전경영</span><ChevronRight size={13} /><strong>{tab === "inspect" ? "AI 위험성평가" : tab === "actions" ? "개선조치 · 재평가" : "결과보고서"}</strong></div></div>
       <main>
-        {boot?.mode === "demo" && <div className="demo-banner">{boot.local_workspace ? <><span><strong>로컬 운영 사본 시험</strong> 기존 평가 사본을 사용합니다. 새 AI 분석은 가상 응답이며 변경사항은 이 PC에만 저장됩니다.</span><span>LOCAL</span></> : <><span><strong>미리 보는 새로운 KYWA Safety</strong> 가상 분석·임시 저장 환경입니다. 실제 업무자료나 개인정보는 입력하지 마세요.</span><span>DEMO</span></>}</div>}
+        {boot?.mode === "demo" && <div className="demo-banner">{boot.local_workspace ? <><span><strong>로컬 운영 사본 시험</strong> 기존 평가 사본을 사용합니다. 새 AI 분석은 가상 응답이며 변경사항은 이 PC에만 저장됩니다.</span><span>LOCAL</span></> : <><span><strong>미리 보는 새로운 {brand.shortName} Safety</strong> 가상 분석·임시 저장 환경입니다. 실제 업무자료나 개인정보는 입력하지 마세요.</span><span>DEMO</span></>}</div>}
         {(error || notice || busy) && <div className={`message ${error ? "error" : busy ? "loading" : "success"}`} role={error ? "alert" : "status"}>{busy ? <LoaderCircle className="spin" size={19} /> : error ? <TriangleAlert size={19} /> : <CheckCircle2 size={19} />}<span>{error || busy || notice}</span>{!busy && <button aria-label="알림 닫기" className="icon-button" onClick={() => { setError(""); setNotice(""); }}><X size={17} /></button>}</div>}
         {!boot ? <div className="empty"><LoaderCircle className="spin" /><p>안전관리 공간을 준비하고 있습니다.</p><button className="button secondary" onClick={() => bootstrap().catch(e => setError(e.message))}>다시 연결</button></div> : <>
-          <div className="page-heading"><div><div className="eyebrow">KYWA · SMART SAFETY</div><h1>{tab === "inspect" ? "안전은 발견에서 시작됩니다." : tab === "actions" ? "발견한 위험을, 확실한 개선으로." : "우리의 안전, 한눈에 확인하세요."}</h1><p>{tab === "inspect" ? "현장의 사진과 설명을 남겨주세요. AI가 위험요인과 개선 방향을 함께 살펴봅니다." : tab === "actions" ? "접수된 위험요인을 확인하고, 개선조치와 재평가를 기록하세요." : "시설별 위험성평가 현황을 살펴보고 결과보고서를 내려받으세요."}</p></div></div>
+          <div className="page-heading"><div><div className="eyebrow">{brand.shortName} · SMART SAFETY</div><h1>{tab === "inspect" ? "안전은 발견에서 시작됩니다." : tab === "actions" ? "발견한 위험을, 확실한 개선으로." : "우리의 안전, 한눈에 확인하세요."}</h1><p>{tab === "inspect" ? "현장의 사진과 설명을 남겨주세요. AI가 위험요인과 개선 방향을 함께 살펴봅니다." : tab === "actions" ? "접수된 위험요인을 확인하고, 개선조치와 재평가를 기록하세요." : "시설별 위험성평가 현황을 살펴보고 결과보고서를 내려받으세요."}</p></div></div>
           {tab === "inspect" ? <>
             <div className="steps"><div className={!draft ? "current" : "finished"}><span>{draft ? <Check size={15} /> : "01"}</span><strong>현장 정보 입력</strong></div><i /><div className={draft ? "current" : ""}><span>02</span><strong>AI 분석 · 검토</strong></div><i /><div><span>03</span><strong>평가 제출</strong></div></div>
             <div className="inspection-grid">
@@ -172,7 +175,7 @@ function SiteFooter() {
     <div className="footer-grid">
       <section className="footer-policy" aria-labelledby="footer-policy-title">
         <div className="footer-heading"><ShieldCheck size={19} /><h2 id="footer-policy-title">데이터 관리와 이용 안내</h2></div>
-        <p className="footer-copyright">© 2026 한국청소년활동진흥원(KYWA) 안전경영부.</p>
+        <p className="footer-copyright">© {new Date().getFullYear()} {brand.name}({brand.shortName}) {brand.department}.</p>
         <dl>
           <div><dt>데이터 보안</dt><dd>AI 분석에 전송되는 입력 정보에는 API 옵트아웃(Opt-out) 설정이 적용되어 외부 AI 모델의 학습에 활용되지 않습니다.</dd></div>
           <div><dt>데이터 이용</dt><dd>사진과 설명은 위험요인 분석 및 평가 기록 관리에 사용됩니다. 실제 AI 분석 시 외부 AI 서비스로 전송되므로, 불필요한 개인정보는 입력하지 마세요.</dd></div>
@@ -182,12 +185,12 @@ function SiteFooter() {
       </section>
       <section className="footer-contact" aria-labelledby="footer-contact-title">
         <div className="footer-heading"><Phone size={17} /><h2 id="footer-contact-title">운영 문의</h2></div>
-        <strong>경영지원본부 안전경영부</strong>
-        <a href="mailto:archi01@kywa.or.kr"><Mail size={15} />archi01@kywa.or.kr</a>
-        <a href="tel:0269597138"><Phone size={15} />02-6959-7138</a>
+        <strong>{brand.department}</strong>
+        <a href={`mailto:${brand.email}`}><Mail size={15} />{brand.email}</a>
+        <a href={`tel:${brand.telephone}`}><Phone size={15} />{brand.phone}</a>
       </section>
     </div>
-    <div className="footer-bottom"><span><strong>KYWA</strong> 한국청소년활동진흥원</span><span>Safe Together, KYWA AI Risk Assessment System</span></div>
+    <div className="footer-bottom"><span><strong>{brand.shortName}</strong> {brand.name}</span><span>Safe Together, {brand.shortName} AI Risk Assessment System</span></div>
   </footer>;
 }
 
