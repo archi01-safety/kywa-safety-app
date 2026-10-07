@@ -1,0 +1,8 @@
+{
+  "name": "kywa-safety-web",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {"dev": "next dev", "build": "next build", "typecheck": "tsc --noEmit", "test:e2e": "playwright test"},
+  "dependencies": {"next": "^16.0.0", "react": "^19.0.0", "react-dom": "^19.0.0", "lucide-react": "^0.468.0"},
+  "devDependencies": {"@types/node": "^22.0.0", "@types/react": "^19.0.0", "@types/react-dom": "^19.0.0", "typescript": "^5.7.0", "@playwright/test": "^1.58.0"}
+}
