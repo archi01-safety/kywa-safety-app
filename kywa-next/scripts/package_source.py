@@ -8,9 +8,9 @@ root=Path(__file__).resolve().parent.parent
 out=root/'artifacts'
 out.mkdir(exist_ok=True)
 patterns=['.gitignore','.dockerignore','.env.example','*.md','Dockerfile','render.yaml','pytest.ini',
-          'backend/*.py','backend/requirements*','backend/tests/*.py','frontend/app/*.tsx','frontend/app/*.css',
+          'backend/policies/*.json','backend/organizations/*.json','backend/*.py','backend/requirements*','backend/tests/*.py','frontend/app/*.tsx','frontend/app/*.ts','frontend/app/*.css',
           'frontend/public/*.png','frontend/package*.json','frontend/next.config.ts','frontend/next-env.d.ts',
-          'frontend/tsconfig.json','frontend/playwright.config.ts','frontend/tests/*.ts','scripts/*.py','scripts/*.ps1','deploy/*.yml']
+          'frontend/tsconfig.json','frontend/playwright.config.ts','frontend/tests/*.ts','frontend/tests/*.mjs','scripts/*.py','scripts/*.ps1','deploy/*.yml']
 files=sorted({path for pattern in patterns for path in root.glob(pattern) if path.is_file()})
 target=out/'kywa-safety-source.zip'
 manifest=[]
