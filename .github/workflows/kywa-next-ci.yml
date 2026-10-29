@@ -38,7 +38,7 @@ jobs:
         working-directory: kywa-next/frontend
       - name: Institution themes on desktop and mobile
         run: |
-          for institution in fowi knps knf kohi khidi cayf; do
+          for institution in fowi knps knf kohi khidi cayf ayf; do
             ORGANIZATION_ID=$institution npm run test:e2e -- institution-branding.spec.ts --output=test-results/$institution
           done
         working-directory: kywa-next/frontend
