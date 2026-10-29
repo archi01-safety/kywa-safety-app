@@ -6,7 +6,7 @@ import pytest
 
 from backend.config import Settings
 from backend.domain import RiskList
-from backend.services import AIService, ServiceError
+from backend.services import AIService, ServiceError, ai_response_schema
 
 
 @pytest.mark.parametrize('code,message,reason,attempts', [
@@ -38,3 +38,16 @@ def test_ai_errors_log_only_safe_reason(monkeypatch, caplog, code, message, reas
     for sensitive in ('secret-test-key', 'private-input-name', 'https://provider'):
         assert sensitive not in caplog.text
         assert sensitive not in str(failure.value)
+
+
+def test_provider_schema_compatibility_keeps_strict_local_validation():
+    import json
+    from pydantic import ValidationError
+    provider_schema = ai_response_schema(RiskList)
+    assert 'additionalProperties' not in json.dumps(provider_schema)
+    assert RiskList.model_json_schema()['additionalProperties'] is False
+    item = dict(category='test', location='test', scenario='test', p=1, s=1, law='', solution='test')
+    with pytest.raises(ValidationError):
+        RiskList.model_validate({'items': [dict(item, unrequested='value')]})
+    with pytest.raises(ValidationError):
+        RiskList.model_validate({'items': [item], 'unrequested': 'value'})
