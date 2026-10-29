@@ -110,7 +110,8 @@ def test_concurrent_attempts_cannot_skip_account_limit(encoded):
 def test_production_pin_does_not_require_google_oauth(encoded):
     cfg = Settings(_env_file=None, app_env='production', auth_mode='pin', admin_pin_hash=encoded,
                    app_base_url='https://example.org', session_secret='test-only-'*5,
-                   google_service_account_json='{}',spreadsheet_id='test-sheet',drive_folder_id='test-folder',
+                   google_service_account_json='{"type":"service_account","client_email":"kywa-safety-check@gen-lang-client-0053629470.iam.gserviceaccount.com","private_key":"test-only-placeholder"}',
+                   allow_legacy_writes=True,
                    gemini_api_key='test-key',kosha_api_key='test-key')
     cfg.validate_runtime()
     cfg.auth_mode = 'google'

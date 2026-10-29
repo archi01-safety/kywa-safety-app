@@ -35,7 +35,7 @@ def initial(client, description='본관 2층 난간 흔들림'):
     response = client.post('/api/analyses', data={'facility':'중앙', 'department':'협력부(국립청소년시설)', 'description':description})
     assert response.status_code == 200, response.text
     draft = response.json()
-    return dict(request_id=str(uuid.uuid4()), draft_id=draft['draft_id'], items=[dict(index=i, location='2층', scenario=x['scenario'], solution=x['solution']) for i,x in enumerate(draft['items'])])
+    return dict(submitter_name='홍㉠㉢', request_id=str(uuid.uuid4()), draft_id=draft['draft_id'], items=[dict(index=i, location='2층', scenario=x['scenario'], solution=x['solution']) for i,x in enumerate(draft['items'])])
 
 
 @pytest.mark.parametrize('p,s', [(p,s) for p in range(1,6) for s in range(1,5)])
