@@ -44,6 +44,10 @@ class Settings(BaseSettings):
         return self.app_env == 'demo'
 
     @property
+    def setup(self):
+        return self.app_env == 'setup'
+
+    @property
     def accounts(self):
         return json.loads(self.access_accounts_json)
 
@@ -63,8 +67,8 @@ class Settings(BaseSettings):
         if self.auth_mode == 'pin':
             from .pin_auth import parse_pin_hash
             parse_pin_hash(self.admin_pin_hash)
-        if self.app_env not in {'demo', 'development', 'production'}:
-            raise ValueError('APP_ENV must be demo, development or production')
+        if self.app_env not in {'demo', 'setup', 'development', 'production'}:
+            raise ValueError('APP_ENV must be demo, setup, development or production')
         base = urlparse(self.app_base_url)
         if base.scheme not in {'http', 'https'} or not base.netloc or base.path not in {'', '/'} or base.query or base.fragment:
             raise ValueError('APP_BASE_URL에는 경로 없는 웹앱 주소를 입력하세요.')
@@ -78,7 +82,14 @@ class Settings(BaseSettings):
                 raise ValueError('프로젝트 local-data에 준비된 운영 사본 data.json이 필요합니다.')
         if base.scheme == 'https' and (len(self.session_secret) < 32 or self.session_secret.startswith('local-demo')):
             raise ValueError('배포 환경의 SESSION_SECRET은 별도의 32자 이상 난수여야 합니다.')
-        if not self.demo:
+        if self.setup:
+            if org.storage.spreadsheet_id or self.spreadsheet_id:
+                raise ValueError('시트가 지정된 기관은 준비 모드를 사용할 수 없습니다.')
+            if self.auth_mode != 'pin' or base.scheme != 'https':
+                raise ValueError('준비 모드는 HTTPS와 관리자 PIN 설정이 필요합니다.')
+            if not self.gemini_api_key or not self.kosha_api_key:
+                raise ValueError('준비 모드의 실제 분석·기술지침 API 설정이 필요합니다.')
+        if not self.demo and not self.setup:
             required = ('google_service_account_json', 'spreadsheet_id', 'drive_folder_id', 'gemini_api_key', 'kosha_api_key')
             if self.auth_mode == 'google':
                 required += ('google_client_id', 'google_client_secret')

@@ -58,7 +58,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     FACILITIES, DEPARTMENTS, CATEGORIES = org.facilities, org.departments, org.categories
     POLICY = org.policy.version
     risk = org.policy.risk
-    repo = repo or (DemoRepository(cfg.demo_data_path, org) if cfg.demo else SheetsRepository(cfg))
+    repo = repo or (DemoRepository(cfg.demo_data_path, org) if cfg.demo or cfg.setup else SheetsRepository(cfg))
     drive = drive or DriveStore(cfg)
     ai = ai or AIService(cfg)
     drafts, limits = Drafts(), RateLimiter()
@@ -79,6 +79,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     @app.middleware('http')
     async def security_headers(request, call_next):
+        if cfg.setup and request.method == 'POST' and request.url.path not in {
+            '/api/auth/pin', '/api/auth/logout', '/api/photos/prepare', '/api/analyses'
+        }:
+            return JSONResponse({'detail': '기관별 저장소 연결을 준비 중입니다. 분석은 가능하지만 제출·저장은 아직 사용할 수 없습니다.'}, status_code=503)
         if cfg.local_workspace and (not request.client or request.client.host not in {'127.0.0.1', '::1'}):
             return JSONResponse({'detail': '로컬 시험 공간은 이 PC에서만 접근할 수 있습니다.'}, status_code=403)
         # Reject oversized multipart bodies before python-multipart can spool to disk.

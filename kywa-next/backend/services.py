@@ -20,6 +20,18 @@ class ServiceError(Exception):
     pass
 
 
+def ai_response_schema(model):
+    # The provider's response_schema dialect rejects additionalProperties.
+    # Keep the strict Pydantic validation on the returned JSON below.
+    def compatible(value):
+        if isinstance(value, dict):
+            return {k: compatible(v) for k, v in value.items() if k != 'additionalProperties'}
+        if isinstance(value, list):
+            return [compatible(v) for v in value]
+        return value
+    return compatible(model.model_json_schema())
+
+
 def log_ai_failure(exc):
     """Log only an allowlisted reason, never provider messages or request content."""
     raw_code = getattr(exc, 'code', None)
@@ -158,7 +170,7 @@ class AIService:
                 try:
                     response = client.models.generate_content(model=self.settings.gemini_model,
                         contents=content, config=types.GenerateContentConfig(
-                            response_mime_type='application/json', response_schema=schema))
+                            response_mime_type='application/json', response_schema=ai_response_schema(schema)))
                     return schema.model_validate_json(response.text)
                 except Exception as exc:
                     if getattr(exc, 'code', None) not in {429, 500, 502, 503, 504} or attempt == 2:
