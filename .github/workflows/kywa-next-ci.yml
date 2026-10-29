@@ -8,6 +8,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: kywa-next-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -27,8 +30,21 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y fonts-nanum
       - run: pip install -r backend/requirements.lock -r backend/requirements-dev.txt
       - run: python -m pytest backend/tests -q
-      - run: npm ci && npm run build
+      - run: npm ci && npm run test:unit && npm run build
         working-directory: kywa-next/frontend
-      - run: npx playwright install --with-deps chromium && npm run test:e2e
+      - run: npx playwright install --with-deps chromium && npm run test:e2e -- --output=test-results/kywa
         working-directory: kywa-next/frontend
+      - run: ORGANIZATION_ID=example npm run test:e2e -- organization.spec.ts --output=test-results/example
+        working-directory: kywa-next/frontend
+      - name: Institution themes on desktop and mobile
+        run: |
+          for institution in fowi knps knf kohi khidi cayf; do
+            ORGANIZATION_ID=$institution npm run test:e2e -- institution-branding.spec.ts --output=test-results/$institution
+          done
+        working-directory: kywa-next/frontend
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-verification
+          path: kywa-next/frontend/test-results/
       - run: docker build -t kywa-safety:test .
