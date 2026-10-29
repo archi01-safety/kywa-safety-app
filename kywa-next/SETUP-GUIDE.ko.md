@@ -138,6 +138,6 @@ Google 개발 시트 대신 `kywa-next/local-data/workbook-test`를 준비했다
 
 129건 조회와 사진 113건의 로컬 읽기를 확인했다. 본원 55건의 Excel 보고서에는 사진 47개가 포함되며 중앙 1건의 PDF도 생성했다. 한 번에 100건까지만 출력하므로 전체 129건 출력 시에는 시설이나 기간을 나누어 선택한다. 검증 과정에서 평가 데이터는 수정하지 않았다.
 
-이 PC의 폴더를 Render 서버가 직접 읽을 수는 없다. 운영 자료·사진은 공개 GitHub/체험 앱에 올리지 않는다. 소스 ZIP과 Docker 이미지에서 `local-data`를 제외한다. 실제 운영은 Google Sheets/Drive를 사용하고 기존 앱 쓰기 중지·백업·이관 후 전환한다.
+이 PC의 폴더를 Render 서버가 직접 읽을 수는 없다. 운영 자료·사진은 공개 GitHub/체험 앱에 올리지 않는다. 소스 ZIP과 Docker 이미지에서 `local-data`를 제외한다. 실제 운영은 Google Sheets/Drive를 사용한다. 기관별 백업·관리 헤더 준비 후 기존 Streamlit의 행 추가와 병행할 수 있다. 최신 절차는 ORGANIZATION-SETUP.ko.md를 따른다.
 
 참고: [Google 서비스 계정 키](https://docs.cloud.google.com/iam/docs/keys-create-delete), [Render 환경변수](https://render.com/docs/configure-environment-variables), [Gemini 키 관리](https://ai.google.dev/gemini-api/docs/api-key).

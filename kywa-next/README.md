@@ -13,6 +13,7 @@
 - 선택 가능한 4자리 관리자 비밀번호 로그인: 관리 탭·사진·보고서를 서버에서 보호하며, 5회 오류 시 15분 잠금과 1시간 세션 만료를 적용합니다. 로컬 사본은 이 방식을 사용합니다. 설정은 `SETUP-GUIDE.ko.md`를 참고하세요.
 - 모든 탭 하단에 데이터 이용 안내·운영 방침·AI 결과 검토 안내·안전경영부 연락처를 표시합니다.
 - 개발용 Sheets/Drive 분리, 비공개 사진, CSRF 검증, 재시도 시 중복 저장 방지, 수정 버전 충돌 검사.
+- 성명은 현장 정보에서 입력하고 브라우저에서 `홍길동 → 홍㉠㉢`으로 변환합니다. 분석·재평가에는 이름을 보내지 않고 제출 시 변환값만 저장·조회·보고서에 사용합니다. 7개 기관 모두 필수입니다. 기관별 설정과 배포 전 관리 열 준비는 [ORGANIZATION-SETUP.ko.md](ORGANIZATION-SETUP.ko.md)를 참고하세요.
 - Excel/PDF: 조회 조건, 최초 평가 당시 등급 집계, 최신 조치내용 및 개선 전후 사진. 전체 변경 이력은 앱에서 조회합니다.
 - HWPX는 사용자가 제공할 정상 양식과 참고자료를 받은 후 연동합니다. 현재 버튼은 준비 중입니다.
 
@@ -46,7 +47,7 @@ http://localhost:8000 에서 확인합니다. `127.0.0.1` 주소로 접속하려
 1. 저장소 루트에 이 `kywa-next` 폴더를 추가합니다. 기존 `app.py`, `Dockerfile`, Streamlit 설정은 그대로 둡니다. `.env`, `.venv`, `local-data`, `node_modules`, `artifacts`, `.tools`는 업로드하지 않습니다.
 2. Render에서 **New → Blueprint**를 선택해 해당 저장소를 연결합니다. Blueprint 파일 경로를 `kywa-next/render.yaml`로 지정합니다.
 3. 서비스 `kywa-safety`, Docker, Singapore, **Free**, `/healthz`를 확인합니다. 이름이 이미 사용 중이면 원하는 주소 생성이 불가능할 수 있으므로 임의로 유료 전환하거나 다른 이름을 확정하지 않습니다.
-4. 초기 설정은 `APP_ENV=demo`, `APP_BASE_URL=https://kywa-safety.onrender.com`입니다. `SESSION_SECRET`은 Render가 생성합니다. 서비스 주소가 다르면 `APP_BASE_URL`과 OAuth 리디렉션 URI도 일치시켜야 합니다.
+4. 운영 설정안은 `APP_ENV=production`, `APP_BASE_URL=https://kywa-safety.onrender.com`입니다. 실제 인증정보와 관리 헤더 검증을 먼저 마쳐야 합니다. `SESSION_SECRET`은 Render가 생성합니다. 서비스 주소가 다르면 `APP_BASE_URL`과 OAuth 리디렉션 URI도 일치시켜야 합니다.
 5. 자동 배포는 꺼져 있습니다. 검토한 커밋을 Render의 Manual Deploy로 배포합니다. 저장소 변경을 기존 Streamlit에 반영하기 전 새 앱에서 검증합니다.
 
 Blueprint 대신 New Web Service로 만들 때도 Root Directory=`kywa-next`, Runtime=`Docker`, Dockerfile=`./Dockerfile`, Free, Health Check=`/healthz`로 설정하면 됩니다. **Next.js는 빌드할 때만 실행**하며, 운영 프로세스는 FastAPI 하나입니다.
@@ -69,10 +70,10 @@ Render Environment에 `.env.example`의 값을 등록합니다. 비밀값을 Git
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | 웹 애플리케이션용 Google OAuth 클라이언트 |
 | `AUTH_MODE`, `ADMIN_PIN_HASH` | 비밀번호 방식은 `pin`과 `scripts/set_admin_pin.py`로 생성한 해시. 이 경우 Google OAuth 클라이언트는 불필요 |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | 서비스 계정 JSON 전체를 서버 환경변수로 등록 |
-| `SPREADSHEET_ID` | 별도 개발용 스프레드시트 ID |
-| `SHEET_NAME` | 기본 `설문지 응답 시트1` |
+| `SPREADSHEET_ID` | 운영은 기관 JSON의 ID. 생략하면 기관 기본값 사용 |
+| `SHEET_NAME` | 생략하면 KYWA `설문지 응답 시트1`, 나머지 `시트1` |
 | `HISTORY_SHEET_NAME` | 기본 `조치이력` |
-| `DRIVE_FOLDER_ID` | 별도 개발용 사진 폴더 ID |
+| `DRIVE_FOLDER_ID` | 운영은 기관 JSON의 폴더 ID. 생략하면 기관 기본값 사용 |
 | `GEMINI_API_KEY`, `GEMINI_MODEL` | 사용 가능한 모델과 키. 첨부 운영 코드와 같은 `gemini-3.6-flash`를 기본으로 설정, 계정에서 사용 가능 여부 확인 |
 | `KOSHA_API_KEY` | 안전보건공단 기술지침 API 키 |
 | `ACCESS_ACCOUNTS_JSON` | 아래 형태의 승인 계정 및 시설 범위 |
@@ -91,33 +92,15 @@ https://kywa-safety.onrender.com/api/auth/google/callback
 
 OAuth 동의 화면이 테스트 상태라면 실제 로그인할 계정을 테스트 사용자에도 등록합니다. Sheets API와 Drive API를 활성화하고 개발 시트를 서비스 계정에 편집자로 공유합니다.
 
-**Drive 저장 위치:** 서비스 계정에는 자체 저장 용량이 없으므로 Workspace 공유 드라이브에 개발 폴더를 만들고 업로드 가능한 권한을 부여하는 구성을 권장합니다. 개인 My Drive 폴더를 공유하는 것만으로는 업로드가 실패할 수 있습니다. 조직에서 이미 도메인 전체 위임을 승인한 경우에만 `GOOGLE_DELEGATE_EMAIL`을 설정해 기존 승인 범위를 사용합니다. 새 권한 승인은 조직 관리자가 진행해야 합니다. 앱은 파일을 인터넷 전체에 공개하는 권한을 만들지 않습니다. [Google Drive 오류 안내](https://developers.google.com/workspace/drive/api/guides/handle-errors#storageQuotaExceeded)
+**Drive 저장 위치:** 서비스 계정에는 자체 저장 용량이 없으므로 Workspace 공유 드라이브에 개발 폴더를 만들고 업로드 가능한 권한을 부여하는 구성을 권장합니다. 개인 My Drive 폴더를 공유하는 것만으로는 업로드가 실패할 수 있습니다. 이번 7개 기관 구성은 지정 서비스 계정으로 직접 인증하며 `GOOGLE_DELEGATE_EMAIL`은 비웁니다. 앱은 파일을 인터넷 전체에 공개하는 권한을 만들지 않습니다. [Google Drive 오류 안내](https://developers.google.com/workspace/drive/api/guides/handle-errors#storageQuotaExceeded)
 
 원본 코드에 직접 들어 있던 KOSHA 키는 새 코드에 복사하지 않았습니다. 기존 저장소 공개 범위를 확인하고 해당 키는 발급처에서 교체해 환경변수로 관리하세요.
 
-## 시트 초기화·기존 데이터 이관
+## 기존 시트 연결과 병행 제출
 
-웹 서버는 시트 구조를 자동으로 변경하지 않습니다. **운영 시트의 사본**에서 먼저 실행하세요. 기존 앱이 같은 시트에 쓰는 동안에는 이관하거나 새 앱을 연결하지 않습니다.
+2026-10-29 기관별 설정·열 매핑을 추가했습니다. 기존 Streamlit과 새 앱은 같은 기존 탭에 행 추가 방식으로 제출할 수 있습니다. 원본 열·행을 보존하고 필요한 관리 헤더만 오른쪽에 추가합니다. KHIDI는 기존 D열 이름을 사용합니다. 기존 기록은 소급 계산하지 않습니다.
 
-```powershell
-# .env에 development와 실제 개발용 설정 등록 후
-.\.venv\Scripts\python.exe -m backend.migrate
-# 행 수와 오류를 확인한 후 적용
-.\.venv\Scripts\python.exe -m backend.migrate --apply
-```
-
-기본 명령은 읽기 전용입니다. `--apply`는 로컬 `artifacts/migration-backups`에 백업을 저장한 다음 단일 Google batchUpdate로 실행합니다. 백업에는 업무 데이터가 들어 있으므로 GitHub에 올리지 않습니다. 대량 이관 전에는 Google Sheets 자체 사본도 별도로 보관하세요.
-
-- 기존 A:R 값은 이관 시 건드리지 않고 S:W에 평가 ID, 기준 버전, 상태, 수정 버전, 시스템 데이터를 추가합니다.
-- 과거 등급은 `LEGACY-UNKNOWN`으로 보존합니다. 기존 점수·등급을 현행 기준으로 다시 써넣지 않습니다. 현행 환산은 상세 화면의 참고값입니다.
-- 기존 개선 후 값이 있으면 완료 상태로 가져오되, 기록에 없는 조치내용·담당자·시각은 만들어내지 않습니다.
-- 알 수 없는 헤더, 잘못된 날짜/수치, 중복 ID 또는 이미 사용 중인 S:W 데이터가 있으면 쓰기 전에 중단합니다.
-- 이후 관리 대상 열을 직접 수정하거나 정렬해서 ID와 시스템 데이터를 분리하지 마세요. 변경은 앱에서 처리합니다.
-- **Render 인스턴스 1개, Uvicorn worker 1개**가 필요합니다. 시트를 직접 쓰는 다른 프로그램과 병행 운영하지 않습니다. 다중 인스턴스가 필요해지면 트랜잭션 DB로 이관해야 합니다.
-
-기존 운영 시트/폴더 ID는 오접속 방지 대상으로 등록되어 있습니다. 운영 전환 때만 `APP_ENV=production` 및 `ALLOW_LEGACY_WRITES=true`가 허용됩니다. 기존 운영 자원을 재사용하는 것이 필수는 아닙니다. 새 저장소를 운영용으로 승격하는 방법도 가능합니다.
-
-롤백 시 새 앱의 쓰기를 중지하고 원본 사본으로 복원한 다음 기존 Streamlit을 다시 연결합니다. 전환 후 새로 추가된 기록은 먼저 별도로 내보내야 합니다. 앱 두 개가 한 시트에 동시에 쓰지 않도록 전환 시간을 정하세요.
+기관별 ID·색상·평가표, 실제 권한 검사, 백업과 헤더 준비, 동시 운영 제약 및 Render 설정은 [기관별 설정 안내](ORGANIZATION-SETUP.ko.md)를 따릅니다. 이 안내가 이전의 단일 KYWA 전환 절차를 대체합니다. `backend.check_connections`와 `backend.verify_workflow`의 실제 검증 결과를 확인해야 연동 완료로 판단할 수 있습니다.
 
 ## 위험도 기준
 
@@ -159,3 +142,7 @@ npm run test:e2e
 `deploy/ci.yml`을 저장소 루트의 `.github/workflows/kywa-next-ci.yml`에도 등록했습니다. Python 테스트, Next.js 빌드, PC·모바일 Playwright E2E, Docker 이미지 빌드를 실행합니다. `deploy/health-check.yml`도 루트 `.github/workflows/kywa-render-health.yml`로 등록했습니다. 기존 워크플로는 덮어쓰지 않았습니다.
 
 실제 Google OAuth, Sheets/Drive 권한, Gemini 모델은 각 계정 연결 후 현장 샘플로 확인해야 합니다. KOSHA 키는 2026-09-29 실제 검색과 원문 PDF 다운로드를 검증했습니다. Render 체험 배포와 이전 버전의 Linux 자동 검사는 완료했습니다. `docs-validation.md`에 로컬 추가 변경의 검증 결과와 남은 확인 항목을 기록합니다.
+
+## 기관별 독립 서비스 설정
+
+공통 코드에서 `ORGANIZATION_ID`로 평가 기준과 성명 입력 설정을 선택합니다. 자세한 절차와 제약은 [ORGANIZATION-SETUP.ko.md](ORGANIZATION-SETUP.ko.md)를 참조하세요. 실제 기관 설정은 KYWA만 포함하며 `example`은 가상 3×3 시험 기관입니다.
