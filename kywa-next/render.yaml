@@ -1,41 +1,429 @@
-# Apply after Google verification and schema preparation. Existing service: update in place.
-services:
-  - type: web
-    name: kywa-safety
-    runtime: docker
-    plan: free
-    region: singapore
-    repo: https://github.com/archi01-safety/kywa-safety-app
-    branch: codex/kywa-next
-    rootDir: kywa-next
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    healthCheckPath: /healthz
-    autoDeployTrigger: off
-    envVars:
-      - key: ORGANIZATION_ID
-        value: kywa
-      - key: APP_ENV
-        value: production
-      - key: ALLOW_LEGACY_WRITES
-        value: "true"
-      - key: APP_BASE_URL
-        value: https://kywa-safety.onrender.com
-      - key: SESSION_SECRET
-        generateValue: true
-      - key: AUTH_MODE
-        value: pin
-      - key: ADMIN_PIN_HASH
-        sync: false
-      - key: GOOGLE_SERVICE_ACCOUNT_JSON
-        sync: false
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_MODEL
-        sync: false
-      - key: KOSHA_API_KEY
-        sync: false
-      - key: PYTHONUNBUFFERED
-        value: "1"
-      - key: REPORT_MAX_ROWS
-        value: "100"
+{
+  "services": [
+    {
+      "type": "web",
+      "name": "kywa-safety",
+      "runtime": "docker",
+      "plan": "free",
+      "region": "singapore",
+      "repo": "https://github.com/archi01-safety/kywa-safety-app",
+      "branch": "codex/kywa-next",
+      "rootDir": "kywa-next",
+      "dockerfilePath": "./Dockerfile",
+      "dockerContext": ".",
+      "healthCheckPath": "/healthz",
+      "autoDeployTrigger": "off",
+      "envVars": [
+        {
+          "key": "ORGANIZATION_ID",
+          "value": "kywa"
+        },
+        {
+          "key": "APP_ENV",
+          "value": "production"
+        },
+        {
+          "key": "ALLOW_LEGACY_WRITES",
+          "value": "true"
+        },
+        {
+          "key": "APP_BASE_URL",
+          "value": "https://kywa-safety.onrender.com"
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "AUTH_MODE",
+          "value": "pin"
+        },
+        {
+          "key": "ADMIN_PIN_HASH",
+          "sync": false
+        },
+        {
+          "key": "GOOGLE_SERVICE_ACCOUNT_JSON",
+          "sync": false
+        },
+        {
+          "key": "GEMINI_API_KEY",
+          "sync": false
+        },
+        {
+          "key": "GEMINI_MODEL",
+          "sync": false
+        },
+        {
+          "key": "KOSHA_API_KEY",
+          "sync": false
+        },
+        {
+          "key": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "key": "REPORT_MAX_ROWS",
+          "value": "100"
+        }
+      ]
+    },
+    {
+      "type": "web",
+      "name": "fowi-safety",
+      "runtime": "docker",
+      "plan": "free",
+      "region": "singapore",
+      "repo": "https://github.com/archi01-safety/kywa-safety-app",
+      "branch": "codex/kywa-next",
+      "rootDir": "kywa-next",
+      "dockerfilePath": "./Dockerfile",
+      "dockerContext": ".",
+      "healthCheckPath": "/healthz",
+      "autoDeployTrigger": "off",
+      "envVars": [
+        {
+          "fromGroup": "kywa-safety-shared-integrations"
+        },
+        {
+          "key": "ORGANIZATION_ID",
+          "value": "fowi"
+        },
+        {
+          "key": "APP_ENV",
+          "value": "production"
+        },
+        {
+          "key": "ALLOW_LEGACY_WRITES",
+          "value": "true"
+        },
+        {
+          "key": "APP_BASE_URL",
+          "value": "https://fowi-safety.onrender.com"
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "AUTH_MODE",
+          "value": "pin"
+        },
+        {
+          "key": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "key": "REPORT_MAX_ROWS",
+          "value": "100"
+        }
+      ]
+    },
+    {
+      "type": "web",
+      "name": "knps-safety",
+      "runtime": "docker",
+      "plan": "free",
+      "region": "singapore",
+      "repo": "https://github.com/archi01-safety/kywa-safety-app",
+      "branch": "codex/kywa-next",
+      "rootDir": "kywa-next",
+      "dockerfilePath": "./Dockerfile",
+      "dockerContext": ".",
+      "healthCheckPath": "/healthz",
+      "autoDeployTrigger": "off",
+      "envVars": [
+        {
+          "fromGroup": "kywa-safety-shared-integrations"
+        },
+        {
+          "key": "ORGANIZATION_ID",
+          "value": "knps"
+        },
+        {
+          "key": "APP_ENV",
+          "value": "production"
+        },
+        {
+          "key": "ALLOW_LEGACY_WRITES",
+          "value": "true"
+        },
+        {
+          "key": "APP_BASE_URL",
+          "value": "https://knps-safety.onrender.com"
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "AUTH_MODE",
+          "value": "pin"
+        },
+        {
+          "key": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "key": "REPORT_MAX_ROWS",
+          "value": "100"
+        }
+      ]
+    },
+    {
+      "type": "web",
+      "name": "knf-safety",
+      "runtime": "docker",
+      "plan": "free",
+      "region": "singapore",
+      "repo": "https://github.com/archi01-safety/kywa-safety-app",
+      "branch": "codex/kywa-next",
+      "rootDir": "kywa-next",
+      "dockerfilePath": "./Dockerfile",
+      "dockerContext": ".",
+      "healthCheckPath": "/healthz",
+      "autoDeployTrigger": "off",
+      "envVars": [
+        {
+          "fromGroup": "kywa-safety-shared-integrations"
+        },
+        {
+          "key": "ORGANIZATION_ID",
+          "value": "knf"
+        },
+        {
+          "key": "APP_ENV",
+          "value": "production"
+        },
+        {
+          "key": "ALLOW_LEGACY_WRITES",
+          "value": "true"
+        },
+        {
+          "key": "APP_BASE_URL",
+          "value": "https://knf-safety.onrender.com"
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "AUTH_MODE",
+          "value": "pin"
+        },
+        {
+          "key": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "key": "REPORT_MAX_ROWS",
+          "value": "100"
+        }
+      ]
+    },
+    {
+      "type": "web",
+      "name": "kohi-safety",
+      "runtime": "docker",
+      "plan": "free",
+      "region": "singapore",
+      "repo": "https://github.com/archi01-safety/kywa-safety-app",
+      "branch": "codex/kywa-next",
+      "rootDir": "kywa-next",
+      "dockerfilePath": "./Dockerfile",
+      "dockerContext": ".",
+      "healthCheckPath": "/healthz",
+      "autoDeployTrigger": "off",
+      "envVars": [
+        {
+          "fromGroup": "kywa-safety-shared-integrations"
+        },
+        {
+          "key": "ORGANIZATION_ID",
+          "value": "kohi"
+        },
+        {
+          "key": "APP_ENV",
+          "value": "production"
+        },
+        {
+          "key": "ALLOW_LEGACY_WRITES",
+          "value": "true"
+        },
+        {
+          "key": "APP_BASE_URL",
+          "value": "https://kohi-safety.onrender.com"
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "AUTH_MODE",
+          "value": "pin"
+        },
+        {
+          "key": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "key": "REPORT_MAX_ROWS",
+          "value": "100"
+        }
+      ]
+    },
+    {
+      "type": "web",
+      "name": "khidi-safety",
+      "runtime": "docker",
+      "plan": "free",
+      "region": "singapore",
+      "repo": "https://github.com/archi01-safety/kywa-safety-app",
+      "branch": "codex/kywa-next",
+      "rootDir": "kywa-next",
+      "dockerfilePath": "./Dockerfile",
+      "dockerContext": ".",
+      "healthCheckPath": "/healthz",
+      "autoDeployTrigger": "off",
+      "envVars": [
+        {
+          "fromGroup": "kywa-safety-shared-integrations"
+        },
+        {
+          "key": "ORGANIZATION_ID",
+          "value": "khidi"
+        },
+        {
+          "key": "APP_ENV",
+          "value": "production"
+        },
+        {
+          "key": "ALLOW_LEGACY_WRITES",
+          "value": "true"
+        },
+        {
+          "key": "APP_BASE_URL",
+          "value": "https://khidi-safety.onrender.com"
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "AUTH_MODE",
+          "value": "pin"
+        },
+        {
+          "key": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "key": "REPORT_MAX_ROWS",
+          "value": "100"
+        }
+      ]
+    },
+    {
+      "type": "web",
+      "name": "cayf-safety",
+      "runtime": "docker",
+      "plan": "free",
+      "region": "singapore",
+      "repo": "https://github.com/archi01-safety/kywa-safety-app",
+      "branch": "codex/kywa-next",
+      "rootDir": "kywa-next",
+      "dockerfilePath": "./Dockerfile",
+      "dockerContext": ".",
+      "healthCheckPath": "/healthz",
+      "autoDeployTrigger": "off",
+      "envVars": [
+        {
+          "fromGroup": "kywa-safety-shared-integrations"
+        },
+        {
+          "key": "ORGANIZATION_ID",
+          "value": "cayf"
+        },
+        {
+          "key": "APP_ENV",
+          "value": "production"
+        },
+        {
+          "key": "ALLOW_LEGACY_WRITES",
+          "value": "true"
+        },
+        {
+          "key": "APP_BASE_URL",
+          "value": "https://cayf-safety.onrender.com"
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "AUTH_MODE",
+          "value": "pin"
+        },
+        {
+          "key": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "key": "REPORT_MAX_ROWS",
+          "value": "100"
+        }
+      ]
+    },
+    {
+      "type": "web",
+      "name": "ayf-safety",
+      "runtime": "docker",
+      "plan": "free",
+      "region": "singapore",
+      "repo": "https://github.com/archi01-safety/kywa-safety-app",
+      "branch": "codex/kywa-next",
+      "rootDir": "kywa-next",
+      "dockerfilePath": "./Dockerfile",
+      "dockerContext": ".",
+      "healthCheckPath": "/healthz",
+      "autoDeployTrigger": "off",
+      "envVars": [
+        {
+          "fromGroup": "kywa-safety-shared-integrations"
+        },
+        {
+          "key": "ORGANIZATION_ID",
+          "value": "ayf"
+        },
+        {
+          "key": "APP_ENV",
+          "value": "setup"
+        },
+        {
+          "key": "ALLOW_LEGACY_WRITES",
+          "value": "true"
+        },
+        {
+          "key": "APP_BASE_URL",
+          "value": "https://ayf-safety.onrender.com"
+        },
+        {
+          "key": "SESSION_SECRET",
+          "generateValue": true
+        },
+        {
+          "key": "AUTH_MODE",
+          "value": "pin"
+        },
+        {
+          "key": "PYTHONUNBUFFERED",
+          "value": "1"
+        },
+        {
+          "key": "REPORT_MAX_ROWS",
+          "value": "100"
+        }
+      ]
+    }
+  ]
+}

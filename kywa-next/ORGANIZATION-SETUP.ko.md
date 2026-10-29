@@ -123,3 +123,12 @@ python -m backend.verify_workflow --organization khidi --run
 7개 기존 평가 탭에 필요한 관리 헤더와 조치이력 탭을 준비했습니다. 원본 600건(KYWA 134, FOWI 131, KNPS 93, KNF 13, KOHI 125, KHIDI 98, CAYF 6)은 백업과 일치합니다. KYWA는 소유자가 1행 보호를 해제한 후 S:X를 추가했습니다. 완료 후 1행 보호를 다시 설정할 수 있습니다.
 
 업무 데이터 백업은 로컬 `local-data/migration-backups`에만 있습니다. 인증정보와 백업은 소스 패키지·GitHub에 포함하지 않습니다. 이번 검사 상태는 로컬 `artifacts/institution-verification.json`에 기록합니다. 현재 배포 사이트의 적용 여부는 배포된 커밋을 별도로 확인해야 합니다.
+
+
+## AYF 추가 설정 (2026-10-29)
+
+안양시청소년재단은 `ORGANIZATION_ID=ayf`를 사용합니다. 주소는 `https://ayf-safety.onrender.com`이며 시설 12개, 소속팀 12개를 적용했습니다. 중복된 활동사업팀은 첫 항목만 남겼으며 시설명은 제공된 표기(평청청소년문화의집 포함)를 유지했습니다. 성명은 필수 초성 변환이며 5×4 점수표의 15점은 높음입니다. 기관 색상·로고는 미제공이므로 중립 회색과 기관명을 사용합니다.
+
+사진 폴더는 KYWA의 기존 폴더를 공유합니다. 시트는 추후 제공 예정이므로 `APP_ENV=setup`으로 운영합니다. 실제 AI 분석과 KOSHA 검색은 가능하지만 제출·개선조치·보고서 저장 API는 서버에서 차단합니다. 다른 기관의 시트로 대신 저장하지 않습니다. 시트 ID를 받으면 AYF 설정에 등록하고 헤더·권한 확인 및 백업 후 `production`으로 전환합니다.
+
+Render의 `kywa-safety-shared-integrations` 환경변수 그룹에는 기존 서비스 계정·AI 키·KOSHA 키·AI 모델·관리자 PIN 해시만 보관합니다. 신규 기관 서비스는 이 그룹을 참조하고, 기관 ID·사이트 주소·세션 키는 서비스별로 분리합니다. 기본 관리자 PIN은 기존 운영 방침의 초기값을 사용합니다. 인증값을 GitHub에 저장하지 않습니다.
