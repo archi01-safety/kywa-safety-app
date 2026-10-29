@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const colors: Record<string, string> = {kywa:'#ED174F',fowi:'#00A651',knps:'#006633',knf:'#005995',kohi:'#0059A6',khidi:'#FF701E',cayf:'#507C5F'};
+const colors: Record<string, string> = {kywa:'#ED174F',fowi:'#00A651',knps:'#006633',knf:'#005995',kohi:'#0059A6',khidi:'#FF701E',cayf:'#507C5F',ayf:'#64748B'};
 const institution = process.env.ORGANIZATION_ID || 'kywa';
 
 test('기관색 로딩, 버튼 상태, 의미 색상, 모바일 및 테마 전환', async ({page}, info) => {
@@ -43,4 +43,21 @@ test('기관색 로딩, 버튼 상태, 의미 색상, 모바일 및 테마 전�
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
   await expect(page.locator('.evaluation-row .badge')).not.toHaveClass(/tone--1/);
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+});
+
+test('AYF 저장소 준비 안내와 제출 차단', async ({page}) => {
+  test.skip(institution !== 'ayf', 'AYF 준비 모드 전용');
+  await page.route('**/api/bootstrap', async route => {
+    const response = await route.fetch();
+    const body = await response.json();
+    await route.fulfill({response, json:{...body, mode:'setup'}});
+  });
+  await page.goto('/');
+  await expect(page.getByText('저장소 준비 중',{exact:true})).toBeVisible();
+  await expect(page.getByText('저장소 연결 준비 중',{exact:true})).toBeVisible();
+  await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
+  await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('가상 시험: 난간 파손');
+  await page.getByRole('button',{name:'AI 위험성 분석하기',exact:true}).click();
+  await expect(page.locator('.evaluation-row')).toHaveCount(1);
+  await expect(page.getByRole('button',{name:'선택한 평가 제출',exact:true})).toBeDisabled();
 });
