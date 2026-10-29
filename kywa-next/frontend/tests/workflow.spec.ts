@@ -7,6 +7,7 @@ test('evaluation, reassessment, completion, history and reports', async ({ page 
   await expect(page.getByText('체험 환경', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'AI 위험성 분석하기', exact: true })).toBeDisabled();
   const location = `${info.project.name} 자동 검증 2층 난간`;
+  await page.getByLabel('제출자 성명', { exact: true }).fill('홍길동');
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('2층 난간 손상\n바닥 미끄러움');
   await page.getByRole('button', { name: 'AI 위험성 분석하기', exact: true }).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(2);

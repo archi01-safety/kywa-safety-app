@@ -6,6 +6,7 @@ test('dark default, keyboard switch, persistence and independent risk colors', a
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.locator('.institution-header')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await page.getByLabel('제출자 성명', { exact: true }).fill('홍길동');
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('테마 검증용 난간 손상');
   await page.getByRole('button', { name: 'AI 위험성 분석하기', exact: true }).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
@@ -39,6 +40,7 @@ test('unavailable preference storage still allows theme switching', async ({ pag
 
 test('printing dark assessments uses paper colors and complete text', async ({ page }) => {
   await page.goto('/');
+  await page.getByLabel('제출자 성명', { exact: true }).fill('홍길동');
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('인쇄 검증용 난간 손상');
   await page.getByRole('button', { name: 'AI 위험성 분석하기', exact: true }).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
