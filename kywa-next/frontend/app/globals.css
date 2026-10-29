@@ -81,3 +81,15 @@ input,textarea,select{background:var(--surface-muted);border-color:var(--line-st
 
 .print-value{display:none}
 @media print{.evaluation-table input:not([type=checkbox]),.evaluation-table textarea{display:none}.evaluation-table .print-value{display:block;white-space:pre-wrap;overflow-wrap:anywhere}.evaluation-table th:nth-child(n){width:auto}.evaluation-table .evaluation-number{border:0}.evaluation-table .evaluation-row{break-inside:auto}}
+
+.policy-details { margin: 16px 0; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+.policy-details summary { cursor: pointer; }
+.policy-details td, .policy-details th { padding: 10px; text-align: center; }
+.submitter-field { display: block; margin: 20px 0; max-width: 560px; }
+.submitter-field small { display: block; color: var(--muted); margin-top: 8px; }
+.submitter-field small { line-height: 1.7; overflow-wrap: anywhere; }
+.submitter-field .name-preview { color: var(--ink); }
+.submitter-field .name-error { color: var(--risk-red); }
+.submitter-field input[aria-invalid="true"] { border-color: var(--risk-red); }
+.record-submitter, .detail-submitter, .report-submitter { overflow-wrap: anywhere; }
+@media print { .submitter-field input { display: none; } }

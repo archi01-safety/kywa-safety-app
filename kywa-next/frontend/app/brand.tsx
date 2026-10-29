@@ -1,15 +1,20 @@
 import type { CSSProperties } from 'react';
 
 // Deployment branding only. Risk and workflow status colors remain independent.
+export type BrandColors = { original: string; button: string; buttonText: string; hover: string; darkText: string; lightText: string };
+export type PublicBranding = { primary: string; logo: string; website: string; department: string; email: string; phone: string; colors: BrandColors };
+// Neutral until /api/bootstrap supplies the selected institution. Never flash KYWA red.
 export const brand = {
-  name: '한국청소년활동진흥원', shortName: 'KYWA', logo: '/kywa_logo.png',
-  department: '경영지원본부 안전경영부', email: 'archi01@kywa.or.kr',
-  phone: '02-6959-7138', telephone: '0269597138',
-  colors: { original: '#ED174F', button: '#C91546', buttonText: '#FFFFFF', hover: '#AA103A', darkText: '#FF6B91', lightText: '#B6103D' },
+  name: '안전관리 시스템', shortName: '', logo: '',
+  department: '', email: '', phone: '', telephone: '',
+  colors: { original: '#64748B', button: '#475569', buttonText: '#FFFFFF', hover: '#334155', darkText: '#CBD5E1', lightText: '#475569' },
 };
-export const brandVariables = {
-  '--brand-original': brand.colors.original, '--brand-button': brand.colors.button,
-  '--brand-on-button': brand.colors.buttonText, '--brand-hover': brand.colors.hover, '--brand-dark-text': brand.colors.darkText,
-  '--brand-light-text': brand.colors.lightText,
-} as CSSProperties;
+export function variables(colors: BrandColors) {
+  return {
+    '--brand-original': colors.original, '--brand-button': colors.button,
+    '--brand-on-button': colors.buttonText, '--brand-hover': colors.hover,
+    '--brand-dark-text': colors.darkText, '--brand-light-text': colors.lightText,
+  } as CSSProperties;
+}
+export const brandVariables = variables(brand.colors);
 export const themeStorageKey = 'safety-ui-theme';
