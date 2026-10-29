@@ -105,6 +105,7 @@ export default function Home() {
   });
   const submit = () => run("선택한 평가를 제출하고 있습니다", async () => {
     if (!draft) return;
+    if (boot?.mode === "setup") throw new Error("저장소 연결 전까지 제출할 수 없습니다.");
     if (nameBlocked) throw new Error(nameComposing ? "한글 입력을 완료해 주세요." : maskedName.error);
     const body = { submitter_name: maskedName.value, draft_id: draft.draft_id, items: draft.items.flatMap((item, index) => item.selected ? [{ index, location: item.location, scenario: item.scenario, solution: item.solution }] : []) };
     const result = await (await api("/assessments", { ...body, request_id: requestId("submit", body) })).json();
@@ -120,7 +121,7 @@ export default function Home() {
   const pendingCount = records.length - completeCount;
 
   return <div className="app-shell">
-    <header className="institution-header"><a className="brand" href="/#inspect" onClick={e => { e.preventDefault(); navigate("inspect"); }}>{brand.logo ? <img src={brand.logo} alt={`${brand.name} ${brand.shortName}`} /> : <strong>{brand.name}</strong>}<span>SAFETY MANAGEMENT</span></a><div className="topbar-right"><ThemeToggle />{boot?.user && <button className="icon-button mobile-account" aria-label="현재 계정 로그아웃" title={boot.user.name} disabled={!!busy} onClick={() => run("로그아웃 중", async () => { await api("/auth/logout", {}); await bootstrap(); setSelectedId(""); })}><LogOut size={16} /></button>}<span className={`environment ${boot?.mode === "production" ? "live" : ""}`}><i />{!boot ? "연결 중" : boot.mode === "demo" ? "체험 환경" : boot.mode === "development" ? "개발 환경" : "운영 환경"}</span></div></header>
+    <header className="institution-header"><a className="brand" href="/#inspect" onClick={e => { e.preventDefault(); navigate("inspect"); }}>{brand.logo ? <img src={brand.logo} alt={`${brand.name} ${brand.shortName}`} /> : <strong>{brand.name}</strong>}<span>SAFETY MANAGEMENT</span></a><div className="topbar-right"><ThemeToggle />{boot?.user && <button className="icon-button mobile-account" aria-label="현재 계정 로그아웃" title={boot.user.name} disabled={!!busy} onClick={() => run("로그아웃 중", async () => { await api("/auth/logout", {}); await bootstrap(); setSelectedId(""); })}><LogOut size={16} /></button>}<span className={`environment ${boot?.mode === "production" ? "live" : ""}`}><i />{!boot ? "연결 중" : boot.mode === "demo" ? "체험 환경" : boot.mode === "development" ? "개발 환경" : boot.mode === "setup" ? "저장소 준비 중" : "운영 환경"}</span></div></header>
     <aside className="sidebar">
 
       <div className="workspace-label">안전한 일터, 함께 만드는 변화</div>
@@ -135,6 +136,7 @@ export default function Home() {
     <div className="main-wrap">
       <div className="breadcrumb-bar"><div><span className="breadcrumb">안전경영</span><ChevronRight size={13} /><strong>{tab === "inspect" ? "AI 위험성평가" : tab === "actions" ? "개선조치 · 재평가" : "결과보고서"}</strong></div></div>
       <main>
+        {boot?.mode === "setup" && <div className="demo-banner"><span><strong>저장소 연결 준비 중</strong> AI 분석은 사용할 수 있습니다. Google 시트 연결 전까지 결과 제출과 저장은 차단됩니다.</span><span>준비</span></div>}
         {boot?.mode === "demo" && <div className="demo-banner">{boot.local_workspace ? <><span><strong>로컬 운영 사본 시험</strong> 기존 평가 사본을 사용합니다. 새 AI 분석은 가상 응답이며 변경사항은 이 PC에만 저장됩니다.</span><span>LOCAL</span></> : <><span><strong>미리 보는 새로운 {brand.shortName} Safety</strong> 가상 분석·임시 저장 환경입니다. 실제 업무자료나 개인정보는 입력하지 마세요.</span><span>DEMO</span></>}</div>}
         {(error || notice || busy) && <div className={`message ${error ? "error" : busy ? "loading" : "success"}`} role={error ? "alert" : "status"}>{busy ? <LoaderCircle className="spin" size={19} /> : error ? <TriangleAlert size={19} /> : <CheckCircle2 size={19} />}<span>{error || busy || notice}</span>{!busy && <button aria-label="알림 닫기" className="icon-button" onClick={() => { setError(""); setNotice(""); }}><X size={17} /></button>}</div>}
         {!boot ? <div className="empty"><LoaderCircle className="spin" /><p>안전관리 공간을 준비하고 있습니다.</p><button className="button secondary" onClick={() => bootstrap().catch(e => setError(e.message))}>다시 연결</button></div> : <>
@@ -152,7 +154,7 @@ export default function Home() {
               </section>
 
             </div>
-            {draft && <section className="results-section"><div className="section-top"><div><div className="eyebrow">REVIEW & SUBMIT</div><h2>AI 분석 결과 <span>{draft.items.length}건</span></h2><p className="muted">제출할 항목을 선택하고 내용을 수정할 수 있습니다. 관련근거는 원문을 확인하세요.</p></div><Badge value="검토 필요" /></div><fieldset disabled={!!busy}><Criteria policy={boot.organization.policy} /><AssessmentResults policy={boot.organization.policy} items={draft.items} onChange={items => setDraft({ ...draft, items })} /><div className="submit-bar"><div><strong>{draft.items.filter(i => i.selected).length}개 항목 선택</strong><span>검토를 마치면 담당자에게 전달됩니다.</span></div><button className="button primary" disabled={!!busy || nameBlocked || !draft.items.some(i => i.selected) || draft.items.some(i => i.selected && (!i.location.trim() || !i.scenario.trim() || !i.solution.trim()))} onClick={submit}>선택한 평가 제출<ArrowRight size={17} /></button></div></fieldset></section>}
+            {draft && <section className="results-section"><div className="section-top"><div><div className="eyebrow">REVIEW & SUBMIT</div><h2>AI 분석 결과 <span>{draft.items.length}건</span></h2><p className="muted">제출할 항목을 선택하고 내용을 수정할 수 있습니다. 관련근거는 원문을 확인하세요.</p></div><Badge value="검토 필요" /></div><fieldset disabled={!!busy}><Criteria policy={boot.organization.policy} /><AssessmentResults policy={boot.organization.policy} items={draft.items} onChange={items => setDraft({ ...draft, items })} /><div className="submit-bar"><div><strong>{draft.items.filter(i => i.selected).length}개 항목 선택</strong><span>검토를 마치면 담당자에게 전달됩니다.</span></div><button className="button primary" disabled={!!busy || boot.mode === "setup" || nameBlocked || !draft.items.some(i => i.selected) || draft.items.some(i => i.selected && (!i.location.trim() || !i.scenario.trim() || !i.solution.trim()))} onClick={submit}>선택한 평가 제출<ArrowRight size={17} /></button></div></fieldset></section>}
             <Guides api={api} keywords={draft?.guide_keywords || []} analysisId={draft?.draft_id || ""} />
             <PublicOverview api={api} revision={revision} />
           </> : !boot.user ? <LoginPanel boot={boot} busy={!!busy} onPin={loginPin} onDemo={login} /> : tab === "reports" && boot.user.role !== "admin" ? <section className="panel"><Empty>결과보고서는 관리자 계정으로 이용할 수 있습니다.</Empty></section> : <>
