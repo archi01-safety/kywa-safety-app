@@ -1,5 +1,6 @@
 import io
 import json
+import logging
 import re
 import ssl
 import threading
@@ -17,6 +18,34 @@ from .organization import record_policy
 
 class ServiceError(Exception):
     pass
+
+
+def log_ai_failure(exc):
+    """Log only an allowlisted reason, never provider messages or request content."""
+    raw_code = getattr(exc, 'code', None)
+    code = raw_code if type(raw_code) is int and 100 <= raw_code <= 599 else 0
+    message = str(exc).lower()
+    if any(token in message for token in ('api_key_invalid', 'api key not valid', 'invalid api key')):
+        reason = 'invalid_api_key'
+    elif 'reported as leaked' in message:
+        reason = 'blocked_api_key'
+    elif code == 404:
+        reason = 'model_unavailable'
+    elif code in (401, 403):
+        reason = 'permission_denied'
+    elif code == 429:
+        reason = 'rate_limited'
+    elif code >= 500:
+        reason = 'provider_unavailable'
+    elif code:
+        reason = 'invalid_request'
+    elif isinstance(exc, httpx.TimeoutException):
+        reason = 'timeout'
+    elif type(exc).__name__ == 'ValidationError':
+        reason = 'invalid_result'
+    else:
+        reason = 'client_error'
+    logging.getLogger('kywa').warning('AI request failed: reason=%s status=%d', reason, code)
 
 
 class Drafts:
@@ -133,6 +162,7 @@ class AIService:
                     return schema.model_validate_json(response.text)
                 except Exception as exc:
                     if getattr(exc, 'code', None) not in {429, 500, 502, 503, 504} or attempt == 2:
+                        log_ai_failure(exc)
                         raise ServiceError('AI 분석 응답을 확인하지 못했습니다. 입력은 보존됩니다. 잠시 후 재시도하세요.') from exc
                     time.sleep(2 ** (attempt + 1))
 
