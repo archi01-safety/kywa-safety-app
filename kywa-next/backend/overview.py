@@ -4,17 +4,19 @@ from collections import Counter
 from .domain import FACILITIES, CATEGORIES
 
 
-def summarize(records, year):
+def summarize(records, year, org=None):
+    facilities_list = org.facilities if org else FACILITIES
+    categories_list = org.categories if org else CATEGORIES
     years = sorted({int(r['created_at'][:4]) for r in records
                     if str(r.get('created_at', ''))[:4].isdigit()} | {year}, reverse=True)
     selected = [r for r in records if str(r.get('created_at', '')).startswith(f'{year}-')]
-    facilities = Counter(r['facility'] if r['facility'] in FACILITIES else '기타' for r in selected)
-    categories = Counter(r['before']['category'] if r['before']['category'] in CATEGORIES else '기타'
+    facilities = Counter(r['facility'] if r['facility'] in facilities_list else '기타' for r in selected)
+    categories = Counter(r['before']['category'] if r['before']['category'] in categories_list else '기타'
                          for r in selected)
     return dict(year=year, years=years, total=len(selected),
                 completed=sum(r['status'] == '완료' for r in selected),
                 facility_count=len(facilities),
-                facilities=[dict(name=f, count=facilities[f]) for f in FACILITIES + (['기타'] if facilities['기타'] else [])],
+                facilities=[dict(name=f, count=facilities[f]) for f in facilities_list + (['기타'] if facilities['기타'] else [])],
                 categories=[dict(name=k, count=v) for k, v in categories.most_common()])
 
 

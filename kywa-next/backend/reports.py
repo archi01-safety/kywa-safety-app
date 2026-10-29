@@ -1,4 +1,5 @@
 import io
+from .submitter_name import display_name
 from collections import Counter
 from pathlib import Path
 from xml.sax.saxutils import escape
@@ -25,7 +26,7 @@ def safe_photo(store, fid):
         return None
 
 
-def excel(records, store):
+def excel(records, store, org=None):
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
     from openpyxl.drawing.image import Image
@@ -34,6 +35,9 @@ def excel(records, store):
     ws = wb.active
     ws.title = '위험성평가'
     cols = HEADERS[:18] + ['개선조치 내용', '처리자', '조치시각', '처리상태', '평가기준', '평가ID']
+    include_name = bool(org and org.submitter_name.mode != 'disabled' and org.submitter_name.show_in_reports)
+    if include_name: cols.append(org.submitter_name.label)
+    cols.append('재평가 기준')
     ws.append(cols)
     for cell in ws[1]:
         cell.fill = PatternFill('solid', fgColor='123A63')
@@ -44,6 +48,8 @@ def excel(records, store):
         a = r.get('after') or {}
         values = sheet_row(r)[:18] + [a.get('text', ''), a.get('actor', ''), a.get('created_at', ''),
                                      r['status'], r['policy'], r['id']]
+        if include_name: values.append(display_name(r.get('submitter_name')))
+        values.append(a.get('policy', ''))
         for j, value in enumerate(values, 1):
             if isinstance(value, str) and value.startswith(('=', '+', '-', '@')):
                 value = "'" + value
@@ -69,6 +75,7 @@ def excel(records, store):
     ws.freeze_panes = 'G2'
     ws.auto_filter.ref = ws.dimensions
     summary = wb.create_sheet('집계')
+    summary.append(['기관', org.name if org else '한국청소년활동진흥원'])
     summary.append(['생성시각', now()])
     summary.append(['전체 건수', len(records)])
     summary.append(['완료 건수', sum(r['status']=='완료' for r in records)])
@@ -77,12 +84,23 @@ def excel(records, store):
         summary.append([grade, count])
     summary.column_dimensions['A'].width = 25
     summary.column_dimensions['B'].width = 65
+    criteria = wb.create_sheet('평가기준')
+    criteria.append(['버전', '구분', '빈도', '강도 / 설명', '점수', '등급'])
+    for policy in policy_snapshots(records):
+        for key, title in [('p_levels', '빈도'), ('s_levels', '강도')]:
+            for level in policy[key]:
+                criteria.append([policy['version'], title, level['value'], level['description']])
+        for cell in policy['cells']:
+            criteria.append([policy['version'], policy['method'], cell['p'], cell['s'], cell['score'], cell['grade']])
+    for row in criteria:
+        for cell in row:
+            if isinstance(cell.value, str) and cell.value.startswith(('=', '+', '-', '@')): cell.value = "'" + cell.value
     out = io.BytesIO()
     wb.save(out)
     return out.getvalue()
 
 
-def pdf(records, store):
+def pdf(records, store, org=None):
     from reportlab.lib import colors
     from reportlab.lib.pagesizes import A4
     from reportlab.lib.styles import ParagraphStyle
@@ -102,20 +120,28 @@ def pdf(records, store):
     out = io.BytesIO()
     doc = SimpleDocTemplate(out, pagesize=A4, rightMargin=36, leftMargin=36, topMargin=40, bottomMargin=40)
     count = Counter(r['before']['grade'] for r in records)
-    story = [p('KYWA 위험성평가\n및 개선조치 보고서', title), p('한국청소년활동진흥원'),
+    story = [p(f'{org.short_name if org else "KYWA"} 위험성평가\n및 개선조치 보고서', title), p(org.name if org else '한국청소년활동진흥원'),
              p(f'생성시각  {now()}'), Spacer(1, 18),
              p(f"평가 {len(records)}건 · 완료 {sum(r['status']=='완료' for r in records)}건 · 미완료 {sum(r['status']!='완료' for r in records)}건", heading),
              p('최초 평가 당시 등급: ' + ' / '.join(f'{g} {n}건' for g, n in count.items())),
              p('본 보고서는 사용자가 확인·저장한 평가와 조치 이력을 기준으로 생성되었습니다. AI 제안의 관련근거는 원문 확인이 필요합니다. 과거 평가의 당시 등급은 보존됩니다.')]
+    for policy in policy_snapshots(records):
+        story.extend([p('평가 기준: ' + policy['version'], heading), p('산정 방식: ' + policy['method'])])
+        for key, label in [('p_levels', '빈도'), ('s_levels', '강도')]:
+            story.append(p(label + ': ' + ' / '.join(f"{x['value']} {x['description']}" for x in policy[key])))
+        story.append(p('평가표: ' + ' / '.join(f"({x['p']}, {x['s']}) → {x['score']}점 {x['grade']}" for x in policy['cells'])))
     for index, record in enumerate(records, 1):
         b, a = record['before'], record.get('after') or {}
         story.extend([PageBreak(), p(f"{index:02d}  {record['facility']} · {b['location']}", heading),
                       p(f"{record['department']}  |  {record['status']}  |  {record['created_at']}"),
                       p(f"평가 ID: {record['id']}  /  기준: {record['policy']}"),
-                      p(f"{b['category']}  ·  {b['grade']} {b['score']}점 (빈도 {b['p']} × 강도 {b['s']})", heading),
+                      p(f"{b['category']}  ·  {b['grade']} {b['score']}점 (빈도 {b['p']} / 강도 {b['s']})", heading),
                       p('위험상황  ' + b['scenario']), p('감소대책  ' + b['solution']), p('관련근거(확인 필요)  ' + b['law'])])
+        if org and org.submitter_name.mode != 'disabled' and org.submitter_name.show_in_reports:
+            story.append(p(org.submitter_name.label + ': ' + display_name(record.get('submitter_name'))))
         if a:
-            story.extend([p(f"개선 후  {a['grade']} {a['score']}점 (빈도 {a['p']} × 강도 {a['s']})", heading),
+            story.extend([p(f"개선 후  {a['grade']} {a['score']}점 (빈도 {a['p']} / 강도 {a['s']})", heading),
+                          p('재평가 기준: ' + a.get('policy', 'LEGACY-UNKNOWN')),
                           p('실제 조치내용  ' + a.get('text', '기존 기록에 조치내용 없음')),
                           p(f"처리자: {a.get('actor', '기록 없음')} / {a.get('created_at', '')}")])
         photo_cells = []
@@ -132,7 +158,17 @@ def pdf(records, store):
         story.append(table)
     def footer(canvas, _doc):
         canvas.setFont('KywaKorean', 8)
-        canvas.drawString(36, 22, 'KYWA · AI 위험성평가')
+        canvas.drawString(36, 22, f'{org.short_name if org else "KYWA"} · AI 위험성평가')
         canvas.drawRightString(A4[0]-36, 22, str(_doc.page))
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return out.getvalue()
+
+
+def policy_snapshots(records):
+    unique = {}
+    for record in records:
+        for item in (record, record.get('after') or {}):
+            snapshot = item.get('policy_snapshot')
+            if snapshot:
+                unique[snapshot['version']] = snapshot
+    return list(unique.values())

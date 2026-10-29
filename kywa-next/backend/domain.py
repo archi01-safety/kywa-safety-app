@@ -46,17 +46,11 @@ class RiskInput(StrictModel):
     category: str = Field(max_length=40)
     location: str = Field(min_length=1, max_length=200)
     scenario: str = Field(min_length=1, max_length=2000)
-    p: StrictInt = Field(ge=1, le=5)
-    s: StrictInt = Field(ge=1, le=4)
+    p: StrictInt = Field(ge=1, le=10)
+    s: StrictInt = Field(ge=1, le=10)
     law: str = Field(default='', max_length=2000)
     solution: str = Field(min_length=1, max_length=3000)
 
-    @field_validator('category')
-    @classmethod
-    def known_category(cls, value):
-        if value not in CATEGORIES:
-            raise ValueError('허용되지 않은 위험 분류입니다.')
-        return value
 
 
 class RiskList(StrictModel):
@@ -64,8 +58,8 @@ class RiskList(StrictModel):
 
 
 class AfterRisk(StrictModel):
-    p: StrictInt = Field(ge=1, le=5)
-    s: StrictInt = Field(ge=1, le=4)
+    p: StrictInt = Field(ge=1, le=10)
+    s: StrictInt = Field(ge=1, le=10)
     rationale: str = Field(min_length=1, max_length=2000)
 
 
@@ -77,6 +71,17 @@ class EditedRisk(StrictModel):
 
 
 class SubmitRequest(StrictModel):
+    submitter_name: str = Field(default="", max_length=100, strict=True)
+
+    @field_validator('submitter_name', mode='before')
+    @classmethod
+    def masked_name_only(cls, value):
+        # Validate before general whitespace stripping. Do not silently accept raw names.
+        from .submitter_name import is_masked_name
+        if value != '' and not is_masked_name(value):
+            raise ValueError('성명은 첫 글자와 초성으로 변환된 형식만 제출할 수 있습니다.')
+        return value
+
     request_id: str = Field(pattern=r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
     draft_id: str
     items: list[EditedRisk] = Field(min_length=1, max_length=12)
@@ -86,8 +91,8 @@ class ActionRequest(StrictModel):
     request_id: str = Field(pattern=r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
     draft_id: str
     revision: StrictInt = Field(ge=1)
-    p: StrictInt = Field(ge=1, le=5)
-    s: StrictInt = Field(ge=1, le=4)
+    p: StrictInt = Field(ge=1, le=10)
+    s: StrictInt = Field(ge=1, le=10)
     complete: bool = True
 
 
@@ -106,7 +111,7 @@ class ReportRequest(StrictModel):
     end: str = ''
 
 
-def sheet_row(record):
+def sheet_row(record, include_name=False):
     b, a = record['before'], record.get('after') or {}
     photo = lambda fid: f'https://drive.google.com/file/d/{fid}/view' if fid else '사진 없음'
     values = [record['created_at'], record['facility'], record['department'], b['location'], b['category'],
@@ -116,4 +121,4 @@ def sheet_row(record):
             json.dumps(record, ensure_ascii=False, separators=(',', ':'))]
     if record.get('legacy_values'):
         values[:13] = record['legacy_values'][:13]
-    return values
+    return values + ([record.get('submitter_name', '')] if include_name else [])

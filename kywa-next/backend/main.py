@@ -12,6 +12,7 @@ from urllib.parse import quote
 
 from authlib.integrations.starlette_client import OAuth
 from fastapi import FastAPI, Request, HTTPException, UploadFile, File, Form
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -24,6 +25,10 @@ from .services import Drafts, RateLimiter, AIService, ServiceError, prepare_imag
 from . import reports
 from .pin_auth import PinAuth, PinLocked, SESSION_SECONDS
 from .overview import summarize, guide_keywords
+from .organization import record_policy, PolicyError
+from .submitter_name import display_name
+from .branding import palette
+from .sheet_schema import SheetSchemaError
 
 log = logging.getLogger('kywa')
 
@@ -49,14 +54,18 @@ class BodySizeLimit:
 def create_app(settings=None, repo=None, drive=None, ai=None):
     cfg = settings or Settings()
     cfg.validate_runtime()
-    repo = repo or (DemoRepository(cfg.demo_data_path) if cfg.demo else SheetsRepository(cfg))
+    org = cfg.organization
+    FACILITIES, DEPARTMENTS, CATEGORIES = org.facilities, org.departments, org.categories
+    POLICY = org.policy.version
+    risk = org.policy.risk
+    repo = repo or (DemoRepository(cfg.demo_data_path, org) if cfg.demo else SheetsRepository(cfg))
     drive = drive or DriveStore(cfg)
     ai = ai or AIService(cfg)
     drafts, limits = Drafts(), RateLimiter()
     overview_cache, overview_lock = {}, threading.Lock()
     pin_auth = PinAuth(cfg.admin_pin_hash) if cfg.auth_mode == 'pin' else None
     expensive, memory_lock = threading.BoundedSemaphore(2), threading.BoundedSemaphore(1)
-    app = FastAPI(title='KYWA Safety API', docs_url='/api/docs' if cfg.demo else None, redoc_url=None,
+    app = FastAPI(title=f'{org.short_name} Safety API', docs_url='/api/docs' if cfg.demo else None, redoc_url=None,
                   openapi_url='/api/openapi.json' if cfg.demo else None)
     app.state.repo, app.state.drafts, app.state.settings = repo, drafts, cfg
     app.state.pin_auth = pin_auth
@@ -86,10 +95,21 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             response.headers['Cache-Control'] = 'no-store'
         return response
 
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request, exc):
+        # FastAPI's default includes rejected inputs (and potentially raw names).
+        # Never serialize or log exc.errors(), exc.body, or the exception text.
+        return JSONResponse({'detail': '입력 형식을 확인해 주세요. 성명은 첫 글자와 초성으로 변환하여 제출해야 합니다.'}, status_code=422)
+
+    @app.exception_handler(PolicyError)
+    async def invalid_policy_value(request, exc):
+        return JSONResponse({'detail': str(exc)}, status_code=422)
+
     @app.exception_handler(ServiceError)
     async def service_error(request, exc):
         return JSONResponse({'detail': str(exc)}, status_code=422)
 
+    @app.exception_handler(SheetSchemaError)
     @app.exception_handler(RepositoryError)
     async def repository_error(request, exc):
         return JSONResponse({'detail': str(exc)}, status_code=409)
@@ -122,7 +142,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         email = request.session.get('email', '')
         if cfg.demo and email.startswith('demo-'):
             role = 'admin' if email == 'demo-admin@kywa.local' else 'staff'
-            account = {'role': role, 'facilities': FACILITIES if role == 'admin' else ['중앙']}
+            account = {'role': role, 'facilities': FACILITIES if role == 'admin' else FACILITIES[:1]}
         else:
             account = cfg.accounts.get(email)
         if not account or account.get('role') not in {'admin', 'staff'}:
@@ -143,16 +163,27 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     def public_record(record):
         r = copy.deepcopy(record)
-        for key in ('submit_hash', 'operation_id', 'submit_owner', 'legacy_values'):
+        for key in ('submit_hash', 'operation_id', 'submit_owner', 'legacy_values', '_sheet_row', '_sheet_hash', '_sheet_revision'):
             r.pop(key, None)
         b = r['before']
-        try:
-            r['current_risk'] = risk(b['p'], b['s'])
-        except ValueError:
-            r['current_risk'] = None
+        # Preserve the recorded grade, even when today's institution policy differs.
+        r['current_risk'] = {key:b[key] for key in ('p','s','score','grade')}
         for target in [r, r.get('after') or {}]:
             fid = target.get('photo_id')
             target['photo_url'] = f"/api/assessments/{r['id']}/photos/{fid}" if fid else ''
+        r['reassessment_policy'] = None
+        try:
+            r['reassessment_policy'] = record_policy(r, org).model_dump()
+        except ValueError:
+            pass
+        if org.submitter_name.mode == 'disabled':
+            r.pop('submitter_name', None)
+        else:
+            r['submitter_name'] = display_name(r.get('submitter_name'))
+        for target in [r['before'], r.get('after') or {}]:
+            if 'tone' not in target:
+                target['tone'] = next((g.tone for g in org.policy.grades if g.name == target.get('grade')), -1)
+                target['urgent'] = next((g.urgent for g in org.policy.grades if g.name == target.get('grade')), False)
         return r
 
     def filtered(request, facility='', department='', status='', start='', end=''):
@@ -190,7 +221,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         return {'mode': cfg.app_env, 'local_workspace': cfg.local_workspace, 'auth_mode': cfg.auth_mode,
                 'csrf': request.session['csrf'], 'user': account,
                 'facilities': FACILITIES, 'departments': DEPARTMENTS, 'categories': CATEGORIES,
-                'policy': POLICY, 'report_max_rows': cfg.report_max_rows}
+                'policy': POLICY, 'organization': {**org.model_dump(exclude={'category_guidance', 'prompt_guidance', 'storage', 'source'}),
+                    'branding': {**org.branding.model_dump(), 'colors': palette(org.branding.primary)}}, 'report_max_rows': cfg.report_max_rows}
 
     @app.get('/api/overview')
     def overview(request: Request, year: int | None = None):
@@ -204,9 +236,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 records = repo.records()
                 years = {year} | {int(r['created_at'][:4]) for r in records
                                  if str(r.get('created_at', ''))[:4].isdigit()}
-                overview_cache['data'] = {y: summarize(records, y) for y in years}
+                overview_cache['data'] = {y: summarize(records, y, org) for y in years}
                 overview_cache['expires'] = time.monotonic() + 30
-            return overview_cache['data'].get(year, dict(summarize([], year), years=sorted(
+            return overview_cache['data'].get(year, dict(summarize([], year, org), years=sorted(
                 set(overview_cache['data']) | {year}, reverse=True)))
 
     @app.get('/api/auth/google')
@@ -312,9 +344,12 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         photo = selected_photo(request, photo_id)
         guard_ai(request)
         try:
-            results = [dict(item, **risk(item['p'], item['s'])) for item in ai.analyze(facility, department, description, photo)]
+            items = ai.analyze(facility, department, description, photo)
+            if any(item['category'] not in CATEGORIES for item in items):
+                raise PolicyError('기관 기준에 없는 위험 분류입니다. 다시 분석하세요.')
+            results = [{**item, **risk(item['p'], item['s'])} for item in items]
             value = {'type': 'initial', 'facility': facility, 'department': department, 'description': description,
-                     'items': results, 'photo': photo}
+                     'items': results, 'photo': photo, 'policy_snapshot': org.policy.model_dump()}
             key = drafts.put(session(request), value)
             return {'draft_id': key, 'items': results, 'guide_keywords': guide_keywords(results),
                     'photo_url': f'/api/drafts/{key}/photo' if photo else ''}
@@ -324,6 +359,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     @app.post('/api/assessments')
     def submit(request: Request, data: SubmitRequest):
         mutation(request)
+        submitter_name = org.name_value(data.submitter_name)
         body_hash = digest(data.model_dump())
         with repo.lock:
             previous = [r for r in repo.records() if r.get('operation_id') == data.request_id]
@@ -344,7 +380,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 before.update(item.model_dump(exclude={'index'}))
                 records.append(dict(id=str(uuid.uuid5(uuid.UUID(data.request_id), str(item.index))),
                     created_at=now(), facility=draft['facility'], department=draft['department'], before=before,
-                    photo_id=photo_id, after=None, policy=POLICY, status='접수', revision=1,
+                    photo_id=photo_id, after=None, organization_id=org.id, submitter_name=submitter_name,
+                    policy_snapshot=draft['policy_snapshot'], prompt_version=org.prompt_version, policy=POLICY, status='접수', revision=1,
                     operation_id=data.request_id, submit_hash=body_hash, submit_owner=digest(session(request))))
             repo.apply(records, [])
             overview_cache['expires'] = 0
@@ -384,8 +421,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         photo = selected_photo(request, photo_id)
         guard_ai(request)
         try:
+            policy = record_policy(record, org)
             result = ai.reassess(record, text, photo)
-            result.update(risk(result['p'], result['s']))
+            result.update(policy.risk(result['p'], result['s']))
             draft_id = drafts.put(session(request), dict(type='after', record_id=record_id,
                                 revision=record['revision'], text=text, photo=photo, result=result))
             return {'draft_id': draft_id, 'revision': record['revision'], **result}
@@ -408,9 +446,11 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 raise HTTPException(422, '다른 평가의 초안입니다.')
             if record['revision'] != data.revision or draft['revision'] != data.revision or record['status'] == '완료':
                 raise HTTPException(409, '평가가 변경되었습니다. 목록을 새로고침하고 다시 분석하세요.')
-            after = dict(**risk(data.p, data.s), text=draft['text'],
+            policy = record_policy(record, org)
+            calculated = policy.risk(data.p, data.s)
+            after = dict(**calculated, text=draft['text'],
                          photo_id=drive.put(draft['photo'], data.request_id), actor=account['email'], created_at=now(),
-                         policy=POLICY, rationale=draft['result']['rationale'], ai_result=draft['result'])
+                         policy=policy.version, policy_snapshot=policy.model_dump(), prompt_version=org.prompt_version, rationale=draft['result']['rationale'], ai_result=draft['result'])
             record.update(after=after, status='완료' if data.complete else '조치 중', revision=record['revision']+1)
             event = dict(id=data.request_id, record_id=record_id, at=now(), actor=account['email'],
                          kind='완료' if data.complete else '조치 저장', text=draft['text'], after=after, body_hash=body_hash)
@@ -457,9 +497,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not memory_lock.acquire(blocking=False):
             raise HTTPException(429, '다른 사진 또는 보고서를 처리 중입니다. 잠시 후 다시 시도하세요.')
         try:
-            output = reports.excel(records, drive) if data.format == 'xlsx' else reports.pdf(records, drive)
+            output = reports.excel(records, drive, org) if data.format == 'xlsx' else reports.pdf(records, drive, org)
             mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if data.format == 'xlsx' else 'application/pdf'
-            filename = f'KYWA_위험성평가_{now()[:10]}.{data.format}'
+            filename = f'{org.id}_위험성평가_{now()[:10]}.{data.format}'
             return Response(output, media_type=mime, headers={'Content-Disposition': f"attachment; filename*=UTF-8''{quote(filename)}"})
         finally:
             memory_lock.release()

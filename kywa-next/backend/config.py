@@ -1,6 +1,6 @@
 import json
 from urllib.parse import urlparse
-from functools import lru_cache
+from functools import lru_cache, cached_property
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -10,6 +10,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / '.env', extra='ignore')
+    organization_id: str = 'kywa'
+    organization_config_dir: str = ''
     app_env: str = 'demo'
     app_base_url: str = 'http://localhost:8000'
     session_secret: str = 'local-demo-only-change-this-before-real-deployment'
@@ -32,6 +34,11 @@ class Settings(BaseSettings):
     auth_mode: str = 'google'
     admin_pin_hash: str = ''
 
+    @cached_property
+    def organization(self):
+        from .organization import load_organization
+        return load_organization(self.organization_id, self.organization_config_dir or None)
+
     @property
     def demo(self):
         return self.app_env == 'demo'
@@ -41,6 +48,16 @@ class Settings(BaseSettings):
         return json.loads(self.access_accounts_json)
 
     def validate_runtime(self):
+        org = self.organization
+        if not self.spreadsheet_id: self.spreadsheet_id = org.storage.spreadsheet_id
+        if not self.drive_folder_id: self.drive_folder_id = org.storage.drive_folder_id
+        if 'sheet_name' not in self.model_fields_set: self.sheet_name = org.storage.sheet_name
+        if self.sheet_name == self.history_sheet_name:
+            raise ValueError('평가 탭과 조치이력 탭은 서로 달라야 합니다.')
+        if org.demo_only and not self.demo:
+            raise ValueError("시험 기관 설정은 실제 연동 환경에서 사용할 수 없습니다.")
+        if org.id != "kywa" and "demo_data_path" not in self.model_fields_set:
+            self.demo_data_path = str(ROOT / "local-data" / org.id / "demo.json")
         if self.auth_mode not in {'google', 'pin'}:
             raise ValueError('AUTH_MODE는 google 또는 pin이어야 합니다.')
         if self.auth_mode == 'pin':
@@ -74,7 +91,7 @@ class Settings(BaseSettings):
                 raise ValueError('실제 연동 환경은 HTTPS APP_BASE_URL이 필요합니다.')
             if self.auth_mode == 'google' and not self.accounts:
                 raise ValueError('담당자/관리자 계정을 ACCESS_ACCOUNTS_JSON에 등록하세요.')
-            from .domain import FACILITIES
+            FACILITIES = org.facilities
             if not isinstance(self.accounts, dict):
                 raise ValueError('ACCESS_ACCOUNTS_JSON은 이메일을 키로 하는 객체여야 합니다.')
             for email, account in self.accounts.items():
@@ -84,12 +101,28 @@ class Settings(BaseSettings):
                     or any(f not in FACILITIES for f in account['facilities'])
                     or account['role'] == 'staff' and not account['facilities']):
                     raise ValueError('승인 계정의 이메일, role, facilities 설정을 확인하세요.')
-            # The supplied legacy apps share these live resources. Never use them accidentally.
-            legacy_sheet = '1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q'
-            legacy_folder = '13RYVnDB7rrqLQYzB5Wa9WdWr0CHjm_MW'
-            if (self.spreadsheet_id == legacy_sheet or self.drive_folder_id == legacy_folder):
+            from .organization import load_organization
+            live = [load_organization(identity).storage for identity in ('kywa','fowi','knps','knf','kohi','khidi','cayf')]
+            if self.spreadsheet_id in {s.spreadsheet_id for s in live} or self.drive_folder_id in {s.drive_folder_id for s in live}:
                 if self.app_env != 'production' or not self.allow_legacy_writes:
                     raise ValueError('기존 운영 저장소입니다. 개발용 시트/폴더를 별도로 지정하세요.')
+            if self.app_env == 'production' and org.storage.spreadsheet_id:
+                if (self.spreadsheet_id != org.storage.spreadsheet_id or self.drive_folder_id != org.storage.drive_folder_id
+                    or self.sheet_name != org.storage.sheet_name):
+                    raise ValueError('기관 설정과 운영 시트·Drive 대상이 다릅니다. 기관별 연결 정보를 확인하세요.')
+            self.validate_google_identity()
+
+    def validate_google_identity(self):
+        try:
+            info = json.loads(self.google_service_account_json)
+            email = info['client_email']
+            if info.get('type') != 'service_account' or not info.get('private_key'):
+                raise ValueError()
+        except (ValueError, TypeError, KeyError):
+            raise ValueError('서비스 계정 JSON 형식을 확인하세요.') from None
+        if email != self.organization.storage.expected_service_account or self.google_delegate_email:
+            raise ValueError('등록된 서비스 계정이 지정된 기관 공통 계정과 다릅니다. 대리 계정 설정도 확인하세요.')
+        return email
 
 
 @lru_cache

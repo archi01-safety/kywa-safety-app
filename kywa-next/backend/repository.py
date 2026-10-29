@@ -1,7 +1,7 @@
 """Single-writer repositories. Google updates and audit rows share one atomic batch.
 
-Use ONE uvicorn worker/Render instance. Direct edits to managed cells and simultaneous
-legacy writers are unsupported; a spreadsheet is not a transactional multi-writer DB.
+Use ONE uvicorn worker/Render instance. Append-only Streamlit submissions may run concurrently. Direct row moves, deletes
+or manual edits during writes are unsupported; a spreadsheet is not a transactional multi-writer DB.
 """
 import copy
 import io
@@ -11,6 +11,7 @@ import threading
 from pathlib import Path
 
 from .domain import HEADERS, HISTORY_HEADERS, now, risk, sheet_row, POLICY
+from .sheet_schema import Layout, SheetSchemaError, MANAGED
 
 
 class RepositoryError(Exception):
@@ -18,7 +19,7 @@ class RepositoryError(Exception):
 
 
 class DemoRepository:
-    def __init__(self, path):
+    def __init__(self, path, org=None):
         self.path = Path(path)
         self.lock = threading.RLock()
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -36,6 +37,8 @@ class DemoRepository:
                 records.append(dict(id=f'demo-{i+1}', created_at=now(), facility=fac,
                                     department='협력부(국립청소년시설)', before=before, after=after,
                                     photo_id='', policy=POLICY, status='완료' if after else '접수', revision=1))
+            if org and org.id != 'kywa':
+                records = []
             self._write({'records': records, 'events': []})
 
     def _read(self):
@@ -77,7 +80,10 @@ def google_client(settings, service, version):
     from googleapiclient.discovery import build
     from google_auth_httplib2 import AuthorizedHttp
     import httplib2
-    return build(service, version, http=AuthorizedHttp(google_credentials(settings), http=httplib2.Http(timeout=25)), cache_discovery=False)
+    # Honor an explicitly configured, trusted CA bundle (e.g. managed Windows TLS inspection).
+    # Certificate verification remains enabled.
+    return build(service, version, http=AuthorizedHttp(google_credentials(settings),
+        http=httplib2.Http(timeout=25, ca_certs=os.environ.get('SSL_CERT_FILE') or None)), cache_discovery=False)
 
 
 def quoted(name):
@@ -101,22 +107,22 @@ class SheetsRepository:
 
     def _rows(self):
         rows = self._values(self.settings.sheet_name)
-        if not rows or rows[0][:len(HEADERS)] != HEADERS:
-            raise RepositoryError('시트 초기화/이관이 필요합니다. migrate 명령을 먼저 실행하세요.')
+        if not rows:
+            raise RepositoryError('기관 평가 탭이 비어 있습니다. migrate로 준비하세요.')
+        Layout(rows[0], self.settings.organization)
         return rows
 
-    def records(self):
-        records = []
-        for row in self._rows()[1:]:
-            if not any(str(v).strip() for v in row):
-                continue
-            if len(row) < 23 or not row[22]:
-                raise RepositoryError('이관되지 않은 행이 있습니다. 기존 앱의 쓰기를 종료한 뒤 다시 이관하세요.')
-            record = json.loads(row[22])
-            if row[18] != record['id']:
-                raise RepositoryError('평가 ID와 시스템 데이터가 일치하지 않습니다.')
-            records.append(record)
+    def _decoded(self, rows):
+        layout = Layout(rows[0], self.settings.organization)
+        identity = self.settings.spreadsheet_id + ':' + self.settings.sheet_name
+        records = [layout.decode(row, index, identity) for index,row in enumerate(rows[1:],1)
+                   if any(str(v).strip() for v in row)]
+        if len({r['id'] for r in records}) != len(records):
+            raise RepositoryError('중복된 평가 ID가 있습니다. 원본을 확인하세요.')
         return records
+
+    def records(self):
+        return self._decoded(self._rows())
 
     def events(self, record_id=None):
         rows = self._values(self.settings.history_sheet_name)
@@ -130,33 +136,43 @@ class SheetsRepository:
             svc = google_client(self.settings, 'sheets', 'v4').spreadsheets()
             meta = svc.get(spreadsheetId=self.settings.spreadsheet_id, fields='sheets.properties').execute()
             ids = {s['properties']['title']: s['properties']['sheetId'] for s in meta['sheets']}
-            existing = self._rows()
-            positions = {r[18]: i for i, r in enumerate(existing) if len(r) > 18}
+            if self.settings.sheet_name not in ids or (events and self.settings.history_sheet_name not in ids):
+                raise RepositoryError('평가·조치이력 탭 준비가 필요합니다.')
+            rows = self._rows()
+            layout = Layout(rows[0], self.settings.organization)
+            layout.require_writable()
+            current = {r['id']:r for r in self._decoded(rows)}
             requests, new_rows = [], []
             for record in records:
-                if record['id'] in positions:
-                    requests.append({'updateCells': {'start': {'sheetId': ids[self.settings.sheet_name],
-                        'rowIndex': positions[record['id']], 'columnIndex': 0},
-                        'rows': [cells(sheet_row(record))], 'fields': 'userEnteredValue'}})
+                previous = current.get(record['id'])
+                if '_sheet_row' in record:
+                    if (not previous or previous['_sheet_row'] != record['_sheet_row'] or
+                        previous['_sheet_hash'] != record.get('_sheet_hash') or
+                        previous['revision'] != record.get('_sheet_revision')):
+                        raise RepositoryError('원본 행이 변경되었습니다. 목록을 새로고침한 뒤 다시 시도하세요.')
+                    encoded = layout.encoded(record)
+                    # Update only management cells. Original timestamps, names, formulas and links stay intact.
+                    for key in MANAGED:
+                        requests.append({'updateCells': {'start': {'sheetId': ids[self.settings.sheet_name],
+                            'rowIndex':previous['_sheet_row'], 'columnIndex':layout.columns[key]},
+                            'rows':[cells([encoded[key]])], 'fields':'userEnteredValue'}})
+                elif previous:
+                    raise RepositoryError('이미 존재하는 평가 ID입니다. 저장 결과를 먼저 확인하세요.')
                 else:
-                    new_rows.append(cells(sheet_row(record)))
+                    new_rows.append(cells(layout.new_row(record)))
             if new_rows:
-                requests.append({'appendCells': {'sheetId': ids[self.settings.sheet_name],
-                                                'rows': new_rows, 'fields': 'userEnteredValue'}})
+                requests.append({'appendCells': {'sheetId':ids[self.settings.sheet_name],
+                                                'rows':new_rows, 'fields':'userEnteredValue'}})
             if events:
-                event_rows = [cells([e['id'], e['record_id'], e['at'], e['actor'], e['kind'],
-                                    e.get('text', ''), json.dumps(e, ensure_ascii=False)]) for e in events]
-                requests.append({'appendCells': {'sheetId': ids[self.settings.history_sheet_name],
-                                                'rows': event_rows, 'fields': 'userEnteredValue'}})
-            # Show risk numbers as integers without filling empty post-action cells.
-            for start, end in ((6, 9), (13, 16)):
-                requests.append({'repeatCell': {
-                    'range': {'sheetId': ids[self.settings.sheet_name], 'startRowIndex': 1,
-                              'startColumnIndex': start, 'endColumnIndex': end},
-                    'cell': {'userEnteredFormat': {'numberFormat': {'type': 'NUMBER', 'pattern': '0'}}},
-                    'fields': 'userEnteredFormat.numberFormat'}})
-            # Do not blindly retry writes. A repeated request first checks its saved operation id.
-            svc.batchUpdate(spreadsheetId=self.settings.spreadsheet_id, body={'requests': requests}).execute()
+                history = self._values(self.settings.history_sheet_name)
+                if not history or history[0][:7] != HISTORY_HEADERS:
+                    raise RepositoryError('조치이력 시트 헤더를 확인하세요.')
+                event_rows = [cells([e['id'],e['record_id'],e['at'],e['actor'],e['kind'],
+                                    e.get('text',''),json.dumps(e,ensure_ascii=False)]) for e in events]
+                requests.append({'appendCells': {'sheetId':ids[self.settings.history_sheet_name],
+                                                'rows':event_rows, 'fields':'userEnteredValue'}})
+            if requests:
+                svc.batchUpdate(spreadsheetId=self.settings.spreadsheet_id, body={'requests':requests}).execute()
 
 
 class DriveStore:
@@ -175,13 +191,14 @@ class DriveStore:
         from googleapiclient.http import MediaIoBaseUpload
         svc = google_client(self.settings, 'drive', 'v3')
         folder = self.settings.drive_folder_id
-        q = f"'{folder}' in parents and trashed=false and appProperties has {{ key='kywaOperation' and value='{key}' }}"
+        organization = self.settings.organization_id
+        q = f"'{folder}' in parents and trashed=false and appProperties has {{ key='kywaOperation' and value='{key}' }} and appProperties has {{ key='safetyOrganization' and value='{organization}' }}"
         found = svc.files().list(q=q, fields='files(id)', supportsAllDrives=True,
                                  includeItemsFromAllDrives=True).execute().get('files', [])
         if found:
             return found[0]['id']
-        result = svc.files().create(body={'name': key + '.jpg', 'parents': [folder],
-                                         'appProperties': {'kywaOperation': key}},
+        result = svc.files().create(body={'name': organization + '_' + key + '.jpg', 'parents': [folder],
+                                         'appProperties': {'kywaOperation': key, 'safetyOrganization': organization}},
                                     media_body=MediaIoBaseUpload(io.BytesIO(data), mimetype='image/jpeg', resumable=False),
                                     fields='id', supportsAllDrives=True).execute()
         # No anyone/reader permission: storage remains private.
