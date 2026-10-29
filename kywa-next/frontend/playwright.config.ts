@@ -9,6 +9,6 @@ export default defineConfig({
   webServer: {
     command: `"${process.env.KYWA_TEST_PYTHON || 'python'}" -m uvicorn backend.main:app --host 127.0.0.1 --port 8010`,
     cwd: '..', url: 'http://localhost:8010/healthz', reuseExistingServer: false,
-    env: { APP_ENV: 'demo', APP_BASE_URL: 'http://localhost:8010', DEMO_DATA_PATH: `local-data/e2e-${Date.now()}.json` },
+    env: { ORGANIZATION_ID: process.env.ORGANIZATION_ID || 'kywa', APP_ENV: 'demo', APP_BASE_URL: 'http://localhost:8010', DEMO_DATA_PATH: `local-data/e2e-${Date.now()}.json` },
   },
 });
