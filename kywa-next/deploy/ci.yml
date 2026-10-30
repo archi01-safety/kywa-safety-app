@@ -27,7 +27,7 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: kywa-next/frontend/package-lock.json
-      - run: sudo apt-get update && sudo apt-get install -y fonts-nanum
+      - run: sudo apt-get update && sudo apt-get install -y fonts-nanum libvips42 libheif1
       - run: pip install -r backend/requirements.lock -r backend/requirements-dev.txt
       - run: python -m pytest backend/tests -q
       - run: npm ci && npm run test:unit && npm run build
