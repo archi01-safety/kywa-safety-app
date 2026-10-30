@@ -96,7 +96,7 @@ input,textarea,select{background:var(--surface-muted);border-color:var(--line-st
 
 /* KYWA next-step guidance and one shared operation dialog. */
 .next-action { outline: 1px solid var(--accent, #ed174f); outline-offset: 3px; box-shadow: 0 0 18px color-mix(in srgb, var(--accent, #ed174f) 16%, transparent); }
-.progress-dialog { position:fixed; inset:0; margin:auto; width:min(420px,calc(100vw - 32px)); padding:34px 26px 28px; color:var(--text); background:var(--surface, #25272c); border:1px solid var(--line); border-radius:20px; text-align:center; box-shadow:0 24px 80px #0008; }
+.progress-dialog { position:fixed; inset:0; margin:auto; width:min(420px,calc(100vw - 32px)); padding:34px 26px 28px; color:var(--ink); background:var(--surface, #25272c); border:1px solid var(--line); border-radius:20px; text-align:center; box-shadow:0 24px 80px #0008; }
 .progress-dialog::backdrop {background:#080b12aa;backdrop-filter:blur(3px)}
 .progress-dialog h2 {font-size:20px;margin:14px 0 10px}.progress-dialog p {line-height:1.7;font-size:14px;word-break:keep-all}
 .progress-symbol svg {width:44px;height:44px;color:var(--accent,#ed174f)}

@@ -87,7 +87,7 @@ export default function Home() {
     const generation = epoch.current;
     retry.current = () => { void run(label, work); };
     running.current = true; setBusy(label); setError(""); setNotice("");
-    try { await work(); if (generation === epoch.current && !noticeRef.current) setNotice("작업을 완료했습니다."); } catch (e) { if (generation !== epoch.current) return; setError(e instanceof Error ? e.message : "연결을 확인하고 다시 시도해 주세요."); }
+    try { await work(); if (generation === epoch.current && !noticeRef.current) setNotice(/재평가/.test(label) ? "재평가를 완료했습니다. 결과를 검토한 뒤 조치내용을 저장하세요." : /로그아웃/.test(label) ? "로그아웃했습니다." : /로그인|비밀번호/.test(label) ? "로그인했습니다. 담당 업무를 이어서 진행해 주세요." : "작업을 완료했습니다."); } catch (e) { if (generation !== epoch.current) return; setError(e instanceof Error ? e.message : "연결을 확인하고 다시 시도해 주세요."); }
     finally { if (generation === epoch.current) { running.current = false; setBusy(""); } }
   };
   const closeProgress = useCallback(() => { setError(""); writeNotice(""); noticeRef.current = ""; }, []);
@@ -107,6 +107,7 @@ export default function Home() {
     if (!enhanced || value.processed) return value;
     setBusy("사진 속 얼굴을 찾아 모자이크하고 있습니다");
     const result = await (await api(`/photos/${value.id}/deidentify`, {})).json();
+    setBusy("처리한 사진과 현장 내용을 분석하고 있습니다");
     return { ...result, confirmed: true } as NonNullable<Photo>;
   };
   const requestId = (scope: string, body: object) => { const key = scope + JSON.stringify(body); if (!requests.current.has(key)) requests.current.set(key, crypto.randomUUID()); return requests.current.get(key)!; };
