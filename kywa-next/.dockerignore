@@ -3,7 +3,10 @@
 .venv
 local-data
 artifacts
-backend/tests
+backend/tests/*
+!backend/tests/fixtures
+backend/tests/fixtures/*
+!backend/tests/fixtures/sample.heic
 **/__pycache__
 .pytest_cache
 frontend/node_modules
