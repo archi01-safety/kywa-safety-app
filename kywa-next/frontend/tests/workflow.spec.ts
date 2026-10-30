@@ -11,6 +11,7 @@ test('evaluation, reassessment, completion, history and reports', async ({ page 
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('2층 난간 손상\n바닥 미끄러움');
   await page.getByRole('button', { name: 'KYWA AI 위험요인 분석 시작', exact: true }).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(2);
+  await expect(page.getByRole('dialog')).toBeHidden();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBeTruthy();
   await page.locator('.evaluation-row').first().getByLabel('장소', { exact: true }).fill(location);
   await page.getByRole('checkbox', { name: '02 · 시설 안전' }).uncheck();
@@ -21,6 +22,8 @@ test('evaluation, reassessment, completion, history and reports', async ({ page 
   await page.getByRole('button').filter({ has: page.getByRole('heading', { name: location, exact: true }) }).click();
   await page.getByLabel('실제 조치내용', { exact: true }).fill('손상 부위를 보수하고 재점검했습니다.');
   await page.getByRole('button', { name: 'AI 재평가하기', exact: true }).click();
+  await expect(page.locator('.reassessment')).toBeVisible();
+  await expect(page.getByRole('dialog')).toBeHidden();
   await page.getByRole('combobox', { name: '빈도', exact: true }).selectOption('1');
   await page.getByRole('button', { name: '확인 후 완료', exact: true }).click();
   await expect(page.getByText('개선조치가 완료되었습니다.', { exact: true })).toBeVisible();

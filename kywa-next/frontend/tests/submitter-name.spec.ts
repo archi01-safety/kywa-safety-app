@@ -37,6 +37,7 @@ test('name preview, required gating, IME, private requests and admin displays', 
   await expect(preview).toHaveText('홍㉠㉢으로 제출됩니다.');
   await analyze.click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
+  await expect(page.getByRole('dialog')).toBeHidden();
   const submit = page.getByRole('button',{name:'KYWA AI 안전센터로 데이터 전송',exact:true});
   await input.fill('');
   await expect(submit).toBeDisabled();
