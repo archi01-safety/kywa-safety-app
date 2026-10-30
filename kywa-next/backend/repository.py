@@ -113,6 +113,9 @@ class SheetsRepository:
         return rows
 
     def _decoded(self, rows):
+        from .compact_storage import compact, decode
+        if self.settings.organization.id == 'kywa' and compact(rows[0]):
+            return decode(self, rows)
         layout = Layout(rows[0], self.settings.organization)
         identity = self.settings.spreadsheet_id + ':' + self.settings.sheet_name
         records = [layout.decode(row, index, identity) for index,row in enumerate(rows[1:],1)
@@ -122,7 +125,12 @@ class SheetsRepository:
         return records
 
     def records(self):
-        return self._decoded(self._rows())
+        with self.lock:
+            rows = self._rows()
+            from .compact_storage import compact, decode, recover
+            if self.settings.organization.id == 'kywa' and compact(rows[0]):
+                return decode(self, rows, recover(self, rows))
+            return self._decoded(rows)
 
     def events(self, record_id=None):
         rows = self._values(self.settings.history_sheet_name)
@@ -133,6 +141,9 @@ class SheetsRepository:
 
     def apply(self, records, events):
         with self.lock:
+            from .compact_storage import compact, apply as compact_apply
+            if self.settings.organization.id == 'kywa' and compact(self._rows()[0]):
+                return compact_apply(self, records, events)
             svc = google_client(self.settings, 'sheets', 'v4').spreadsheets()
             meta = svc.get(spreadsheetId=self.settings.spreadsheet_id, fields='sheets.properties').execute()
             ids = {s['properties']['title']: s['properties']['sheetId'] for s in meta['sheets']}

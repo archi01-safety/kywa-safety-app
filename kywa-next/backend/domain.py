@@ -103,7 +103,7 @@ class StateRequest(StrictModel):
 
 
 class ReportRequest(StrictModel):
-    format: Literal['xlsx', 'pdf']
+    format: Literal['xlsx', 'pdf', 'hwpx']
     facility: str = ''
     department: str = ''
     status: str = ''

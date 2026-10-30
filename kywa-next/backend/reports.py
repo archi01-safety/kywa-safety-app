@@ -63,9 +63,22 @@ def excel(records, store, org=None):
             data = safe_photo(store, fid)
             if data:
                 pic = Image(io.BytesIO(data))
-                ratio = min(150 / pic.width, 110 / pic.height)
-                pic.width, pic.height = pic.width * ratio, pic.height * ratio
-                ws.add_image(pic, f'{get_column_letter(col)}{idx}')
+                if org and org.id == 'kywa':
+                    from openpyxl.drawing.spreadsheet_drawing import TwoCellAnchor, AnchorMarker
+                    from openpyxl.utils.units import pixels_to_EMU
+                    # Excel width 24 uses 7px per character + 5px padding; 100pt = 133.33px.
+                    width, height, margin = 24*7+5, 100*96/72, 6
+                    ratio=min((width-2*margin)/pic.width,(height-2*margin)/pic.height)
+                    pic.width,pic.height=pic.width*ratio,pic.height*ratio
+                    x,y=(width-pic.width)/2,(height-pic.height)/2
+                    pic.anchor=TwoCellAnchor(editAs='twoCell',
+                        _from=AnchorMarker(col=col-1,row=idx-1,colOff=pixels_to_EMU(x),rowOff=pixels_to_EMU(y)),
+                        to=AnchorMarker(col=col-1,row=idx-1,colOff=pixels_to_EMU(x+pic.width),rowOff=pixels_to_EMU(y+pic.height)))
+                    ws.add_image(pic)
+                else:
+                    ratio = min(150 / pic.width, 110 / pic.height)
+                    pic.width, pic.height = pic.width * ratio, pic.height * ratio
+                    ws.add_image(pic, f'{get_column_letter(col)}{idx}')
                 ws.cell(idx, col, '')
             else:
                 ws.cell(idx, col, '사진 불러오기 실패' if fid else '사진 없음')

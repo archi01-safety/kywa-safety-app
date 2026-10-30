@@ -25,7 +25,12 @@ def ai_response_schema(model):
     # Keep the strict Pydantic validation on the returned JSON below.
     def compatible(value):
         if isinstance(value, dict):
-            return {k: compatible(v) for k, v in value.items() if k != 'additionalProperties'}
+            excluded = {'additionalProperties'}
+            if model.__name__ == 'FaceDetection':
+                # Coordinate bounds in nested face arrays are rejected by this API dialect.
+                # Strict bounds/order/count validation still runs on the returned JSON.
+                excluded |= {'minimum','maximum','maxItems'}
+            return {k: compatible(v) for k, v in value.items() if k not in excluded}
         if isinstance(value, list):
             return [compatible(v) for v in value]
         return value
@@ -66,14 +71,25 @@ class Drafts:
         self.items = OrderedDict()
         self.lock = threading.RLock()
         self.max_entries, self.ttl = max_entries, ttl
+        self.revoked = OrderedDict()
 
     def put(self, owner, value):
         with self.lock:
+            if owner in self.revoked:
+                raise ServiceError('초기화된 작업입니다. 새 분석을 시작해 주세요.')
             key = str(uuid.uuid4())
             self.items[key] = (time.monotonic(), owner, value)
             while len(self.items) > self.max_entries:
                 self.items.popitem(last=False)
             return key
+
+    def clear_owner(self, owner):
+        with self.lock:
+            self.revoked[owner] = time.monotonic()
+            while len(self.revoked)>5000:
+                self.revoked.popitem(last=False)
+            for key in [k for k, value in self.items.items() if value[1] == owner]:
+                del self.items[key]
 
     def get(self, owner, key):
         with self.lock:
@@ -205,6 +221,9 @@ class AIService:
 관련근거는 확인이 필요한 제안이며,
 실시간 법령 검증을 했다고 주장하지 않는다. 확신 없는 조항 번호는 생략하고 확인 필요라고 쓴다.
 서로 다른 위험만 최대 12개 반환한다. 점수와 등급은 서버에서 계산하므로 반환하지 않는다.'''
+        if self.org.id == 'kywa':
+            from .prompts import kywa_prompt
+            prompt = kywa_prompt(self.org, facility, department, description)
         return [r.model_dump() for r in self._generate(prompt, RiskList, photo).items]
 
     def reassess(self, record, text, photo=None):

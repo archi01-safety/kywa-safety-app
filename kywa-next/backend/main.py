@@ -35,8 +35,9 @@ log = logging.getLogger('kywa')
 
 class BodySizeLimit:
     """Enforce the limit on received bytes as well as the declared Content-Length."""
-    def __init__(self, app):
+    def __init__(self, app, max_bytes=11*1024*1024):
         self.app = app
+        self.max_bytes = max_bytes
 
     async def __call__(self, scope, receive, send):
         size = 0
@@ -45,8 +46,9 @@ class BodySizeLimit:
             message = await receive()
             if message['type'] == 'http.request':
                 size += len(message.get('body', b''))
-                if size > 11 * 1024 * 1024:
-                    raise HTTPException(413, '요청 크기가 11MB를 초과했습니다.')
+                limit = self.max_bytes if scope.get('path') == '/api/photos/prepare' else 11*1024*1024
+                if size > limit:
+                    raise HTTPException(413, '요청 크기 제한을 초과했습니다.')
             return message
         await self.app(scope, limited_receive if scope['type'] == 'http' else receive, send)
 
@@ -63,15 +65,19 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     ai = ai or AIService(cfg)
     drafts, limits = Drafts(), RateLimiter()
     overview_cache, overview_lock = {}, threading.Lock()
+    draft_epochs = {}
+    epoch_lock = threading.Lock()
     pin_auth = PinAuth(cfg.admin_pin_hash) if cfg.auth_mode == 'pin' else None
     expensive, memory_lock = threading.BoundedSemaphore(2), threading.BoundedSemaphore(1)
+    from .report_jobs import ReportJobs, MIMES
+    report_jobs = ReportJobs(ai,drive,org,memory_lock)
     app = FastAPI(title=f'{org.short_name} Safety API', docs_url='/api/docs' if cfg.demo else None, redoc_url=None,
                   openapi_url='/api/openapi.json' if cfg.demo else None)
     app.state.repo, app.state.drafts, app.state.settings = repo, drafts, cfg
     app.state.pin_auth = pin_auth
     app.add_middleware(SessionMiddleware, secret_key=cfg.session_secret, session_cookie='kywa_session',
                        max_age=SESSION_SECONDS if pin_auth else 28800, same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
-    app.add_middleware(BodySizeLimit)
+    app.add_middleware(BodySizeLimit, max_bytes=(21 if org.id == 'kywa' else 11)*1024*1024)
     oauth = OAuth()
     oauth.register(name='google', client_id=cfg.google_client_id, client_secret=cfg.google_client_secret,
                    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
@@ -87,8 +93,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             return JSONResponse({'detail': '로컬 시험 공간은 이 PC에서만 접근할 수 있습니다.'}, status_code=403)
         # Reject oversized multipart bodies before python-multipart can spool to disk.
         length = request.headers.get('content-length')
-        if length and (not length.isdigit() or int(length) > 11 * 1024 * 1024):
-            return JSONResponse({'detail': '요청 크기가 11MB를 초과했습니다.'}, status_code=413)
+        max_body = 21 if org.id == 'kywa' and request.url.path == '/api/photos/prepare' else 11
+        if length and (not length.isdigit() or int(length) > max_body * 1024 * 1024):
+            return JSONResponse({'detail': '요청 크기 제한을 초과했습니다.'}, status_code=413)
         if request.method == 'POST' and request.url.path == '/api/photos/prepare' and not length:
             return JSONResponse({'detail': 'Content-Length가 필요합니다.'}, status_code=411)
         response = await call_next(request)
@@ -129,6 +136,17 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             request.session['owner'] = secrets.token_urlsafe(24)
             request.session['csrf'] = secrets.token_urlsafe(24)
         return request.session['owner']
+
+    def draft_owner(request):
+        if not hasattr(request.state, 'draft_owner'):
+            owner = session(request)
+            with epoch_lock:
+                if owner not in draft_epochs:
+                    if len(draft_epochs) >= 5000:
+                        draft_epochs.pop(next(iter(draft_epochs)))
+                    draft_epochs[owner] = secrets.token_urlsafe(24)
+                request.state.draft_owner = draft_epochs[owner]
+        return request.state.draft_owner
 
     def mutation(request):
         session(request)
@@ -308,23 +326,61 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     @app.post('/api/photos/prepare')
     def prepare(request: Request, photo: UploadFile = File(...)):
         mutation(request)
+        draft_owner(request)
         if not limits.allow('photo:' + session(request), 20, 600):
             raise HTTPException(429, '사진 처리 요청이 많습니다.')
         if not memory_lock.acquire(blocking=False):
             raise HTTPException(429, '다른 사진 또는 보고서를 처리 중입니다. 잠시 후 다시 시도하세요.')
         try:
-            raw = photo.file.read(10*1024*1024+1)
-            data = prepare_image(raw)
-            key = drafts.put(session(request), {'type': 'photo', 'photo': data})
+            raw = photo.file.read((20 if org.id == 'kywa' else 10)*1024*1024+1)
+            if org.id == 'kywa':
+                from .photo_privacy import normalize_photo
+                data = normalize_photo(raw)
+            else:
+                data = prepare_image(raw)
+            key = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data})
             return {'id': key, 'url': f'/api/drafts/{key}/photo',
                     'notice': '자동 얼굴 처리에는 누락이 있을 수 있습니다. 미리보기에서 얼굴·개인정보를 확인하세요.'}
         finally:
             photo.file.close()
             memory_lock.release()
 
+    @app.post('/api/drafts/reset')
+    def reset_drafts(request: Request):
+        mutation(request)
+        previous = draft_owner(request)
+        drafts.clear_owner(previous)
+        # A new draft owner prevents late analysis replies from reviving cleared drafts.
+        with epoch_lock:
+            draft_epochs[session(request)] = secrets.token_urlsafe(24)
+        return {'ok': True}
+
+    @app.post('/api/photos/{key}/deidentify')
+    def deidentify(request: Request, key: str):
+        mutation(request)
+        if org.id != 'kywa':
+            raise HTTPException(404)
+        original = drafts.get(draft_owner(request), key)
+        if original['type'] != 'photo':
+            raise HTTPException(422, '사진을 다시 선택해 주세요.')
+        if original.get('processed_id'):
+            saved = drafts.get(draft_owner(request), original['processed_id'])
+            return {'id': original['processed_id'], 'url': f"/api/drafts/{original['processed_id']}/photo", 'processed': True}
+        draft_owner(request)
+        guard_ai(request)
+        try:
+            from .photo_privacy import deidentify_photo
+            with memory_lock:
+                data = deidentify_photo(ai, original['photo'])
+            processed_id = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data, 'deidentified': True})
+            original['processed_id'] = processed_id
+            return {'id': processed_id, 'url': f'/api/drafts/{processed_id}/photo', 'processed': True}
+        finally:
+            expensive.release()
+
     @app.get('/api/drafts/{key}/photo')
     def draft_photo(request: Request, key: str):
-        draft = drafts.get(session(request), key)
+        draft = drafts.get(draft_owner(request), key)
         if not draft.get('photo'):
             raise HTTPException(404)
         return Response(draft['photo'], media_type='image/jpeg')
@@ -332,9 +388,11 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def selected_photo(request, key):
         if not key:
             return None
-        draft = drafts.get(session(request), key)
+        draft = drafts.get(draft_owner(request), key)
         if draft['type'] != 'photo':
             raise HTTPException(422, '사진 초안이 아닙니다.')
+        if org.id == 'kywa' and not draft.get('deidentified'):
+            raise HTTPException(422, '사진의 얼굴 비식별화를 먼저 완료해 주세요.')
         return draft['photo']
 
     @app.post('/api/analyses')
@@ -346,6 +404,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if len(description) > 6000 or (not description.strip() and not photo_id):
             raise HTTPException(422, '사진 또는 6,000자 이하의 상황 설명을 입력하세요.')
         photo = selected_photo(request, photo_id)
+        draft_owner(request)
         guard_ai(request)
         try:
             items = ai.analyze(facility, department, description, photo)
@@ -354,7 +413,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             results = [{**item, **risk(item['p'], item['s'])} for item in items]
             value = {'type': 'initial', 'facility': facility, 'department': department, 'description': description,
                      'items': results, 'photo': photo, 'policy_snapshot': org.policy.model_dump()}
-            key = drafts.put(session(request), value)
+            key = drafts.put(draft_owner(request), value)
             return {'draft_id': key, 'items': results, 'guide_keywords': guide_keywords(results),
                     'photo_url': f'/api/drafts/{key}/photo' if photo else ''}
         finally:
@@ -371,7 +430,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 if any(r.get('submit_hash') != body_hash or r.get('submit_owner') != digest(session(request)) for r in previous):
                     raise HTTPException(409, '같은 제출번호로 다른 내용을 저장할 수 없습니다.')
                 return {'ids': [r['id'] for r in previous], 'replayed': True}
-            draft = drafts.get(session(request), data.draft_id)
+            draft = drafts.get(draft_owner(request), data.draft_id)
             if draft['type'] != 'initial':
                 raise HTTPException(422)
             indexes = [x.index for x in data.items]
@@ -423,14 +482,15 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not text.strip() or len(text) > 6000:
             raise HTTPException(422, '6,000자 이하의 개선조치 내용을 입력하세요.')
         photo = selected_photo(request, photo_id)
+        draft_owner(request)
         guard_ai(request)
         try:
             policy = record_policy(record, org)
             result = ai.reassess(record, text, photo)
             result.update(policy.risk(result['p'], result['s']))
-            draft_id = drafts.put(session(request), dict(type='after', record_id=record_id,
+            draft_id = drafts.put(draft_owner(request), dict(type='after', record_id=record_id,
                                 revision=record['revision'], text=text, photo=photo, result=result))
-            return {'draft_id': draft_id, 'revision': record['revision'], **result}
+            return {'draft_id': draft_id, 'revision': record['revision'], 'photo_url': f'/api/drafts/{draft_id}/photo' if photo else '', **result}
         finally:
             expensive.release()
 
@@ -445,7 +505,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 if saved['body_hash'] != body_hash:
                     raise HTTPException(409, '같은 요청번호로 다른 내용을 저장할 수 없습니다.')
                 return {'item': public_record(record), 'replayed': True}
-            draft = drafts.get(session(request), data.draft_id)
+            draft = drafts.get(draft_owner(request), data.draft_id)
             if draft['type'] != 'after' or draft['record_id'] != record_id:
                 raise HTTPException(422, '다른 평가의 초안입니다.')
             if record['revision'] != data.revision or draft['revision'] != data.revision or record['status'] == '완료':
@@ -493,6 +553,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def report(request: Request, data: ReportRequest):
         mutation(request)
         user(request, admin=True)
+        if data.format == 'hwpx':
+            raise HTTPException(422, '한글 보고서는 보고서 생성 작업으로 요청해 주세요.')
         records = filtered(request, **data.model_dump(exclude={'format'}))
         if not records:
             raise HTTPException(422, '선택한 조건에 데이터가 없습니다.')
@@ -507,6 +569,33 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             return Response(output, media_type=mime, headers={'Content-Disposition': f"attachment; filename*=UTF-8''{quote(filename)}"})
         finally:
             memory_lock.release()
+
+    @app.post('/api/report-jobs')
+    def start_report(request: Request, data: ReportRequest):
+        mutation(request)
+        user(request, admin=True)
+        if org.id != 'kywa': raise HTTPException(404)
+        filters=data.model_dump(exclude={'format'})
+        records=filtered(request,**filters)
+        if not records or len(records)>cfg.report_max_rows:
+            raise HTTPException(422,f'선택한 조건에서 1~{cfg.report_max_rows}건을 조회한 뒤 생성하세요.')
+        records.sort(key=lambda r:(r['created_at'],r['id']))
+        return {'id':report_jobs.start(session(request),records,data.format,filters)}
+
+    @app.get('/api/report-jobs/{job_id}')
+    def report_status(request: Request, job_id: str):
+        user(request,admin=True)
+        job=report_jobs.get(session(request),job_id)
+        return {k:job[k] for k in ('state','stage')}
+
+    @app.get('/api/report-jobs/{job_id}/download')
+    def report_download(request: Request, job_id: str):
+        user(request,admin=True)
+        job=report_jobs.get(session(request),job_id)
+        if job['state']!='complete': raise HTTPException(409,'보고서 생성이 아직 완료되지 않았습니다.')
+        filename=f"kywa_위험성평가_{now()[:10]}.{job['format']}"
+        return Response(job['output'],media_type=MIMES[job['format']],
+            headers={'Content-Disposition':f"attachment; filename*=UTF-8''{quote(filename)}"})
 
     static = ROOT / 'frontend' / 'out'
     if static.exists():

@@ -153,3 +153,6 @@ uvicorn==0.54.0
     # via -r kywa-next/backend/requirements.txt
 websockets==16.1.1
     # via google-genai
+pyvips==3.0.0
+pyvips-binary==8.17.3; sys_platform == 'win32'
+pillow-heif==1.1.1; sys_platform == 'win32'
