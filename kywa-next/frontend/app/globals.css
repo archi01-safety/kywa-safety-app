@@ -93,3 +93,17 @@ input,textarea,select{background:var(--surface-muted);border-color:var(--line-st
 .submitter-field input[aria-invalid="true"] { border-color: var(--risk-red); }
 .record-submitter, .detail-submitter, .report-submitter { overflow-wrap: anywhere; }
 @media print { .submitter-field input { display: none; } }
+
+/* KYWA next-step guidance and one shared operation dialog. */
+.next-action { outline: 1px solid var(--accent, #ed174f); outline-offset: 3px; box-shadow: 0 0 18px color-mix(in srgb, var(--accent, #ed174f) 16%, transparent); }
+.progress-dialog { position:fixed; inset:0; margin:auto; width:min(420px,calc(100vw - 32px)); padding:34px 26px 28px; color:var(--text); background:var(--surface, #25272c); border:1px solid var(--line); border-radius:20px; text-align:center; box-shadow:0 24px 80px #0008; }
+.progress-dialog::backdrop {background:#080b12aa;backdrop-filter:blur(3px)}
+.progress-dialog h2 {font-size:20px;margin:14px 0 10px}.progress-dialog p {line-height:1.7;font-size:14px;word-break:keep-all}
+.progress-symbol svg {width:44px;height:44px;color:var(--accent,#ed174f)}
+.progress-dialog.is-success .progress-symbol svg {color:#56c98a;animation:completion-in .35s ease-out}
+.progress-close {position:absolute;right:10px;top:10px}.progress-track {height:3px;border-radius:3px;overflow:hidden;background:#ffffff18;margin-top:22px}
+.progress-track i {display:block;width:35%;height:100%;background:var(--accent,#ed174f);animation:progress-slide 1.4s ease-in-out infinite}
+.progress-dialog .button-row {justify-content:center;margin-top:20px}.progress-dialog>.text-button {margin-top:20px}
+@keyframes progress-slide {from {transform:translateX(-100%)}to {transform:translateX(400%)}}
+@keyframes completion-in {from {transform:scale(.75);opacity:.2}to {transform:scale(1);opacity:1}}
+@media(prefers-reduced-motion:reduce) {.progress-dialog * {animation:none!important;transition:none!important}}
