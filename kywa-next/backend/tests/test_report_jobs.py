@@ -51,3 +51,15 @@ def test_failed_report_has_no_download_and_can_retry(monkeypatch):
         assert 'private' not in result['stage']
         assert jobs.start('admin',records,'pdf',{})!=key
     finally:jobs.executor.shutdown(wait=True)
+
+
+def test_received_records_do_not_become_in_progress_in_report():
+    from backend.report_model import aggregate, validate_narrative_status
+    cfg=settings('kywa');record=current_record(cfg.organization)
+    record.update(status='접수',after=None)
+    facts=aggregate([record])
+    assert facts['statuses']=={'접수':1}
+    for text in ['현재 전건 개선조치 진행 중임.', '모든 위험요인이 해소되었음.', '개선조치가 완료됨.']:
+        with pytest.raises(ValueError):
+            validate_narrative_status(SimpleNamespace(overview=text),facts)
+    validate_narrative_status(SimpleNamespace(overview='추락 위험을 우선 검토하고 난간 보수를 추진하여야 함.'),facts)
