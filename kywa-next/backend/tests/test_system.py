@@ -173,6 +173,8 @@ def test_photos_and_foreign_drafts(context):
     photo=upload.json()
     response=c.get(photo['url'])
     assert response.status_code==200 and response.content.startswith(b'\xff\xd8')
+    assert c.post('/api/analyses',data={'facility':'중앙','department':'협력부(국립청소년시설)','photo_id':photo['id']}).status_code==422
+    photo=c.post('/api/photos/'+photo['id']+'/deidentify').json()
     analyzed=c.post('/api/analyses',data={'facility':'중앙','department':'협력부(국립청소년시설)','photo_id':photo['id']})
     assert analyzed.status_code==200
     c.cookies.clear();c.headers['X-CSRF-Token']=c.get('/api/bootstrap').json()['csrf']
