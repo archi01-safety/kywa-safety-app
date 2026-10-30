@@ -1,0 +1,50 @@
+name: KYWA Next checks
+on:
+  pull_request:
+    paths: ['kywa-next/**', '.github/workflows/kywa-next-ci.yml']
+  push:
+    branches: [main]
+    paths: ['kywa-next/**', '.github/workflows/kywa-next-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: kywa-next-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kywa-next
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: kywa-next/frontend/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y fonts-nanum libvips42 libheif1 libheif-plugin-libde265
+      - run: pip install -r backend/requirements.lock -r backend/requirements-dev.txt
+      - run: python -m pytest backend/tests -q
+      - run: npm ci && npm run test:unit && npm run build
+        working-directory: kywa-next/frontend
+      - run: npx playwright install --with-deps chromium && npm run test:e2e -- --output=test-results/kywa
+        working-directory: kywa-next/frontend
+      - run: ORGANIZATION_ID=example npm run test:e2e -- organization.spec.ts --output=test-results/example
+        working-directory: kywa-next/frontend
+      - name: Institution themes on desktop and mobile
+        run: |
+          for institution in fowi knps knf kohi khidi cayf ayf; do
+            ORGANIZATION_ID=$institution npm run test:e2e -- institution-branding.spec.ts --output=test-results/$institution
+          done
+        working-directory: kywa-next/frontend
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-verification
+          path: kywa-next/frontend/test-results/
+      - run: docker build -t kywa-safety:test .

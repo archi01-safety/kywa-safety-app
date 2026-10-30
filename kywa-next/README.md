@@ -1,0 +1,144 @@
+# KYWA Safety · Next.js 개발 앱
+
+기존 Streamlit을 유지하면서 `Next.js 정적 화면 + FastAPI`를 하나의 Render 무료 Docker 서비스로 실행합니다. 2026-09-29 **https://kywa-safety.onrender.com**에 체험 환경을 배포했습니다. `v2` 접미사는 사용하지 않습니다.
+
+개발 PR: https://github.com/archi01-safety/kywa-safety-app/pull/1 · 최초 Linux 검사: https://github.com/archi01-safety/kywa-safety-app/actions/runs/36525400277
+
+## 구현 범위
+
+- 모바일·PC 대응 화면: AI 위험성평가, 개선조치·재평가, 관리자 결과보고서.
+- 사진 또는 설명 분석 → 항목 선택·내용 수정 → 제출 → 조치 기록 → 재평가 → 담당자 확인 완료 → 다시 열기 및 이력 조회.
+- Gemini 구조화 응답 검증, 서버에서 점수·등급 산정, KOSHA 키워드 검색과 원문 링크.
+- Google 로그인 및 승인 계정 목록. 담당자는 지정 시설만, 관리자는 전체 조회·보고서 출력.
+- 선택 가능한 4자리 관리자 비밀번호 로그인: 관리 탭·사진·보고서를 서버에서 보호하며, 5회 오류 시 15분 잠금과 1시간 세션 만료를 적용합니다. 로컬 사본은 이 방식을 사용합니다. 설정은 `SETUP-GUIDE.ko.md`를 참고하세요.
+- 모든 탭 하단에 데이터 이용 안내·운영 방침·AI 결과 검토 안내·안전경영부 연락처를 표시합니다.
+- 개발용 Sheets/Drive 분리, 비공개 사진, CSRF 검증, 재시도 시 중복 저장 방지, 수정 버전 충돌 검사.
+- 성명은 현장 정보에서 입력하고 브라우저에서 `홍길동 → 홍㉠㉢`으로 변환합니다. 분석·재평가에는 이름을 보내지 않고 제출 시 변환값만 저장·조회·보고서에 사용합니다. 7개 기관 모두 필수입니다. 기관별 설정과 배포 전 관리 열 준비는 [ORGANIZATION-SETUP.ko.md](ORGANIZATION-SETUP.ko.md)를 참고하세요.
+- Excel/PDF: 조회 조건, 최초 평가 당시 등급 집계, 최신 조치내용 및 개선 전후 사진. 전체 변경 이력은 앱에서 조회합니다.
+- KYWA는 편집 가능한 HWPX와 PDF 공통 보고서를 작업 API로 생성합니다. 다른 기관의 HWPX 버튼은 준비 중으로 유지합니다. KYWA 저장 구조 이관 절차는 KYWA-UPGRADE.ko.md를 참고하세요.
+
+`APP_ENV=demo`에서는 **가상 AI 응답과 로컬 샘플 데이터**를 사용합니다. Gemini/Google/KOSHA 연결 성공을 의미하지 않습니다. Render 무료 서비스가 재시작되면 체험 기록은 초기화될 수 있습니다.
+
+## 로컬 실행
+
+Python 3.12, Node.js 22가 필요합니다. 아래 명령은 `kywa-next` 폴더 기준입니다.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
+Copy-Item .env.example .env
+cd frontend
+npm ci
+npm run build
+cd ..
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+```
+
+http://localhost:8000 에서 확인합니다. `127.0.0.1` 주소로 접속하려면 `APP_BASE_URL`도 동일하게 바꾸세요. Origin 검증 때문에 두 주소를 섞어 사용하지 않습니다. 화면 변경 후 `npm run build`, 브라우저 새로고침이 필요합니다.
+
+이 작업 폴더에 준비된 런타임을 이용하려면 `scripts/start-local.ps1`을 실행할 수도 있습니다. `.tools` 폴더는 로컬 도구이며 GitHub에 업로드하지 않습니다.
+
+## GitHub 반영과 Render 배포
+
+대상 저장소: https://github.com/archi01-safety/kywa-safety-app
+
+개발 브랜치는 `codex/kywa-next`입니다. 새 Render 서비스는 이 브랜치를 배포합니다. 기존 main의 Streamlit 및 배포 워크플로와 분리해서 검증한 다음, 운영 반영 시점에 PR을 병합하고 Render의 배포 브랜치를 조정합니다.
+
+1. 저장소 루트에 이 `kywa-next` 폴더를 추가합니다. 기존 `app.py`, `Dockerfile`, Streamlit 설정은 그대로 둡니다. `.env`, `.venv`, `local-data`, `node_modules`, `artifacts`, `.tools`는 업로드하지 않습니다.
+2. Render에서 **New → Blueprint**를 선택해 해당 저장소를 연결합니다. Blueprint 파일 경로를 `kywa-next/render.yaml`로 지정합니다.
+3. 서비스 `kywa-safety`, Docker, Singapore, **Free**, `/healthz`를 확인합니다. 이름이 이미 사용 중이면 원하는 주소 생성이 불가능할 수 있으므로 임의로 유료 전환하거나 다른 이름을 확정하지 않습니다.
+4. 운영 설정안은 `APP_ENV=production`, `APP_BASE_URL=https://kywa-safety.onrender.com`입니다. 실제 인증정보와 관리 헤더 검증을 먼저 마쳐야 합니다. `SESSION_SECRET`은 Render가 생성합니다. 서비스 주소가 다르면 `APP_BASE_URL`과 OAuth 리디렉션 URI도 일치시켜야 합니다.
+5. 자동 배포는 꺼져 있습니다. 검토한 커밋을 Render의 Manual Deploy로 배포합니다. 저장소 변경을 기존 Streamlit에 반영하기 전 새 앱에서 검증합니다.
+
+Blueprint 대신 New Web Service로 만들 때도 Root Directory=`kywa-next`, Runtime=`Docker`, Dockerfile=`./Dockerfile`, Free, Health Check=`/healthz`로 설정하면 됩니다. **Next.js는 빌드할 때만 실행**하며, 운영 프로세스는 FastAPI 하나입니다.
+
+배포 이미지의 Python 의존성은 `backend/requirements.lock`, 프런트엔드는 `frontend/package-lock.json`을 사용합니다. Python 원본 범위를 바꾸면 잠금 파일도 갱신하세요.
+
+## 실제 API 연결 (개발 데이터부터)
+
+서비스 계정 JSON 준비, Render Gemini 키 등록, 확정된 관리자 계정과 로컬 운영 사본 사용법은 [SETUP-GUIDE.ko.md](SETUP-GUIDE.ko.md)에 정리했습니다. 현재 개발은 사용자 요청에 따라 `local-data/workbook-test`의 XLSX 사본 129건과 로컬 사진을 사용합니다. `.venv/Scripts/python.exe scripts/start_workbook_test.py`로 시작하고 `http://localhost:8001`에서 시험합니다. 이때 실제 Google API 인증정보는 필요하지 않으며 AI는 가상 응답입니다. 아래 별도 Google 시험 저장소 설정은 실제 API 연결을 검증할 때 사용합니다.
+
+2026-09-29 사용자가 제공한 운영 시트·서비스 계정·KOSHA 정보와 다음 배포 반영 사항은 [DEPLOYMENT-NOTES.md](DEPLOYMENT-NOTES.md)에 기록했습니다.
+
+Render Environment에 `.env.example`의 값을 등록합니다. 비밀값을 GitHub나 채팅에 붙여 넣지 마세요.
+
+| 설정 | 내용 |
+|---|---|
+| `APP_ENV` | 실연동 테스트는 `development`, 검증 후 `production` |
+| `APP_BASE_URL` | `https://kywa-safety.onrender.com` |
+| `SESSION_SECRET` | 32자 이상 별도 난수. 변경하면 기존 로그인 세션이 무효화됩니다. |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | 웹 애플리케이션용 Google OAuth 클라이언트 |
+| `AUTH_MODE`, `ADMIN_PIN_HASH` | 비밀번호 방식은 `pin`과 `scripts/set_admin_pin.py`로 생성한 해시. 이 경우 Google OAuth 클라이언트는 불필요 |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | 서비스 계정 JSON 전체를 서버 환경변수로 등록 |
+| `SPREADSHEET_ID` | 운영은 기관 JSON의 ID. 생략하면 기관 기본값 사용 |
+| `SHEET_NAME` | 생략하면 KYWA `설문지 응답 시트1`, 나머지 `시트1` |
+| `HISTORY_SHEET_NAME` | 기본 `조치이력` |
+| `DRIVE_FOLDER_ID` | 운영은 기관 JSON의 폴더 ID. 생략하면 기관 기본값 사용 |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | 사용 가능한 모델과 키. 첨부 운영 코드와 같은 `gemini-3.6-flash`를 기본으로 설정, 계정에서 사용 가능 여부 확인 |
+| `KOSHA_API_KEY` | 안전보건공단 기술지침 API 키 |
+| `ACCESS_ACCOUNTS_JSON` | 아래 형태의 승인 계정 및 시설 범위 |
+
+```json
+{"admin@example.org":{"role":"admin","facilities":[]},"staff@example.org":{"role":"staff","facilities":["중앙","평창"]}}
+```
+
+이메일은 소문자로 입력합니다. 시설은 `중앙, 평창, 우주, 바이오, 해양, 미래, 생태, 본원` 중 지정합니다. 로그인 허용 여부와 시설 범위는 매 요청마다 다시 검사합니다.
+
+Google OAuth의 승인된 리디렉션 URI:
+
+```text
+https://kywa-safety.onrender.com/api/auth/google/callback
+```
+
+OAuth 동의 화면이 테스트 상태라면 실제 로그인할 계정을 테스트 사용자에도 등록합니다. Sheets API와 Drive API를 활성화하고 개발 시트를 서비스 계정에 편집자로 공유합니다.
+
+**Drive 저장 위치:** 서비스 계정에는 자체 저장 용량이 없으므로 Workspace 공유 드라이브에 개발 폴더를 만들고 업로드 가능한 권한을 부여하는 구성을 권장합니다. 개인 My Drive 폴더를 공유하는 것만으로는 업로드가 실패할 수 있습니다. 이번 7개 기관 구성은 지정 서비스 계정으로 직접 인증하며 `GOOGLE_DELEGATE_EMAIL`은 비웁니다. 앱은 파일을 인터넷 전체에 공개하는 권한을 만들지 않습니다. [Google Drive 오류 안내](https://developers.google.com/workspace/drive/api/guides/handle-errors#storageQuotaExceeded)
+
+원본 코드에 직접 들어 있던 KOSHA 키는 새 코드에 복사하지 않았습니다. 기존 저장소 공개 범위를 확인하고 해당 키는 발급처에서 교체해 환경변수로 관리하세요.
+
+## 기존 시트 연결과 병행 제출
+
+2026-10-29 기관별 설정·열 매핑을 추가했습니다. 기존 Streamlit과 새 앱은 같은 기존 탭에 행 추가 방식으로 제출할 수 있습니다. 원본 열·행을 보존하고 필요한 관리 헤더만 오른쪽에 추가합니다. KHIDI는 기존 D열 이름을 사용합니다. 기존 기록은 소급 계산하지 않습니다.
+
+기관별 ID·색상·평가표, 실제 권한 검사, 백업과 헤더 준비, 동시 운영 제약 및 Render 설정은 [기관별 설정 안내](ORGANIZATION-SETUP.ko.md)를 따릅니다. 이 안내가 이전의 단일 KYWA 전환 절차를 대체합니다. `backend.check_connections`와 `backend.verify_workflow`의 실제 검증 결과를 확인해야 연동 완료로 판단할 수 있습니다.
+
+## 위험도 기준
+
+빈도 1~5 × 강도 1~4. AI가 보낸 점수·등급을 신뢰해 저장하지 않고 서버에서 계산합니다.
+
+| 점수 | 등급 |
+|---|---|
+| 1~3 | 매우 낮음 |
+| 4~6 | 낮음 |
+| 8 | 보통 |
+| 9~12 | 약간 높음 |
+| 15 | 높음 |
+| 16~20 | 매우 높음 |
+
+해당 곱셈 범위에서 7, 11, 13, 14, 17~19는 나오지 않습니다. 재평가 AI가 낮은 점수를 주도록 강제하지 않으며, 담당자가 빈도·강도를 조정할 수 있습니다.
+
+## 무료 독립 운영
+
+기관별 무료 Docker 서비스와 첫 접속 대기를 수용합니다. 절전 방지용 주기 호출은 추가하지 않습니다. `GET /healthz`는 외부 AI·Google API를 호출하지 않는 수동 상태 점검 용도입니다. `deploy/health-check.yml`에는 예약 실행이 없습니다.
+
+서비스의 무료 사용 시간은 워크스페이스에서 공유되므로 여러 기관의 상시 실행을 전제하지 않습니다. 운영 후 응답시간·AI 오류·사진 업로드·중복 제출·메모리를 관찰해야 합니다.
+
+## 검증
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest backend/tests -q
+cd frontend
+npm run build
+# 별도 합성 데이터 서버를 자동으로 시작하는 PC·모바일 검사
+# Windows: KYWA_TEST_PYTHON에 .venv/Scripts/python.exe 절대경로 지정
+npx playwright install chromium
+npm run test:e2e
+```
+
+`deploy/ci.yml`을 저장소 루트의 `.github/workflows/kywa-next-ci.yml`에도 등록했습니다. Python 테스트, Next.js 빌드, PC·모바일 Playwright E2E, Docker 이미지 빌드를 실행합니다. `deploy/health-check.yml`도 루트 `.github/workflows/kywa-render-health.yml`로 등록했습니다. 기존 워크플로는 덮어쓰지 않았습니다.
+
+실제 Google OAuth, Sheets/Drive 권한, Gemini 모델은 각 계정 연결 후 현장 샘플로 확인해야 합니다. KOSHA 키는 2026-09-29 실제 검색과 원문 PDF 다운로드를 검증했습니다. Render 체험 배포와 이전 버전의 Linux 자동 검사는 완료했습니다. `docs-validation.md`에 로컬 추가 변경의 검증 결과와 남은 확인 항목을 기록합니다.
+
+## 기관별 독립 서비스 설정
+
+공통 코드에서 `ORGANIZATION_ID`로 평가 기준과 성명 입력 설정을 선택합니다. 자세한 절차와 제약은 [ORGANIZATION-SETUP.ko.md](ORGANIZATION-SETUP.ko.md)를 참조하세요. KYWA·FOWI·KNPS·KNF·KOHI·KHIDI·CAYF·AYF 설정이 포함되며 `example`은 가상 3×3 시험 기관입니다.
