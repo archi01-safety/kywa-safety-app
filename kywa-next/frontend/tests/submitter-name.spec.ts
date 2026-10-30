@@ -9,7 +9,7 @@ test('name preview, required gating, IME, private requests and admin displays', 
   await page.goto('/');
   const input = page.getByLabel('제출자 성명', {exact:true});
   const preview = page.locator('#submitter-name-preview');
-  const analyze = page.getByRole('button', {name:'AI 위험성 분석하기', exact:true});
+  const analyze = page.getByRole('button', {name:'KYWA AI 위험요인 분석 시작', exact:true});
   await expect(page.locator('.input-panel').getByLabel('제출자 성명', {exact:true})).toBeVisible();
   await page.getByLabel('어떤 위험이 있나요?', {exact:false}).fill('시험용 난간 손상');
   await expect(analyze).toBeDisabled();
@@ -37,7 +37,7 @@ test('name preview, required gating, IME, private requests and admin displays', 
   await expect(preview).toHaveText('홍㉠㉢으로 제출됩니다.');
   await analyze.click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
-  const submit = page.getByRole('button',{name:'선택한 평가 제출',exact:true});
+  const submit = page.getByRole('button',{name:'KYWA AI 안전센터로 데이터 전송',exact:true});
   await input.fill('');
   await expect(submit).toBeDisabled();
   await input.fill('홍A');
@@ -47,7 +47,7 @@ test('name preview, required gating, IME, private requests and admin displays', 
   const location = `성명검사-${info.project.name}-${Date.now()}`;
   await page.locator('.evaluation-row').getByLabel('장소',{exact:true}).fill(location);
   await submit.click();
-  await expect(page.locator('.message[role="status"]')).toContainText('1건을 제출했습니다');
+  await expect(page.locator('.progress-dialog [role="status"]')).toContainText('1건을 제출했습니다');
   await expect(input).toHaveValue('');
   await expect(input).toHaveAttribute('aria-invalid','false');
   const analysisRequests = requests.filter(r => new URL(r.url).pathname === '/api/analyses');
@@ -89,7 +89,7 @@ for (const mode of ['optional','disabled'] as const) {
     await page.goto('/');
     await page.getByLabel('어떤 위험이 있나요?', {exact:false}).fill('시험 설명');
     const input = page.getByLabel('제출자 성명',{exact:true});
-    const analyze = page.getByRole('button',{name:'AI 위험성 분석하기',exact:true});
+    const analyze = page.getByRole('button',{name:'KYWA AI 위험요인 분석 시작',exact:true});
     await expect(analyze).toBeEnabled();
     if (mode === 'disabled') await expect(input).toHaveCount(0);
     else {

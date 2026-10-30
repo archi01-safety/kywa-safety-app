@@ -13,7 +13,7 @@ test('기관색 로딩, 버튼 상태, 의미 색상, 모바일 및 테마 전�
   expect(await brand()).toBe('#64748B');
   release();
   await expect.poll(brand).toBe(colors[institution]);
-  const analyze = page.getByRole('button', {name:'AI 위험성 분석하기',exact:true});
+  const analyze = page.getByRole('button', {name:institution==='kywa'?'KYWA AI 위험요인 분석 시작':'AI 위험성 분석하기',exact:true});
   await expect(analyze).toBeDisabled();
   await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('시험용 난간 손상');
@@ -57,7 +57,7 @@ test('AYF 저장소 준비 안내와 제출 차단', async ({page}) => {
   await expect(page.getByText('저장소 연결 준비 중',{exact:true})).toBeVisible();
   await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('가상 시험: 난간 파손');
-  await page.getByRole('button',{name:'AI 위험성 분석하기',exact:true}).click();
+  await page.getByRole('button',{name:institution==='kywa'?'KYWA AI 위험요인 분석 시작':'AI 위험성 분석하기',exact:true}).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
   await expect(page.getByRole('button',{name:'선택한 평가 제출',exact:true})).toBeDisabled();
 });
