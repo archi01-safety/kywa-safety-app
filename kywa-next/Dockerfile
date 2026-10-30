@@ -14,6 +14,7 @@ COPY backend/requirements.lock ./requirements.lock
 RUN pip install --no-cache-dir -r requirements.lock
 RUN useradd --create-home --uid 10001 kywa && mkdir /app/local-data && chown kywa:kywa /app/local-data
 COPY backend/ ./backend/
+RUN python -c "from pathlib import Path; from backend.photo_privacy import normalize_photo; assert normalize_photo(Path('backend/tests/fixtures/sample.heic').read_bytes()).startswith(b'\xff\xd8')"
 COPY --from=frontend /build/out ./frontend/out/
 COPY --from=frontend /usr/local/bin/node /usr/local/bin/node
 USER kywa
