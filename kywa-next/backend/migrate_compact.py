@@ -72,6 +72,11 @@ def migrate(settings, apply=False):
 
 
 if __name__=='__main__':
-    parser=argparse.ArgumentParser(); parser.add_argument('--apply',action='store_true'); args=parser.parse_args()
-    from .check_connections import target_settings
-    print(json.dumps(migrate(target_settings('kywa'),args.apply),ensure_ascii=False,indent=2))
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--spreadsheet-id',required=True,help='Explicit target ID: use a verified copy first.')
+    parser.add_argument('--sheet-name',default='설문지 응답 시트1')
+    parser.add_argument('--apply',action='store_true')
+    args=parser.parse_args()
+    from .config import Settings
+    settings=Settings(organization_id='kywa',spreadsheet_id=args.spreadsheet_id,sheet_name=args.sheet_name)
+    print(json.dumps(migrate(settings,args.apply),ensure_ascii=False,indent=2))

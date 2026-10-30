@@ -107,7 +107,8 @@ def build(model,records,store):
     rule(p,36,110,523,ACCENT,2)
     text(p,'1. 위험성평가 개요',36,129,523,13,bold=True)
     text(p,'평가 기간  '+facts['period'],36,155,523,10)
-    text(p,'평가 대상  '+', '.join(facts['facilities']),36,175,523,10,14,max_lines=2)
+    facility_label = facts['facilities'][0] if len(facts['facilities'])==1 else str(len(facts['facilities']))+'개 시설 · '+', '.join(sorted({r['facility'] for r in records}))
+    text(p,'평가 대상  '+facility_label,36,175,523,10,14,max_lines=2)
     table(p,[['총 평가','개선 완료','미완료'],[f"{facts['total']}건",f"{facts['complete']}건",f"{facts['incomplete']}건"]],36,213,523,27,12)
     text(p,'2. 최초 위험등급별 현황',36,284,523,13,bold=True)
     grades=GRADES+[g for g in facts['grades'] if g not in GRADES]
