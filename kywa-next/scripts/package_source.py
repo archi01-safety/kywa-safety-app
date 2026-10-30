@@ -7,7 +7,7 @@ from pathlib import Path
 root=Path(__file__).resolve().parent.parent
 out=root/'artifacts'
 out.mkdir(exist_ok=True)
-patterns=['.gitignore','.dockerignore','.env.example','*.md','Dockerfile','render.yaml','pytest.ini',
+patterns=['.gitignore','.dockerignore','.env.example','*.md','Dockerfile','render.yaml','pytest.ini','backend/assets/*.cjs','backend/assets/*LICENSE.txt','backend/tests/fixtures/*.heic',
           'backend/policies/*.json','backend/organizations/*.json','backend/*.py','backend/requirements*','backend/tests/*.py','frontend/app/*.tsx','frontend/app/*.ts','frontend/app/*.css',
           'frontend/public/*.png','frontend/package*.json','frontend/next.config.ts','frontend/next-env.d.ts',
           'frontend/tsconfig.json','frontend/playwright.config.ts','frontend/tests/*.ts','frontend/tests/*.mjs','scripts/*.py','scripts/*.ps1','deploy/*.yml']
