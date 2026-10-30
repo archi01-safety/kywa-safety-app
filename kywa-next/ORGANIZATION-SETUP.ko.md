@@ -132,3 +132,7 @@ python -m backend.verify_workflow --organization khidi --run
 사진 폴더는 KYWA의 기존 폴더를 공유합니다. 시트는 추후 제공 예정이므로 `APP_ENV=setup`으로 운영합니다. 실제 AI 분석과 KOSHA 검색은 가능하지만 제출·개선조치·보고서 저장 API는 서버에서 차단합니다. 다른 기관의 시트로 대신 저장하지 않습니다. 시트 ID를 받으면 AYF 설정에 등록하고 헤더·권한 확인 및 백업 후 `production`으로 전환합니다.
 
 Render의 `kywa-safety-shared-integrations` 환경변수 그룹에는 기존 서비스 계정·AI 키·KOSHA 키·AI 모델·관리자 PIN 해시만 보관합니다. 신규 기관 서비스는 이 그룹을 참조하고, 기관 ID·사이트 주소·세션 키는 서비스별로 분리합니다. 기본 관리자 PIN은 기존 운영 방침의 초기값을 사용합니다. 인증값을 GitHub에 저장하지 않습니다.
+
+## KYWA 우선 개선
+
+2026-10-30 KYWA 전용 사진·프롬프트·진행 팝업·보고서와 관리 열 이관 도구는 `KYWA-UPGRADE.ko.md`를 참고합니다. 다른 기관에는 배포하지 않습니다. 기존 24열 시트도 계속 읽고 쓸 수 있으며 열 삭제는 별도 이관 도구로만 수행합니다.
