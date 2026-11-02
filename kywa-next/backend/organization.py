@@ -78,6 +78,8 @@ class NameField(Model):
 
 class Branding(Model):
     primary: str = Field(default='#64748B', pattern=r'^#[0-9A-Fa-f]{6}$')
+    secondary: str = Field(default='#64748B', pattern=r'^#[0-9A-Fa-f]{6}$')
+    design: Literal['standard', 'premium'] = 'standard'
     logo: str = Field(default='', pattern=r'^(|/[A-Za-z0-9_./-]+\.(png|svg|webp))$')
     website: str = ''
     department: str = ''

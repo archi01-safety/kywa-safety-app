@@ -27,14 +27,19 @@ def readable(color, backgrounds, target):
 
 
 def palette(base):
+    if base.upper() == '#F0145A':
+        # Preserve the CI swatch; use a darker fill for white action labels.
+        return dict(original=base, button='#D70B4D', buttonText='#FFFFFF', hover='#B90942',
+                    darkText='#FF7AA6', lightText='#B90942')
     if base.upper() == '#ED174F':
         return dict(original=base, button='#C91546', buttonText='#FFFFFF', hover='#AA103A',
                     darkText='#FF6B91', lightText='#B6103D')
-    hover = mix(base, '#000000', .10)
-    text = max(('#FFFFFF','#101418'), key=lambda c: min(contrast(c,base),contrast(c,hover)))
+    text = max(('#FFFFFF','#101418'), key=lambda c: contrast(c,base))
+    button = readable(base, [text], '#000000' if text == '#FFFFFF' else '#FFFFFF')
+    hover = mix(button, '#000000', .10)
     # For middle luminances choose a lighter hover if a dark hover would break text contrast.
-    if min(contrast(text,base),contrast(text,hover)) < 4.5:
-        hover = mix(base, '#FFFFFF' if text == '#101418' else '#000000', .10)
-    return dict(original=base,button=base,buttonText=text,hover=hover,
+    if contrast(text,hover) < 4.5:
+        hover = mix(button, '#FFFFFF' if text == '#101418' else '#000000', .10)
+    return dict(original=base,button=button,buttonText=text,hover=hover,
                 darkText=readable(base, ['#181B20','#242830','#2C313B',mix(base,'#242830',.88)], '#FFFFFF'),
                 lightText=readable(base, ['#FFFFFF','#F4F4F2','#F0F1F3',mix(base,'#FFFFFF',.92)], '#000000'))

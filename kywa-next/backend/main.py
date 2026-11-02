@@ -297,7 +297,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 'auth_session':auth_status(request) if org.enhanced and pin_auth else None,
                 'facilities': FACILITIES, 'departments': DEPARTMENTS, 'categories': CATEGORIES,
                 'policy': POLICY, 'organization': {**org.model_dump(exclude={'category_guidance', 'prompt_guidance', 'storage', 'source'}),
-                    'branding': {**org.branding.model_dump(), 'colors': palette(org.branding.primary)}}, 'report_max_rows': cfg.report_max_rows}
+                    'branding': {**org.branding.model_dump(), 'colors': palette(org.branding.primary),
+                                 'secondary_colors': palette(org.branding.secondary)}}, 'report_max_rows': cfg.report_max_rows}
 
     @app.get('/api/overview')
     def overview(request: Request, year: int | None = None):
