@@ -83,6 +83,7 @@ class Branding(Model):
     department: str = ''
     email: str = ''
     phone: str = ''
+    technical_support: bool = False
 
 
 class Storage(Model):
@@ -96,6 +97,7 @@ class Storage(Model):
 class Organization(Model):
     id: str = Field(pattern=r'^[a-z][a-z0-9_-]{0,39}$')
     demo_only: bool = False
+    experience_version: Literal[1, 2] = 1
     name: str = Field(min_length=1, max_length=100)
     short_name: str = Field(min_length=1, max_length=40)
     facilities: list[str] = Field(min_length=1)
@@ -109,6 +111,10 @@ class Organization(Model):
     storage: Storage = Field(default_factory=Storage)
     source: dict = Field(default_factory=dict)
     policy: Policy
+
+    @property
+    def enhanced(self):
+        return self.experience_version >= 2 or self.id == 'kywa'
 
     @model_validator(mode='after')
     def validate_lists(self):

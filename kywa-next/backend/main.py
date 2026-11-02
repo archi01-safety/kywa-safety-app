@@ -79,8 +79,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     app.state.pin_auth = pin_auth
     app.state.storage_pause_until = 0.0
     app.add_middleware(SessionMiddleware, secret_key=cfg.session_secret, session_cookie='kywa_session',
-                       max_age=SESSION_SECONDS if pin_auth and org.id != 'kywa' else 28800, same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
-    app.add_middleware(BodySizeLimit, max_bytes=(21 if org.id == 'kywa' else 11)*1024*1024)
+                       max_age=SESSION_SECONDS if pin_auth and not org.enhanced else 28800, same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
+    app.add_middleware(BodySizeLimit, max_bytes=(21 if org.enhanced else 11)*1024*1024)
     oauth = OAuth()
     oauth.register(name='google', client_id=cfg.google_client_id, client_secret=cfg.google_client_secret,
                    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
@@ -96,7 +96,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             return JSONResponse({'detail': '로컬 시험 공간은 이 PC에서만 접근할 수 있습니다.'}, status_code=403)
         # Reject oversized multipart bodies before python-multipart can spool to disk.
         length = request.headers.get('content-length')
-        max_body = 21 if org.id == 'kywa' and request.url.path == '/api/photos/prepare' else 11
+        max_body = 21 if org.enhanced and request.url.path == '/api/photos/prepare' else 11
         if length and (not length.isdigit() or int(length) > max_body * 1024 * 1024):
             return JSONResponse({'detail': '요청 크기 제한을 초과했습니다.'}, status_code=413)
         if request.method == 'POST' and request.url.path == '/api/photos/prepare' and not length:
@@ -268,13 +268,13 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     @app.get('/api/auth/session')
     def auth_session(request: Request):
-        if org.id!='kywa' or not pin_auth: raise HTTPException(404)
+        if not org.enhanced or not pin_auth: raise HTTPException(404)
         return auth_status(request)
 
     @app.post('/api/auth/extend')
     def auth_extend(request: Request):
         mutation(request)
-        if org.id!='kywa' or not pin_auth: raise HTTPException(404)
+        if not org.enhanced or not pin_auth: raise HTTPException(404)
         if not pin_auth.extend(request.session.get('pin_session','')):
             raise HTTPException(401,'로그인이 만료되었습니다. 작성 내용은 유지됩니다. 다시 로그인하세요.')
         return auth_status(request)
@@ -288,7 +288,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             account = None
         return {'mode': cfg.app_env, 'local_workspace': cfg.local_workspace, 'auth_mode': cfg.auth_mode,
                 'csrf': request.session['csrf'], 'user': account,
-                'auth_session':auth_status(request) if org.id=='kywa' and pin_auth else None,
+                'auth_session':auth_status(request) if org.enhanced and pin_auth else None,
                 'facilities': FACILITIES, 'departments': DEPARTMENTS, 'categories': CATEGORIES,
                 'policy': POLICY, 'organization': {**org.model_dump(exclude={'category_guidance', 'prompt_guidance', 'storage', 'source'}),
                     'branding': {**org.branding.model_dump(), 'colors': palette(org.branding.primary)}}, 'report_max_rows': cfg.report_max_rows}
@@ -301,7 +301,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not limits.allow('overview:' + session(request), 30, 60):
             raise HTTPException(429, '잠시 후 다시 조회하세요.')
         with overview_lock:
-            if (org.id=='kywa' and hasattr(repo,'snapshot')) or time.monotonic() >= overview_cache.get('expires', 0):
+            if (org.enhanced and hasattr(repo,'snapshot')) or time.monotonic() >= overview_cache.get('expires', 0):
                 records = repo.records()
                 years = {year} | {int(r['created_at'][:4]) for r in records
                                  if str(r.get('created_at', ''))[:4].isdigit()}
@@ -357,7 +357,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not token:
             raise HTTPException(401, '비밀번호가 올바르지 않습니다.')
         pin_auth.revoke(request.session.get('pin_session', ''))
-        retained_owner=request.session.get('owner') if org.id=='kywa' else None
+        retained_owner=request.session.get('owner') if org.enhanced else None
         request.session.clear()
         session(request)
         if retained_owner: request.session['owner']=retained_owner
@@ -381,8 +381,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not memory_lock.acquire(blocking=False):
             raise HTTPException(429, '다른 사진 또는 보고서를 처리 중입니다. 잠시 후 다시 시도하세요.')
         try:
-            raw = photo.file.read((20 if org.id == 'kywa' else 10)*1024*1024+1)
-            if org.id == 'kywa':
+            raw = photo.file.read((20 if org.enhanced else 10)*1024*1024+1)
+            if org.enhanced:
                 from .photo_privacy import normalize_photo
                 data = normalize_photo(raw)
             else:
@@ -407,7 +407,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     @app.post('/api/photos/{key}/deidentify')
     def deidentify(request: Request, key: str):
         mutation(request)
-        if org.id != 'kywa':
+        if not org.enhanced:
             raise HTTPException(404)
         original = drafts.get(draft_owner(request), key)
         if original['type'] != 'photo':
@@ -440,7 +440,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         draft = drafts.get(draft_owner(request), key)
         if draft['type'] != 'photo':
             raise HTTPException(422, '사진 초안이 아닙니다.')
-        if org.id == 'kywa' and not draft.get('deidentified'):
+        if org.enhanced and not draft.get('deidentified'):
             raise HTTPException(422, '사진의 얼굴 비식별화를 먼저 완료해 주세요.')
         return draft['photo']
 
@@ -469,14 +469,14 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             expensive.release()
 
     def storage_ready():
-        if org.id == 'kywa' and time.monotonic() < app.state.storage_pause_until:
+        if org.enhanced and time.monotonic() < app.state.storage_pause_until:
             raise HTTPException(503, '저장소 정비 중입니다. 입력은 유지됩니다. 잠시 후 다시 전송해 주세요.')
 
     @app.post('/api/admin/storage-maintenance')
     def storage_maintenance(request: Request, enabled: bool = Form(...)):
         mutation(request)
         user(request, admin=True)
-        if org.id != 'kywa': raise HTTPException(404)
+        if not org.enhanced: raise HTTPException(404)
         with repo.lock:
             app.state.storage_pause_until = time.monotonic()+1800 if enabled else 0.0
         return {'paused': enabled, 'lease_seconds': 1800 if enabled else 0}
@@ -486,7 +486,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         mutation(request)
         submitter_name = org.name_value(data.submitter_name)
         body_hash = digest(data.model_dump())
-        with submission_metrics(org.id=='kywa'), repo.lock, (repo.operation() if hasattr(repo,'operation') and org.id=='kywa' else nullcontext()):
+        with submission_metrics(org.enhanced), repo.lock, (repo.operation() if hasattr(repo,'operation') and org.enhanced else nullcontext()):
             storage_ready()
             with phase('receipt'):
                 previous = repo.receipt(data.request_id) if hasattr(repo,'receipt') else [r for r in repo.records() if r.get('operation_id') == data.request_id]
@@ -505,7 +505,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 raise HTTPException(422, '제출 항목을 확인하세요.')
             created_at = now()
             with phase('photo'):
-                photo = drive.put_photo(draft['photo'],data.request_id,draft['facility'],created_at) if org.id=='kywa' else {'id':drive.put(draft['photo'],data.request_id),'created_at':created_at}
+                photo = drive.put_photo(draft['photo'],data.request_id,draft['facility'],created_at) if org.enhanced else {'id':drive.put(draft['photo'],data.request_id),'created_at':created_at}
             records = []
             for item in data.items:
                 before = dict(draft['items'][item.index])
@@ -515,7 +515,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                     photo_id=photo['id'], after=None, organization_id=org.id, submitter_name=submitter_name,
                     policy_snapshot=draft['policy_snapshot'], prompt_version=org.prompt_version, policy=POLICY, status='접수', revision=1,
                     operation_id=data.request_id, submit_hash=body_hash, submit_owner=digest(session(request))))
-            if org.id=='kywa':
+            if org.enhanced:
                 for record in records: record['photo_view_url']=photo['view_url']
             repo.apply(records, [])
             overview_cache['expires'] = 0
@@ -531,7 +531,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def confirm_policy(request: Request, record_id: str, data: PolicyConfirmRequest):
         mutation(request)
         account=user(request,admin=True)
-        if org.id!='kywa' or not hasattr(repo,'confirm_policy'): raise HTTPException(404)
+        if not org.enhanced or not hasattr(repo,'confirm_policy'): raise HTTPException(404)
         with repo.lock:
             storage_ready()
             repo.confirm_policy(record_id,data.revision,data.request_id,account['email'])
@@ -580,7 +580,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def action(request: Request, record_id: str, data: ActionRequest):
         mutation(request)
         body_hash = digest(data.model_dump())
-        with submission_metrics(org.id=='kywa'), repo.lock, (repo.operation() if hasattr(repo,'operation') and org.id=='kywa' else nullcontext()):
+        with submission_metrics(org.enhanced), repo.lock, (repo.operation() if hasattr(repo,'operation') and org.enhanced else nullcontext()):
             storage_ready()
             record, account = get_record(request, record_id)
             saved = next((e for e in repo.events(record_id) if e['id'] == data.request_id), None)
@@ -597,11 +597,11 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             calculated = policy.risk(data.p, data.s)
             created_at = now()
             with phase('photo'):
-                photo = drive.put_photo(draft['photo'],data.request_id,record['facility'],created_at,after=True) if org.id=='kywa' else {'id':drive.put(draft['photo'],data.request_id),'created_at':created_at}
+                photo = drive.put_photo(draft['photo'],data.request_id,record['facility'],created_at,after=True) if org.enhanced else {'id':drive.put(draft['photo'],data.request_id),'created_at':created_at}
             after = dict(**calculated, text=draft['text'],
                          photo_id=photo['id'], actor=account['email'], created_at=photo['created_at'],
                          policy=policy.version, policy_snapshot=policy.model_dump(), prompt_version=org.prompt_version, rationale=draft['result']['rationale'], ai_result=draft['result'])
-            if org.id=='kywa': after['photo_view_url']=photo['view_url']
+            if org.enhanced: after['photo_view_url']=photo['view_url']
             record.update(after=after, status='완료' if data.complete else '조치 중', revision=record['revision']+1)
             event = dict(id=data.request_id, record_id=record_id, at=now(), actor=account['email'],
                          kind='완료' if data.complete else '조치 저장', text=draft['text'], after=after, body_hash=body_hash)
@@ -652,12 +652,12 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             raise HTTPException(429, '다른 사진 또는 보고서를 처리 중입니다. 잠시 후 다시 시도하세요.')
         try:
             output = reports.excel(records, drive, org) if data.format == 'xlsx' else reports.pdf(records, drive, org)
-            if org.id=='kywa':
+            if org.enhanced:
                 from .report_jobs import signature
                 if signature(records)!=signature(filtered(request,strict=True,**data.model_dump(exclude={'format'}))):
                     raise HTTPException(409,'보고서 생성 중 평가가 변경되었습니다. 다시 생성해 주세요.')
             mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if data.format == 'xlsx' else 'application/pdf'
-            filename = report_filename(data.facility,data.format,now()) if org.id=='kywa' else f'{org.id}_위험성평가_{now()[:10]}.{data.format}'
+            filename = report_filename(data.facility,data.format,now(),org.short_name) if org.enhanced else f'{org.id}_위험성평가_{now()[:10]}.{data.format}'
             return Response(output, media_type=mime, headers={'Content-Disposition': f"attachment; filename*=UTF-8''{quote(filename)}"})
         finally:
             memory_lock.release()
@@ -666,7 +666,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def start_report(request: Request, data: ReportRequest):
         mutation(request)
         user(request, admin=True)
-        if org.id != 'kywa': raise HTTPException(404)
+        if not org.enhanced: raise HTTPException(404)
         filters=data.model_dump(exclude={'format'})
         records=filtered(request,strict=True,**filters)
         if not records or len(records)>cfg.report_max_rows:

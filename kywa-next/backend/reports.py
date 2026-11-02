@@ -27,7 +27,7 @@ def safe_photo(store, fid):
 
 
 def excel(records, store, org=None):
-    if org and org.id=="kywa":
+    if org and org.enhanced:
         from .excel_kywa import create_excel
         return create_excel(records,store,org)
     from openpyxl import Workbook
@@ -66,7 +66,7 @@ def excel(records, store, org=None):
             data = safe_photo(store, fid)
             if data:
                 pic = Image(io.BytesIO(data))
-                if org and org.id == 'kywa':
+                if org and org.enhanced:
                     from openpyxl.drawing.spreadsheet_drawing import TwoCellAnchor, AnchorMarker
                     from openpyxl.utils.units import pixels_to_EMU
                     # Excel width 24 uses 7px per character + 5px padding; 100pt = 133.33px.

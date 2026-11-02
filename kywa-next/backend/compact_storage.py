@@ -81,7 +81,10 @@ def decode(repo, rows, entries=None):
         if index in mapped or index >= len(rows) or row_hash(rows[index],width) != value['hash']:
             raise SheetSchemaError('평가 행이 이동하거나 변경되었습니다. 원본과 관리 정보를 확인하세요.')
         mapped[index] = value['record']
-    layout = Layout(rows[0], repo.settings.organization)
+    org = repo.settings.organization
+    if org.storage.legacy_name_column:
+        org = org.model_copy(update={'storage': org.storage.model_copy(update={'legacy_name_column': False})})
+    layout = Layout(rows[0], org)
     identity = repo.settings.spreadsheet_id + ':' + repo.settings.sheet_name
     records = []
     for index, row in enumerate(rows[1:], 1):

@@ -221,9 +221,9 @@ class AIService:
 관련근거는 확인이 필요한 제안이며,
 실시간 법령 검증을 했다고 주장하지 않는다. 확신 없는 조항 번호는 생략하고 확인 필요라고 쓴다.
 서로 다른 위험만 최대 12개 반환한다. 점수와 등급은 서버에서 계산하므로 반환하지 않는다.'''
-        if self.org.id == 'kywa':
-            from .prompts import kywa_prompt
-            prompt = kywa_prompt(self.org, facility, department, description)
+        if self.org.enhanced:
+            from .prompts import institution_prompt
+            prompt = institution_prompt(self.org, facility, department, description)
         return [r.model_dump() for r in self._generate(prompt, RiskList, photo).items]
 
     def reassess(self, record, text, photo=None):

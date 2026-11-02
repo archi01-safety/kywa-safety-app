@@ -113,7 +113,7 @@ class Settings(BaseSettings):
                     or account['role'] == 'staff' and not account['facilities']):
                     raise ValueError('승인 계정의 이메일, role, facilities 설정을 확인하세요.')
             from .organization import load_organization
-            live = [load_organization(identity).storage for identity in ('kywa','fowi','knps','knf','kohi','khidi','cayf')]
+            live = [load_organization(identity).storage for identity in ('kywa','fowi','knps','knf','kohi','khidi','cayf','ayf')]
             if self.spreadsheet_id in {s.spreadsheet_id for s in live} or self.drive_folder_id in {s.drive_folder_id for s in live}:
                 if self.app_env != 'production' or not self.allow_legacy_writes:
                     raise ValueError('기존 운영 저장소입니다. 개발용 시트/폴더를 별도로 지정하세요.')

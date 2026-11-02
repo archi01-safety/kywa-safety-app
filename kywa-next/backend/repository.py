@@ -91,7 +91,7 @@ def google_client(settings, service, version):
     import httplib2
     from .storage_metrics import request_builder
     ca = os.environ.get('SSL_CERT_FILE') or None
-    reuse = settings.organization_id == 'kywa'
+    reuse = settings.organization.enhanced
     # Never share httplib2 transports between threads or credential configurations.
     key = (service, version, hashlib.sha256(settings.google_service_account_json.encode()).hexdigest(),
            settings.google_delegate_email, ca)
@@ -146,15 +146,27 @@ class SheetsRepository:
         if not rows:
             raise RepositoryError('기관 평가 탭이 비어 있습니다. migrate로 준비하세요.')
         Layout(rows[0], self.settings.organization)
-        from .compact_storage import VISIBLE
-        if self.settings.organization.id=='kywa' and rows[0]==VISIBLE:
+        from .visible_layout import is_visible
+        if self.settings.organization.enhanced and is_visible(rows[0], self.settings.organization):
             rows=self._values(self.settings.sheet_name,raw=True)
         return rows
 
+    def _compact_rows(self, rows):
+        from .visible_layout import is_visible, VisibleLayout, CANONICAL_HEADER
+        if is_visible(rows[0], self.settings.organization):
+            layout = VisibleLayout(rows[0], self.settings.organization)
+            return [CANONICAL_HEADER] + [layout.canonical(r) for r in rows[1:]]
+        return rows
+
+    def _is_compact(self, header):
+        from .visible_layout import is_visible
+        from .compact_storage import PREVIOUS
+        return is_visible(header, self.settings.organization) or (self.settings.organization.id == 'kywa' and header == PREVIOUS)
+
     def _decoded(self, rows):
         from .compact_storage import compact, decode
-        if self.settings.organization.id == 'kywa' and compact(rows[0]):
-            return decode(self, rows)
+        if self.settings.organization.enhanced and self._is_compact(rows[0]):
+            return decode(self, self._compact_rows(rows))
         layout = Layout(rows[0], self.settings.organization)
         identity = self.settings.spreadsheet_id + ':' + self.settings.sheet_name
         records = [layout.decode(row, index, identity) for index,row in enumerate(rows[1:],1)
@@ -167,17 +179,18 @@ class SheetsRepository:
         with self.lock:
             rows = self._rows()
             from .compact_storage import compact, decode, recover
-            if self.settings.organization.id == 'kywa' and compact(rows[0]):
+            if self.settings.organization.enhanced and self._is_compact(rows[0]):
                 from .compact_storage import metadata
                 from .sheet_sync import enabled, Store
                 if enabled(metadata(self)):
                     self._row_sync_enabled=True
                     return Store(self).sync()[0]
-                return decode(self, rows, recover(self, rows))
+                canonical_rows = self._compact_rows(rows)
+                return decode(self, canonical_rows, recover(self, canonical_rows))
             return self._decoded(rows)
 
     def sync_store(self):
-        if self.settings.organization.id != 'kywa': return None
+        if not self.settings.organization.enhanced: return None
         from .compact_storage import metadata, VISIBLE
         from .sheet_sync import enabled, Store
         def create():
@@ -186,7 +199,7 @@ class SheetsRepository:
                 return self._operation_store
             return Store(self)
         if getattr(self,'_row_sync_enabled',False): return create()
-        if self._rows()[0] == VISIBLE and enabled(metadata(self)):
+        if self._is_compact(self._rows()[0]) and enabled(metadata(self)):
             self._row_sync_enabled=True
             return create()
         return None
@@ -224,12 +237,14 @@ class SheetsRepository:
     def apply(self, records, events):
         with self.lock:
             from .compact_storage import compact, apply as compact_apply
-            if self.settings.organization.id == 'kywa' and (getattr(self,'_row_sync_enabled',False) or compact(self._rows()[0])):
+            if self.settings.organization.enhanced and (getattr(self,'_row_sync_enabled',False) or self._is_compact(self._rows()[0])):
                 store=self.sync_store()
                 if store:
                     if all('_sheet_row' not in r for r in records): return store.append(records)
                     if any('_sheet_row' not in r for r in records): raise RepositoryError('신규 저장과 기존 수정을 분리해 주세요.')
                     return store.update(records, events)
+                if self.settings.organization.id != 'kywa':
+                    raise RepositoryError('행 식별정보 이관을 완료한 후 제출하세요.')
                 return compact_apply(self, records, events)
             svc = google_client(self.settings, 'sheets', 'v4').spreadsheets()
             meta = svc.get(spreadsheetId=self.settings.spreadsheet_id, fields='sheets.properties').execute()

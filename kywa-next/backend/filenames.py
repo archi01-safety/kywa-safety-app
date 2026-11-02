@@ -19,7 +19,7 @@ def photo_filename(facility, created_at, after=False):
     return f"{component(facility)}_{'개선후_' if after else ''}{korea_time(created_at):%Y%m%d_%H%M%S}.jpg"
 
 
-def report_filename(facility, format, created_at):
+def report_filename(facility, format, created_at, institution='KYWA'):
     if format not in {'pdf', 'xlsx', 'hwpx'}:
         raise ValueError('Unsupported report format')
-    return f"{component(facility or 'KYWA')}_위험성평가_{korea_time(created_at):%Y%m%d}.{format}"
+    return f"{component(facility or institution)}_위험성평가_{korea_time(created_at):%Y%m%d}.{format}"

@@ -115,7 +115,8 @@ def build(model,records,store):
     text(p,'평가 대상  '+facility_label,36,175,523,10,14,max_lines=2)
     table(p,[['총 평가','개선 완료','미완료'],[f"{facts['total']}건",f"{facts['complete']}건",f"{facts['incomplete']}건"]],36,213,523,27,12)
     text(p,'2. 최초 위험등급별 현황',36,284,523,13,bold=True)
-    grades=GRADES+[g for g in facts['grades'] if g not in GRADES]
+    grade_order=facts.get('grade_order',GRADES)
+    grades=grade_order+[g for g in facts['grades'] if g not in grade_order]
     table(p,[grades,[str(facts['grades'].get(g,0))+'건' for g in grades]],36,310,523,24,9.5)
     text(p,'3. 유해위험요인 분류',36,378,523,13,bold=True)
     pie(p,facts['categories'],55,406)

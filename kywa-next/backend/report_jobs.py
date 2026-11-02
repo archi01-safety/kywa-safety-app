@@ -29,7 +29,7 @@ class ReportJobs:
             cutoff=time.monotonic()-1800
             self.jobs={k:v for k,v in self.jobs.items() if v['at']>cutoff and v.get('state')!='expired'}
             self.cache={k:v for k,v in self.cache.items() if v['at']>cutoff}
-            key=digest([owner,VERSION,filters,signature(records)])
+            key=digest([self.org.id,self.org.policy.version,self.org.prompt_version,owner,VERSION,filters,signature(records)])
             for job_id,job in self.jobs.items():
                 if job['owner']==owner and job['key']==key and job['format']==format and job['state']!='failed':
                     return job_id
@@ -72,7 +72,7 @@ class ReportJobs:
                     if cached:
                         pages=cached['pages']
                     else:
-                        model=compose(records,self.ai,stage)
+                        model=compose(records,self.ai,stage,self.org)
                         stage('집계와 사진을 보고서 서식에 배치 중')
                         photos=report_semantic.Photos(records,self.drive)
                         pages=report_layout.build(model,records,photos)
@@ -83,7 +83,7 @@ class ReportJobs:
                     output=report_semantic.hwpx(cached['model'],cached['photos']) if job['format']=='hwpx' else report_layout.pdf(pages)
                 created_at = now()
                 with self.lock: job.update(state='complete',stage='보고서가 준비되었습니다',output=output,
-                    created_at=created_at,filename=report_filename(job['filters'].get('facility',''),job['format'],created_at))
+                    created_at=created_at,filename=report_filename(job['filters'].get('facility',''),job['format'],created_at,self.org.short_name))
         except Exception as exc:
             # Provider details and submitted content never become error messages/logs.
             message=str(exc) if isinstance(exc,ServiceError) else '보고서를 만들지 못했습니다. 다시 생성해 주세요.'

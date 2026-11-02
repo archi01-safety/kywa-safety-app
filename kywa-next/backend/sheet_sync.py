@@ -15,6 +15,7 @@ from .organization import Policy
 from .repository import RepositoryError, cells, google_client, quoted
 from .sheet_format import canonical, DATE_FORMAT, format_requests
 from .sheet_schema import Layout
+from .visible_layout import VisibleLayout
 from .submitter_name import display_name
 from .storage_metrics import phase
 
@@ -81,8 +82,11 @@ class GoogleRows:
                 rows[index] = [next(iter(c.get('effectiveValue', {}).values()), '') for c in cs]
                 if cs and cs[0].get('note', '').startswith(NOTE): notes[index] = cs[0]['note']
                 formats[index] = [c.get('userEnteredFormat', {}) for c in cs]
-        if not rows or padded(rows[0]) != VISIBLE:
-            raise SyncError('sheet_schema', 'KYWA 평가표의 19개 열을 확인하세요.')
+        if not rows:
+            raise SyncError('sheet_schema', '기관 평가표의 19개 열을 확인하세요.')
+        self.layout = VisibleLayout(rows[0], self.repo.settings.organization)
+        rows = [VISIBLE] + [self.layout.canonical(r) for r in rows[1:]]
+        formats = {i:self.layout.canonical(f, {}) for i,f in formats.items()}
         while len(rows)>1 and blank(rows[-1]) and len(rows)-1 not in notes: rows.pop()
         # Read cell values and row identities in the SAME Google response, so a
         # deletion between separate API reads cannot pair two different rows.
@@ -90,7 +94,8 @@ class GoogleRows:
         for md in found:
             if md.get('metadataKey')!=KEY or md.get('visibility')!='DOCUMENT':continue
             loc = md.get('location', {}).get('dimensionRange', {})
-            if loc.get('sheetId') != self.sheet_id: continue
+            # Google omits the default numeric value 0 in dimension metadata.
+            if loc.get('sheetId', 0) != self.sheet_id: continue
             key = md['metadataValue']
             if key in identities or loc.get('dimension')!='ROWS' or loc.get('endIndex',0)-loc.get('startIndex',0)!=1:
                 raise SyncError('identity_conflict', '평가 행의 식별정보가 중복되었습니다. 관리 정보 확인이 필요합니다.')
@@ -98,6 +103,12 @@ class GoogleRows:
         return rows, identities, notes, formats
 
     def batch(self, requests):
+        requests = copy.deepcopy(requests)
+        for request in requests:
+            append = request.get('appendCells', {})
+            if append.get('sheetId') == self.sheet_id:
+                for row in append.get('rows', []):
+                    row['values'] = self.layout.physical(row['values'], {})
         if requests: return self.api.batchUpdate(spreadsheetId=self.sid, body={'requests':requests}).execute()
         return {}
 
@@ -136,6 +147,7 @@ class GoogleRows:
             'location':{'dimensionRange':{'sheetId':self.sheet_id, 'dimension':'ROWS', 'startIndex':index, 'endIndex':index+1}}}}}
 
     def patch(self, metadata_id, edits):
+        edits = {self.layout.positions[k]:v for k,v in edits.items()}
         values = [None] * (max(edits)+1)
         for col, value in edits.items(): values[col] = value
         response = self.api.values().batchUpdateByDataFilter(spreadsheetId=self.sid, body={'valueInputOption':'RAW', 'data':[
@@ -314,7 +326,7 @@ class Store:
                 if changed and not policy and force: policy=self.org.policy
                 if changed and not policy:
                     needs_policy=True
-                    issues.append(('최초' if offset==6 else '개선 후')+' 평가 기준을 확인하고 현재 KYWA 기준을 적용하세요.')
+                    issues.append(('최초' if offset==6 else '개선 후')+f' 평가 기준을 확인하고 현재 {self.org.short_name} 기준을 적용하세요.')
                 if changed and policy:
                     target.update(policy.risk(p,s))
                     edits.update({offset+2:target['score'],offset+3:target['grade']})
@@ -410,7 +422,7 @@ class Store:
             check,ids,_,_=self.g.snapshot();loc=ids.get(key)
             if not loc or fingerprint(check[loc['row']])!=fingerprint(row):
                 raise SyncError('row_conflict','행 연결 중 시트가 변경되었습니다. 다시 새로고침하세요.')
-            previous={'id':key,'organization_id':'kywa','revision':1,'status':'접수','policy':'LEGACY-UNKNOWN',
+            previous={'id':key,'organization_id':self.org.id,'revision':1,'status':'접수','policy':'LEGACY-UNKNOWN',
                 'before':{},'after':None,'legacy_source':'streamlit','reassessment_policy_snapshot':self.org.policy.model_dump()}
             record,_,errors,_=self.parse(row,previous,row)
             value={**loc,'record':record,'source_values':padded(row),'hash':fingerprint(row)}
@@ -481,7 +493,7 @@ class Store:
         row=rows[loc['row']]; record,edits,errors,_=self.parse(row,value['record'],value['source_values'],True)
         if errors: raise SyncError('row_invalid',' '.join(errors))
         record['revision']+=1
-        event=self._event(key,value['source_values'],row,'현재 KYWA 기준 적용')
+        event=self._event(key,value['source_values'],row,f'현재 {self.org.short_name} 기준 적용')
         event.update(id=operation,actor=actor)
         self.write(key,{**loc,'record':record},row,edits,[event],operation)
 
@@ -496,6 +508,8 @@ def prepare(repo, gateway=None, apply=False):
         expected=visible(value['record'])
         expected_hash=value.get('hash') or fingerprint(expected)
         candidates=[i for i,row in enumerate(rows[1:],1) if not blank(row) and fingerprint(row)==expected_hash]
+        if value.get('migration_position_verified') and value.get('row') in candidates:
+            candidates = [value['row']]
         if len(candidates)>1 or any(i in used for i in candidates):
             raise SyncError('migration_ambiguous','동일 내용의 관리 기록 연결이 모호합니다. 원본 백업과 대조해야 합니다.')
         if not candidates:
