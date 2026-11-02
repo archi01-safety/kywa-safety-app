@@ -3,7 +3,7 @@ import argparse
 import json
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 from zoneinfo import ZoneInfo
@@ -23,6 +23,8 @@ def drive_id(value):
 
 
 def timestamp(value):
+    if isinstance(value,(int,float)):
+        return (datetime(1899,12,30,tzinfo=ZoneInfo('Asia/Seoul'))+timedelta(seconds=round(float(value)*86400))).isoformat(timespec='seconds')
     value = str(value).strip()
     try:
         parsed = datetime.fromisoformat(value)

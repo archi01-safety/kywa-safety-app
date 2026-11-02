@@ -1,4 +1,4 @@
-"""KYWA visible 20-column sheet + hidden metadata and recoverable append journal."""
+"""KYWA visible 19-column sheet + hidden metadata and recoverable append journal."""
 import copy
 import json
 import re
@@ -19,11 +19,13 @@ def packed(kind, key, value, clear=False):
     row = [kind, key, *parts]
     return row + [''] * (META_COLUMNS-len(row)) if clear else row
 
-VISIBLE = HEADERS[:18] + ['처리상태', '제출자 성명']
+PREVIOUS = HEADERS[:18] + ['처리상태', '제출자 성명']
+VISIBLE = HEADERS[:18] + ['제출자 성명']
+from .sheet_format import canonical, fingerprint, format_requests
 
 
 def compact(header):
-    return list(header) == VISIBLE
+    return list(header) in (VISIBLE, PREVIOUS)
 
 
 def clean(record):
@@ -35,17 +37,23 @@ def clean(record):
     return value
 
 
-def padded(row):
-    return list(row[:20]) + [''] * max(0, 20-len(row))
+def padded(row, width=19):
+    return list(row[:width]) + [''] * max(0, width-len(row))
 
 
-def visible(record):
+def row_hash(row, width):
+    return fingerprint(row) if width==19 else digest(padded(row,20))
+
+
+def normalized(row, width):
+    return canonical(row) if width==19 else padded(row,20)
+
+
+def visible(record, width=19):
     row = sheet_row(clean(record), True)
-    # Keep the original sheet's familiar timestamp rendering for new entries.
-    if not record.get('legacy_values'):
-        from datetime import datetime
-        row[0] = datetime.fromisoformat(record['created_at']).strftime('%Y-%m-%d %H:%M:%S')
-    return row[:18] + [record['status'], display_name(record.get('submitter_name'))]
+    if width==20:
+        return row[:18]+[record['status'],display_name(record.get('submitter_name'))]
+    return canonical(row[:18]+[display_name(record.get('submitter_name'))])
 
 
 def metadata(repo):
@@ -64,15 +72,16 @@ def metadata(repo):
 
 def decode(repo, rows, entries=None):
     entries = metadata(repo) if entries is None else entries
+    width = len(rows[0])
     mapped = {}
     for (kind, key), (_, value) in entries.items():
         if kind != 'record':
             continue
         index = value['row']
-        if index in mapped or index >= len(rows) or digest(padded(rows[index])) != value['hash']:
+        if index in mapped or index >= len(rows) or row_hash(rows[index],width) != value['hash']:
             raise SheetSchemaError('평가 행이 이동하거나 변경되었습니다. 원본과 관리 정보를 확인하세요.')
         mapped[index] = value['record']
-    layout = Layout(VISIBLE, repo.settings.organization)
+    layout = Layout(rows[0], repo.settings.organization)
     identity = repo.settings.spreadsheet_id + ':' + repo.settings.sheet_name
     records = []
     for index, row in enumerate(rows[1:], 1):
@@ -81,8 +90,8 @@ def decode(repo, rows, entries=None):
         record = copy.deepcopy(mapped.get(index))
         if record is None:
             record = layout.legacy(row, index, identity)
-            record['status'] = row[18] if len(row)>18 and row[18] else record['status']
-        record.update(_sheet_row=index, _sheet_hash=digest(padded(row)), _sheet_revision=record['revision'])
+            if width==20: record['status'] = row[18] if len(row)>18 and row[18] else record['status']
+        record.update(_sheet_row=index, _sheet_hash=row_hash(row,width), _sheet_revision=record['revision'])
         records.append(record)
     if len({r['id'] for r in records}) != len(records):
         raise SheetSchemaError('중복된 평가 ID입니다.')
@@ -97,6 +106,7 @@ def recover(repo, rows):
     """
     from .repository import google_client, cells
     entries = metadata(repo)
+    width = len(rows[0])
     pending = [(key, index, value) for (kind, key), (index, value) in entries.items()
                if kind == 'request' and value.get('state') == 'appending']
     if not pending:
@@ -107,10 +117,10 @@ def recover(repo, rows):
     occupied = {v['row'] for (kind,_),(_,v) in entries.items() if kind == 'record'}
     requests = []
     for key, index, journal in pending:
-        expected = journal['rows']
+        expected = [normalized(r,width) for r in journal['rows']]
         matches = [i for i in range(journal['start'], len(rows)-len(expected)+1)
                    if not occupied.intersection(range(i,i+len(expected)))
-                   and [padded(r) for r in rows[i:i+len(expected)]] == expected]
+                   and [normalized(r,width) for r in rows[i:i+len(expected)]] == expected]
         if len(matches) != 1:
             continue
         start = matches[0]
@@ -118,11 +128,10 @@ def recover(repo, rows):
         requests.append({'updateCells':{'start':{'sheetId':ids[TAB],'rowIndex':index,'columnIndex':0},
             'rows':[cells(packed('request',key,journal,True))],'fields':'userEnteredValue'}})
         for offset, record in enumerate(journal['records']):
-            value = {'row':start+offset,'hash':digest(expected[offset]),'record':record}
+            value = {'row':start+offset,'hash':row_hash(expected[offset],width),'record':record}
             requests.append({'appendCells':{'sheetId':ids[TAB],
                 'rows':[cells(packed('record',record['id'],value))],'fields':'userEnteredValue'}})
-        requests.append({'copyPaste':{'source':{'sheetId':ids[repo.settings.sheet_name],'startRowIndex':1,'endRowIndex':2,'startColumnIndex':0,'endColumnIndex':20},
-            'destination':{'sheetId':ids[repo.settings.sheet_name],'startRowIndex':start,'endRowIndex':start+len(expected),'startColumnIndex':0,'endColumnIndex':20},'pasteType':'PASTE_FORMAT'}})
+        requests.extend(format_requests(svc,repo.settings.spreadsheet_id,repo.settings.sheet_name,start,start+len(expected),width))
         occupied.update(range(start,start+len(expected)))
     if requests:
         svc.batchUpdate(spreadsheetId=repo.settings.spreadsheet_id,body={'requests':requests}).execute()
@@ -138,6 +147,7 @@ def apply(repo, records, events):
     ids = {s['properties']['title']:s['properties']['sheetId'] for s in info['sheets']}
     entries = metadata(repo)
     rows = repo._rows()
+    width = len(rows[0])
     current = {r['id']:r for r in decode(repo, rows, entries)}
     def save_entries(changes, extra=None):
         requests = list(extra or [])
@@ -161,7 +171,7 @@ def apply(repo, records, events):
         operation = fresh[0]['operation_id']
         if any(r['operation_id'] != operation for r in fresh):
             raise RepositoryError('다른 제출 요청이 섞였습니다.')
-        expected = [visible(r) for r in fresh]
+        expected = [visible(r,width) for r in fresh]
         payload_hash = digest([[r['id'],r['submit_hash'],r['submit_owner']] for r in fresh])
         pending = entries.get(('request',operation))
         if pending:
@@ -169,9 +179,9 @@ def apply(repo, records, events):
             if journal['hash'] != payload_hash:
                 raise RepositoryError('같은 요청번호의 내용이 다릅니다.')
             fresh = journal['records']
-            expected = journal['rows']
+            expected = [normalized(r,width) for r in journal['rows']]
             matches = [i for i in range(journal['start'],len(rows)-len(expected)+1)
-                       if [padded(r) for r in rows[i:i+len(expected)]] == expected]
+                       if [normalized(r,width) for r in rows[i:i+len(expected)]] == expected]
             if len(matches) != 1:
                 raise RepositoryError('이전 제출의 저장 위치를 확인 중입니다. 중복 전송하지 말고 관리자에게 확인해 주세요.')
             start = matches[0]
@@ -179,32 +189,31 @@ def apply(repo, records, events):
             journal = {'hash':payload_hash,'start':len(rows),'rows':expected,'records':[clean(r) for r in fresh],'state':'appending'}
             save_entries([('request',operation,journal)])
             entries = metadata(repo)
-            response = svc.values().append(spreadsheetId=sid,range=quoted(repo.settings.sheet_name)+'!A:T',
+            response = svc.values().append(spreadsheetId=sid,range=quoted(repo.settings.sheet_name)+('!A:S' if width==19 else '!A:T'),
                 valueInputOption='RAW',insertDataOption='INSERT_ROWS',body={'values':expected}).execute()
-            match = re.search(r'!A(\d+):T(\d+)$',response['updates']['updatedRange'])
+            match = re.search(r'!A(\d+):[ST](\d+)$',response['updates']['updatedRange'])
             if not match or int(match[2])-int(match[1])+1 != len(fresh):
                 raise RepositoryError('저장 위치 확인에 실패했습니다. 다시 전송하면 기존 결과부터 확인합니다.')
             start = int(match[1])-1
         rows = repo._rows()
-        if [padded(r) for r in rows[start:start+len(expected)]] != expected:
+        if [normalized(r,width) for r in rows[start:start+len(expected)]] != expected:
             raise RepositoryError('저장한 행의 내용이 달라졌습니다.')
         for offset,record in enumerate(fresh):
-            changes.append(('record',record['id'],{'row':start+offset,'hash':digest(expected[offset]),'record':clean(record)}))
+            changes.append(('record',record['id'],{'row':start+offset,'hash':row_hash(expected[offset],width),'record':clean(record)}))
         journal['state']='committed'; journal['row']=start
         changes.append(('request',operation,journal))
-        # Copy the approved column-by-column format, never neighboring user data.
-        requests.append({'copyPaste':{'source':{'sheetId':ids[repo.settings.sheet_name],'startRowIndex':1,'endRowIndex':2,'startColumnIndex':0,'endColumnIndex':20},
-            'destination':{'sheetId':ids[repo.settings.sheet_name],'startRowIndex':start,'endRowIndex':start+len(fresh),'startColumnIndex':0,'endColumnIndex':20},'pasteType':'PASTE_FORMAT'}})
+        requests.extend(format_requests(svc,sid,repo.settings.sheet_name,start,len(rows),width))
     else:
         for record in records:
             previous = current.get(record['id'])
             if not previous or any(previous[k] != record[k] for k in ('_sheet_row','_sheet_hash','_sheet_revision')):
                 raise RepositoryError('다른 담당자가 변경했습니다. 새로고침하세요.')
-            index=previous['_sheet_row']; values=visible(record)
+            index=previous['_sheet_row']; values=visible(record,width)
             # Preserve A:M and the originally entered name, including legacy raw names.
-            updated=padded(rows[index]); updated[13:19]=values[13:19]
-            requests.append({'updateCells':{'start':{'sheetId':ids[repo.settings.sheet_name],'rowIndex':index,'columnIndex':13},'rows':[cells(updated[13:19])],'fields':'userEnteredValue'}})
-            changes.append(('record',record['id'],{'row':index,'hash':digest(updated),'record':clean(record)}))
+            last=18 if width==19 else 19
+            updated=padded(rows[index],width); updated[13:last]=values[13:last]
+            requests.append({'updateCells':{'start':{'sheetId':ids[repo.settings.sheet_name],'rowIndex':index,'columnIndex':13},'rows':[cells(updated[13:last])],'fields':'userEnteredValue'}})
+            changes.append(('record',record['id'],{'row':index,'hash':row_hash(updated,width),'record':clean(record)}))
     if events:
         history=repo._values(repo.settings.history_sheet_name)
         if not history or history[0] != HISTORY_HEADERS:

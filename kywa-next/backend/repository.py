@@ -101,15 +101,18 @@ class SheetsRepository:
         self.settings = settings
         self.lock = threading.RLock()
 
-    def _values(self, name):
+    def _values(self, name, raw=False):
         return google_client(self.settings, 'sheets', 'v4').spreadsheets().values().get(
-            spreadsheetId=self.settings.spreadsheet_id, range=quoted(name)).execute().get('values', [])
+            spreadsheetId=self.settings.spreadsheet_id, range=quoted(name), **({'valueRenderOption':'UNFORMATTED_VALUE','dateTimeRenderOption':'SERIAL_NUMBER'} if raw else {})).execute().get('values', [])
 
     def _rows(self):
         rows = self._values(self.settings.sheet_name)
         if not rows:
             raise RepositoryError('기관 평가 탭이 비어 있습니다. migrate로 준비하세요.')
         Layout(rows[0], self.settings.organization)
+        from .compact_storage import VISIBLE
+        if self.settings.organization.id=='kywa' and rows[0]==VISIBLE:
+            rows=self._values(self.settings.sheet_name,raw=True)
         return rows
 
     def _decoded(self, rows):

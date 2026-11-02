@@ -1,3 +1,4 @@
+from .chart_colors import CATEGORY_COLOR_MAP, FALLBACK_COLOR
 """A4 report template: one overview, then at most two editable cards per page."""
 import base64
 import io
@@ -10,6 +11,7 @@ from PIL import Image, ImageDraw
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from .report_model import GRADES
+from .report_semantic import ReportError
 from .services import ServiceError
 
 WIDTH, HEIGHT = 595.28, 841.89
@@ -54,7 +56,7 @@ def wrapped(text,width,size):
 def text(p,value,x,y,width,size=10,leading=14,color=INK,bold=False,max_lines=None):
     lines=wrapped(value,width,size)
     if max_lines and len(lines)>max_lines:
-        raise ServiceError('보고서 요약이 정해진 영역보다 깁니다. 다시 생성해 주세요.')
+        raise ReportError('layout','보고서 요약이 정해진 영역보다 깁니다. 다시 생성해 주세요.')
     for value in lines:
         p['lines'].append(line(value,x,y,size,color,bold)); y+=leading
     return y
@@ -71,7 +73,7 @@ def table(p,values,x,y,width,row_height=22,size=10):
         for c,value in enumerate(row):
             cx,cy=x+c*cell_width,y+r*row_height
             lines=wrapped(str(value),cell_width-10,size)
-            if len(lines)>1: raise ServiceError('보고서 표 내용이 영역을 초과했습니다.')
+            if len(lines)>1: raise ReportError('layout','보고서 표 내용이 영역을 초과했습니다.')
             item=line(str(value),cx+5,cy+(row_height-size)/2,size,INK,r==0)
             item['x']=cx+(cell_width-item['width'])/2
             cells.append(dict(row=r,col=c,rowSpan=1,colSpan=1,x=cx,y=cy,width=cell_width,height=row_height,
@@ -92,13 +94,15 @@ def picture(p,data,x,y,w,h,name):
 
 def pie(p,categories,x,y):
     im=Image.new('RGB',(500,500),'white'); draw=ImageDraw.Draw(im); angle=-90; total=sum(categories.values())
-    for i,count in enumerate(categories.values()):
+    for category,count in categories.items():
         end=angle+360*count/total
-        draw.pieslice((4,4,496,496),angle,end,fill=COLORS[i%len(COLORS)],outline='white',width=3); angle=end
+        draw.pieslice((4,4,496,496),angle,end,fill=CATEGORY_COLOR_MAP.get(category,FALLBACK_COLOR),outline='white',width=3); angle=end
     out=io.BytesIO(); im.save(out,'PNG'); picture(p,out.getvalue(),x,y,132,132,'categories')
     for i,(category,count) in enumerate(categories.items()):
-        rule(p,x+160,y+10+i*22,10,COLORS[i%len(COLORS)],10)
-        text(p,f'{category}   {count}건 ({count/total:.0%})',x+180,y+9+i*22,280,10)
+        col, row = divmod(i,6) if len(categories)>6 else (0,i)
+        left=x+150+col*174
+        rule(p,left,y+10+row*21,8,CATEGORY_COLOR_MAP.get(category,FALLBACK_COLOR),8)
+        text(p,f'{category} {count}건 ({count/total:.0%})',left+13,y+9+row*21,170,8.5 if len(categories)>6 else 10)
 
 
 def build(model,records,store):
@@ -120,7 +124,7 @@ def build(model,records,store):
     for value in model['priorities']:
         y=text(p,'• '+value,43,y+5,516,10,14,max_lines=2)
     if y>748:
-        raise ServiceError('총평이 첫 페이지 영역보다 깁니다. 다시 생성해 주세요.')
+        raise ReportError('layout','총평이 첫 페이지 영역보다 깁니다. 다시 생성해 주세요.')
     text(p,'상기 위험요인의 개선조치와 이행 여부를 지속 확인하여야 함.  끝.',36,y+9,523,10)
     text(p,'붙임  위험성평가 세부 결과.  끝.',36,y+37,523,10)
     for index,detail in enumerate(model['details']):
@@ -140,7 +144,7 @@ def build(model,records,store):
         # Fixed photo frame, with measured text stopping before it.
         photo_y=max(y+8,top+186)
         if y>top+241:
-            raise ServiceError('세부 요약이 사진 영역을 초과했습니다. 다시 생성해 주세요.')
+            raise ReportError('layout','세부 요약이 사진 영역을 초과했습니다. 다시 생성해 주세요.')
         record=records[index]
         for col,(label,fid) in enumerate([('개선 전',record.get('photo_id')),('개선 후',(record.get('after') or {}).get('photo_id'))]):
             x=42+col*260

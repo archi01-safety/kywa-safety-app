@@ -84,3 +84,15 @@ class PinAuth:
     def revoke(self, token):
         with self.lock:
             self.sessions.pop(token, None)
+
+    def remaining(self, token):
+        with self.lock:
+            return max(0, self.sessions.get(token, 0)-self.clock())
+
+    def extend(self, token):
+        with self.lock:
+            if self.sessions.get(token, 0) <= self.clock():
+                self.sessions.pop(token, None)
+                return False
+            self.sessions[token] = self.clock()+SESSION_SECONDS
+            return True

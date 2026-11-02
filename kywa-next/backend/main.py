@@ -75,8 +75,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                   openapi_url='/api/openapi.json' if cfg.demo else None)
     app.state.repo, app.state.drafts, app.state.settings = repo, drafts, cfg
     app.state.pin_auth = pin_auth
+    app.state.storage_pause_until = 0.0
     app.add_middleware(SessionMiddleware, secret_key=cfg.session_secret, session_cookie='kywa_session',
-                       max_age=SESSION_SECONDS if pin_auth else 28800, same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
+                       max_age=SESSION_SECONDS if pin_auth and org.id != 'kywa' else 28800, same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
     app.add_middleware(BodySizeLimit, max_bytes=(21 if org.id == 'kywa' else 11)*1024*1024)
     oauth = OAuth()
     oauth.register(name='google', client_id=cfg.google_client_id, client_secret=cfg.google_client_secret,
@@ -233,6 +234,24 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     async def health():
         return {'status': 'ok'}
 
+    def auth_status(request):
+        remaining=pin_auth.remaining(request.session.get('pin_session','')) if pin_auth else 0
+        server_time=time.time()
+        return {'active':remaining>0,'server_time':server_time,'expires_at':server_time+remaining if remaining else None,'remaining_seconds':remaining}
+
+    @app.get('/api/auth/session')
+    def auth_session(request: Request):
+        if org.id!='kywa' or not pin_auth: raise HTTPException(404)
+        return auth_status(request)
+
+    @app.post('/api/auth/extend')
+    def auth_extend(request: Request):
+        mutation(request)
+        if org.id!='kywa' or not pin_auth: raise HTTPException(404)
+        if not pin_auth.extend(request.session.get('pin_session','')):
+            raise HTTPException(401,'로그인이 만료되었습니다. 작성 내용은 유지됩니다. 다시 로그인하세요.')
+        return auth_status(request)
+
     @app.get('/api/bootstrap')
     def bootstrap(request: Request):
         session(request)
@@ -242,6 +261,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             account = None
         return {'mode': cfg.app_env, 'local_workspace': cfg.local_workspace, 'auth_mode': cfg.auth_mode,
                 'csrf': request.session['csrf'], 'user': account,
+                'auth_session':auth_status(request) if org.id=='kywa' and pin_auth else None,
                 'facilities': FACILITIES, 'departments': DEPARTMENTS, 'categories': CATEGORIES,
                 'policy': POLICY, 'organization': {**org.model_dump(exclude={'category_guidance', 'prompt_guidance', 'storage', 'source'}),
                     'branding': {**org.branding.model_dump(), 'colors': palette(org.branding.primary)}}, 'report_max_rows': cfg.report_max_rows}
@@ -310,8 +330,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not token:
             raise HTTPException(401, '비밀번호가 올바르지 않습니다.')
         pin_auth.revoke(request.session.get('pin_session', ''))
+        retained_owner=request.session.get('owner') if org.id=='kywa' else None
         request.session.clear()
         session(request)
+        if retained_owner: request.session['owner']=retained_owner
         request.session['pin_session'] = token
         return {'ok': True}
 
@@ -419,12 +441,26 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         finally:
             expensive.release()
 
+    def storage_ready():
+        if org.id == 'kywa' and time.monotonic() < app.state.storage_pause_until:
+            raise HTTPException(503, '저장소 정비 중입니다. 입력은 유지됩니다. 잠시 후 다시 전송해 주세요.')
+
+    @app.post('/api/admin/storage-maintenance')
+    def storage_maintenance(request: Request, enabled: bool = Form(...)):
+        mutation(request)
+        user(request, admin=True)
+        if org.id != 'kywa': raise HTTPException(404)
+        with repo.lock:
+            app.state.storage_pause_until = time.monotonic()+1800 if enabled else 0.0
+        return {'paused': enabled, 'lease_seconds': 1800 if enabled else 0}
+
     @app.post('/api/assessments')
     def submit(request: Request, data: SubmitRequest):
         mutation(request)
         submitter_name = org.name_value(data.submitter_name)
         body_hash = digest(data.model_dump())
         with repo.lock:
+            storage_ready()
             previous = [r for r in repo.records() if r.get('operation_id') == data.request_id]
             if previous:
                 if any(r.get('submit_hash') != body_hash or r.get('submit_owner') != digest(session(request)) for r in previous):
@@ -499,6 +535,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         mutation(request)
         body_hash = digest(data.model_dump())
         with repo.lock:
+            storage_ready()
             record, account = get_record(request, record_id)
             saved = next((e for e in repo.events(record_id) if e['id'] == data.request_id), None)
             if saved:
@@ -526,6 +563,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def state(request: Request, record_id: str, data: StateRequest):
         mutation(request)
         with repo.lock:
+            storage_ready()
             record, account = get_record(request, record_id)
             saved = next((e for e in repo.events(record_id) if e['id'] == data.request_id), None)
             if saved:
@@ -586,7 +624,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def report_status(request: Request, job_id: str):
         user(request,admin=True)
         job=report_jobs.get(session(request),job_id)
-        return {k:job[k] for k in ('state','stage')}
+        return {k:job[k] for k in ('state','stage','error_code') if k in job}
 
     @app.get('/api/report-jobs/{job_id}/download')
     def report_download(request: Request, job_id: str):

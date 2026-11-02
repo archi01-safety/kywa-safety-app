@@ -27,6 +27,9 @@ def safe_photo(store, fid):
 
 
 def excel(records, store, org=None):
+    if org and org.id=="kywa":
+        from .excel_kywa import create_excel
+        return create_excel(records,store,org)
     from openpyxl import Workbook
     from openpyxl.styles import Font, PatternFill, Alignment
     from openpyxl.drawing.image import Image

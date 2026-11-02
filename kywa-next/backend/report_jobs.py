@@ -5,7 +5,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from .domain import digest
 from .report_model import VERSION, compose
-from . import reports, report_layout
+from . import reports, report_layout, report_semantic
 from .services import ServiceError
 
 MIMES={'pdf':'application/pdf','hwpx':'application/hwp+zip',
@@ -60,13 +60,15 @@ class ReportJobs:
                     else:
                         model=compose(records,self.ai,stage)
                         stage('집계와 사진을 보고서 서식에 배치 중')
-                        pages=report_layout.build(model,records,self.drive)
+                        photos=report_semantic.Photos(records,self.drive)
+                        pages=report_layout.build(model,records,photos)
                         if len(self.cache)>=2: self.cache.pop(next(iter(self.cache)))
-                        self.cache[job['key']]={'at':time.monotonic(),'pages':pages}
+                        cached={'at':time.monotonic(),'pages':pages,'model':model,'photos':photos}
+                        self.cache[job['key']]=cached
                     stage('편집 가능한 한글 문서 생성 중' if job['format']=='hwpx' else 'PDF 문서 생성 중')
-                    output=report_layout.hwpx(pages) if job['format']=='hwpx' else report_layout.pdf(pages)
+                    output=report_semantic.hwpx(cached['model'],cached['photos']) if job['format']=='hwpx' else report_layout.pdf(pages)
                 with self.lock: job.update(state='complete',stage='보고서가 준비되었습니다',output=output)
         except Exception as exc:
             # Provider details and submitted content never become error messages/logs.
             message=str(exc) if isinstance(exc,ServiceError) else '보고서를 만들지 못했습니다. 다시 생성해 주세요.'
-            with self.lock: job.update(state='failed',stage=message)
+            with self.lock: job.update(state='failed',stage=message,error_code=getattr(exc,'code','document'))

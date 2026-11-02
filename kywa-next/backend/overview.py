@@ -2,6 +2,7 @@
 from collections import Counter
 
 from .domain import FACILITIES, CATEGORIES
+from .chart_colors import CATEGORY_COLOR_MAP, FACILITY_COLOR_MAP, FALLBACK_COLOR
 
 
 def summarize(records, year, org=None):
@@ -16,8 +17,8 @@ def summarize(records, year, org=None):
     return dict(year=year, years=years, total=len(selected),
                 completed=sum(r['status'] == '완료' for r in selected),
                 facility_count=len(facilities),
-                facilities=[dict(name=f, count=facilities[f]) for f in facilities_list + (['기타'] if facilities['기타'] else [])],
-                categories=[dict(name=k, count=v) for k, v in categories.most_common()])
+                facilities=[dict(name=f, count=facilities[f],**({'color':FACILITY_COLOR_MAP.get(f,FALLBACK_COLOR)} if org and org.id=='kywa' else {})) for f in facilities_list + (['기타'] if facilities['기타'] else [])],
+                categories=[dict(name=k, count=v,**({'color':CATEGORY_COLOR_MAP.get(k,FALLBACK_COLOR)} if org and org.id=='kywa' else {})) for k, v in categories.most_common()])
 
 
 def guide_keywords(items):
