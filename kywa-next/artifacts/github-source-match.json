@@ -1,0 +1,8 @@
+{
+  "checked_at": "2026-11-02T09:50:18.914909+00:00",
+  "source_revision": "5fd9dfdb3eee757889b3974f6d40b4c7a3c05b59",
+  "application_commit": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+  "compared_files": 154,
+  "mismatches": [],
+  "scope": "all packaged source, docs and workflows; generated artifacts verified after upload separately"
+}

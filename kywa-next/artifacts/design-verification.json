@@ -1,0 +1,40 @@
+{
+  "ci_run": 41420384220,
+  "commit": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+  "status": "PASS",
+  "backend_tests": 264,
+  "frontend_unit_tests": 15,
+  "sizes": [
+    1440,
+    768,
+    390
+  ],
+  "screens": [
+    "inspect",
+    "actions",
+    "reports"
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "institutions": [
+    "kywa",
+    "fowi",
+    "knps",
+    "khidi",
+    "knf",
+    "kohi",
+    "cayf",
+    "ayf"
+  ],
+  "standard_geometry_preserved": true,
+  "risk_colors_preserved": true,
+  "root_docker": "PASS",
+  "ax_container": "PASS",
+  "production_deployment": "8/8 Live",
+  "post_deployment_tests": "omitted at user request",
+  "deployed_commit": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+  "deployment_evidence": "render-deployments.json",
+  "visual_review": "PASS: final CI desktop/mobile captures for all institutions; KYWA tablet and dark/light three-screen captures reviewed"
+}

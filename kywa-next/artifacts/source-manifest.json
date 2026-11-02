@@ -6,8 +6,8 @@
   },
   {
     "path": "kywa-next/.env.example",
-    "bytes": 1423,
-    "sha256": "3ef6db433824b79f6e2682b4d019f9cc80e098c605b69b123b9e8bc66165c571"
+    "bytes": 1835,
+    "sha256": "c005435f0ba5468ee48d7a81ba628c45972d9cc0967ce134641eafcad659162e"
   },
   {
     "path": "kywa-next/.gitignore",
@@ -16,8 +16,28 @@
   },
   {
     "path": "kywa-next/AGENTS.md",
-    "bytes": 1760,
-    "sha256": "4f0c05b8ab9e4dd2897f3bedabca92490a1f2a9f79955ebd10468b2cb5cb5dc7"
+    "bytes": 2118,
+    "sha256": "1346d711b509e6c99ec1c2180b8912471e94223ee9b2e7c889cfdf28fd86b48e"
+  },
+  {
+    "path": "kywa-next/app.py",
+    "bytes": 518,
+    "sha256": "5104eab696114d1c660af08d70179d70ca71b50d3ba052bdf37fca15ad4da2fe"
+  },
+  {
+    "path": "kywa-next/artifacts/design-colors.json",
+    "bytes": 3787,
+    "sha256": "77f0b09480d0c5b14fde0a81767f44b061dd99e169b8e3800c5709577b19e8d5"
+  },
+  {
+    "path": "kywa-next/artifacts/design-scope-audit.json",
+    "bytes": 943,
+    "sha256": "0ab9fbc421e71bfc82d21f5923f83caa05bece0e57fbb2f6d5a06bffde2a7d86"
+  },
+  {
+    "path": "kywa-next/artifacts/design-verification.json",
+    "bytes": 942,
+    "sha256": "ffdff731a785f7978accb856c5d481bd0e6d3d8859707e4d83e206ec3483a4b7"
   },
   {
     "path": "kywa-next/artifacts/partner-rollout-verification.json",
@@ -26,8 +46,18 @@
   },
   {
     "path": "kywa-next/artifacts/render-deployments.json",
-    "bytes": 2446,
-    "sha256": "4399ebbebe586478b22d05d0acabd70982e553d7afb30780c0a3a7911caa0dbc"
+    "bytes": 3644,
+    "sha256": "30cb5728efeb93325da224d89da2ec0057d3a5067478c1fa0bc354beda7069bb"
+  },
+  {
+    "path": "kywa-next/AX-DEPLOYMENT.ko.md",
+    "bytes": 9931,
+    "sha256": "dededd6443e514cae99d7ed31a69e26d15f56dbe32c15cb44c33438a0b9eed0f"
+  },
+  {
+    "path": "kywa-next/AX-VERIFICATION.ko.md",
+    "bytes": 5730,
+    "sha256": "168c1c1c8c5055b121b2ab544a1af59baebd13941430bdfc78eb96c0c4708eb7"
   },
   {
     "path": "kywa-next/backend/__init__.py",
@@ -61,8 +91,8 @@
   },
   {
     "path": "kywa-next/backend/branding.py",
-    "bytes": 1753,
-    "sha256": "891c2fbb9ab654c52fbd115fde18ba1e52b432f4a9d9fbf420935c1511029f20"
+    "bytes": 2058,
+    "sha256": "781453ab1208716001d1464cf84e4da3ee0ae48984e7d5f590d285a7aafdfcdf"
   },
   {
     "path": "kywa-next/backend/chart_colors.py",
@@ -81,8 +111,8 @@
   },
   {
     "path": "kywa-next/backend/config.py",
-    "bytes": 8326,
-    "sha256": "4fabaea8ee14f6f2cbf619235dbe9904b9f1a6bc208b8e8634035d248788cec8"
+    "bytes": 9523,
+    "sha256": "7a3c4e6b6b01c2c623c45cc9726abe3574f0d68a1c03ee7b79f3627e39062f6c"
   },
   {
     "path": "kywa-next/backend/domain.py",
@@ -106,8 +136,8 @@
   },
   {
     "path": "kywa-next/backend/main.py",
-    "bytes": 40370,
-    "sha256": "aba071d1abe1a0ccda545739b6d9d842a4dfcc399ee1427b1d42a7d7fcdf8393"
+    "bytes": 40950,
+    "sha256": "f47188eb82677519c088a738f13cfc402fc2fe2a29f50ae628591af511fe3786"
   },
   {
     "path": "kywa-next/backend/migrate.py",
@@ -131,18 +161,18 @@
   },
   {
     "path": "kywa-next/backend/organization.py",
-    "bytes": 7741,
-    "sha256": "975e81232d9ac7584a5e0f57ad56c6c286f648be89b1ff51b37c4ee3a1857b7a"
+    "bytes": 7875,
+    "sha256": "64f3709727c70363bd50cfdd50d6b405a32e71a67af2dd8eac2242c179a0ecef"
   },
   {
     "path": "kywa-next/backend/organizations/ayf.json",
-    "bytes": 7581,
-    "sha256": "b35dc572aeeecbf506980ec3e9a85d8089f444201092a7be2e19f9f476889df3"
+    "bytes": 7637,
+    "sha256": "913dfd11ae505dc4f61fc3da24f220d1d4485cc8a781132f587dbe8c52acd0d6"
   },
   {
     "path": "kywa-next/backend/organizations/cayf.json",
-    "bytes": 7411,
-    "sha256": "aecb3cf3bfc3a44fdcb6776a52f5ed8d7a4771238ff388e47df58828b863cc56"
+    "bytes": 7467,
+    "sha256": "6200eaa2fb6bb816d087a78b95cdda6ddc32da60e9bd942ba296ad64f8f87f75"
   },
   {
     "path": "kywa-next/backend/organizations/example.json",
@@ -151,33 +181,33 @@
   },
   {
     "path": "kywa-next/backend/organizations/fowi.json",
-    "bytes": 10186,
-    "sha256": "c75162d2f76f1d3d452ab674cbc01f1f906380d049ac63829da24dad57cfbf62"
+    "bytes": 10242,
+    "sha256": "388fcf31699cbb67a3bc04ac73fa80111725325647260de8190c7cc0ae05647c"
   },
   {
     "path": "kywa-next/backend/organizations/khidi.json",
-    "bytes": 6935,
-    "sha256": "6d1e7d048f898843b1e047a46264c6baacbbd7df1ecba134de84f0aada59bc3f"
+    "bytes": 6991,
+    "sha256": "774744524c02779f5eecaa23a28edd52d8b52fbe2f49a4e1310a272e854bc384"
   },
   {
     "path": "kywa-next/backend/organizations/knf.json",
-    "bytes": 6996,
-    "sha256": "d7780e3475ad0a3090851952baea99694bc9c784bac394d667a8d486107adf8c"
+    "bytes": 7052,
+    "sha256": "6fea61a929fb8e897e59d435763974b9b59d3a904fc9cfc59669edc48b8bf7b8"
   },
   {
     "path": "kywa-next/backend/organizations/knps.json",
-    "bytes": 8449,
-    "sha256": "c1bb2f6a8aa68c408c526192b3f5ae063df39a7cefde34158edae3642d337e55"
+    "bytes": 8505,
+    "sha256": "77de1edbdd169f6382dcb1e3e2f9d59e1fe2399faa7973945298319df5b9379c"
   },
   {
     "path": "kywa-next/backend/organizations/kohi.json",
-    "bytes": 7989,
-    "sha256": "391f4fafa5371694fea2eef43486b08d0af2ddcdb0c6cbc72d9852943976f92a"
+    "bytes": 8045,
+    "sha256": "f77cd543c7b61a2ac377bd7b42e05ee367feb1d63638ed689f35e823a79269d4"
   },
   {
     "path": "kywa-next/backend/organizations/kywa.json",
-    "bytes": 7126,
-    "sha256": "bba61b880ce564dfc603204ca9c402c2faf15f3978bcf0fe369bda88a7ad023e"
+    "bytes": 7181,
+    "sha256": "fd22ea9c09b05f2d9135f1fe9001962c1ad0137a3cc55e5f5bf25b1c37ec4515"
   },
   {
     "path": "kywa-next/backend/overview.py",
@@ -285,6 +315,11 @@
     "sha256": "1b53b9f9deeae76d2a49aed24221a0fa5a0a99342c67dc86e18dacb86e950438"
   },
   {
+    "path": "kywa-next/backend/runtime.py",
+    "bytes": 2300,
+    "sha256": "b9d3b05905e37eee3cfe3390f487445441e73af0ae68452af4f21b5df27620fb"
+  },
+  {
     "path": "kywa-next/backend/services.py",
     "bytes": 14801,
     "sha256": "c30fe9140eb7763770e89f9158bbb79271413a6cf667f737bd2c1ddbffcbd48d"
@@ -325,9 +360,19 @@
     "sha256": "f21a451007e40e947d970487cedc218e602c1276ebfa356efb7370872da83a8f"
   },
   {
+    "path": "kywa-next/backend/tests/test_ax_runtime.py",
+    "bytes": 6850,
+    "sha256": "0a5cde39a9264240a3dc5aee69fcb095e22b7a777490a0ab45d306239a8589ed"
+  },
+  {
     "path": "kywa-next/backend/tests/test_ayf.py",
     "bytes": 2998,
     "sha256": "6fcca728f63b911f71979d6cee3328b63e4ab8350ae8cb1835164928380158ed"
+  },
+  {
+    "path": "kywa-next/backend/tests/test_design_tokens.py",
+    "bytes": 1408,
+    "sha256": "def2a9de31c263484cb57370e0a1688e18fc31206e8aeb26a9b55b4128a62553"
   },
   {
     "path": "kywa-next/backend/tests/test_institutions.py",
@@ -401,13 +446,13 @@
   },
   {
     "path": "kywa-next/CHANGELOG.md",
-    "bytes": 7815,
-    "sha256": "c9d972b4c214d0a2ec5074b4ae71324fc7e899af1b4540a6f7a3713bd1944445"
+    "bytes": 9379,
+    "sha256": "c64515e9bc5df22cbb2104315d79c3e6ed3c72dcf1fad67cd65cf8994505e920"
   },
   {
     "path": "kywa-next/deploy/ci.yml",
-    "bytes": 1979,
-    "sha256": "298e07f0826927fd3f4cc64609768a8c1dc175c36d70edf8e108d2fa0c7f04b4"
+    "bytes": 3471,
+    "sha256": "d4c1a4e2ab9309238f579aa79c823b8102a126f587a1df27dd9ac1562c007ffb"
   },
   {
     "path": "kywa-next/deploy/health-check.yml",
@@ -425,9 +470,14 @@
     "sha256": "90fe85fe25aa148d041375759c4ae67017f056ac3b0c690a81e51d8be7eab2d5"
   },
   {
+    "path": "kywa-next/DESIGN-REVIEW.ko.md",
+    "bytes": 6940,
+    "sha256": "769be4e12194f82650ec3e32d9b0e1fe8013523e107b13d8bbfd3e582f1e4614"
+  },
+  {
     "path": "kywa-next/Dockerfile",
-    "bytes": 1203,
-    "sha256": "6c2081d223fa00c2660c3d0a322d6ce991e36b53e92be21364fe68793b7e4dfa"
+    "bytes": 1259,
+    "sha256": "42857d4d869f06bf2950693d75f922bf9bc5e9a6b5efb8d517e2a4fc39bbf1eb"
   },
   {
     "path": "kywa-next/docs-validation.md",
@@ -440,9 +490,14 @@
     "sha256": "07564a2165268f7c85c8f100cafb276412688f1489008ab58315872b02ea6b33"
   },
   {
+    "path": "kywa-next/frontend/app/base-path.ts",
+    "bytes": 432,
+    "sha256": "d02fc5b5dacc84d7de0fa1e4638a219eced236737e1ee810771c5872812b2387"
+  },
+  {
     "path": "kywa-next/frontend/app/brand.tsx",
-    "bytes": 1275,
-    "sha256": "c527410320158db05764891c93e78fa0f39a69174ea25d4d446c7848ac530fee"
+    "bytes": 1554,
+    "sha256": "b45cfc3a22e79688d8e494e9eec22c3ac4d29f9dfc595e16c931a6fb55d4984a"
   },
   {
     "path": "kywa-next/frontend/app/download-name.ts",
@@ -461,18 +516,23 @@
   },
   {
     "path": "kywa-next/frontend/app/layout.tsx",
-    "bytes": 794,
-    "sha256": "f4f33fd1f419fe4391f29b8ccd1352fd39765ae7e91c7f4fc58873a6543e1b80"
+    "bytes": 843,
+    "sha256": "01462a438efd03d9a37f48d641a52188c339f830c77aee37f6a6e015ab1d6e77"
   },
   {
     "path": "kywa-next/frontend/app/page.tsx",
-    "bytes": 51044,
-    "sha256": "d946beffdbf33977a8c83fbbec8cecd30e69e052bf405d88e7a077ed33f264b4"
+    "bytes": 51731,
+    "sha256": "de8cf333b0e0e38e20de47eca232268d9bfd3da8967b57071daef13c7b4008ed"
   },
   {
     "path": "kywa-next/frontend/app/policy.tsx",
     "bytes": 1929,
     "sha256": "257543aefa86edcd7e8a009d01d6a7f8bb0c879d30a182d34c28dd7facef8079"
+  },
+  {
+    "path": "kywa-next/frontend/app/premium.css",
+    "bytes": 8675,
+    "sha256": "903d7a3af17719ee3606377f17f6cbdfdfb3b52e21288944b7465ae3be51558c"
   },
   {
     "path": "kywa-next/frontend/app/progress-dialog.tsx",
@@ -515,14 +575,19 @@
     "sha256": "2bd01c738097c8c93a7910b61bda109ca1927f6f408d6beb36377f62798fe53e"
   },
   {
+    "path": "kywa-next/frontend/app/themes.css",
+    "bytes": 1147,
+    "sha256": "9a0e19bb3cf8be3f3411d92a51720029ac87dc1e84d2209aade788e7f19d580c"
+  },
+  {
     "path": "kywa-next/frontend/next-env.d.ts",
     "bytes": 295,
     "sha256": "1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37"
   },
   {
     "path": "kywa-next/frontend/next.config.ts",
-    "bytes": 164,
-    "sha256": "5eaa9c6dc4a0344a653b3b153fc5c3dbd98c9805770a50a4f266d70e6c6d90bb"
+    "bytes": 393,
+    "sha256": "4598e82c7a8fdf6d68073f7e4a28486d8dfd597637e19fa1df54e6da81eb88a0"
   },
   {
     "path": "kywa-next/frontend/package-lock.json",
@@ -531,18 +596,33 @@
   },
   {
     "path": "kywa-next/frontend/package.json",
-    "bytes": 670,
-    "sha256": "cc5ee4d08ad05992fcec12f053d1e0c55c9f404e33111ab5403137daabf974e4"
+    "bytes": 727,
+    "sha256": "20d17935e7f25a45542d16572f13766394a06662830a3c8b5f60a5b32cc71095"
   },
   {
     "path": "kywa-next/frontend/playwright.config.ts",
-    "bytes": 896,
-    "sha256": "dd3b558e8aef62ad28c511f087baa9d610d7efeead3f90b3a059e151467f87ed"
+    "bytes": 1229,
+    "sha256": "fe906231b6cb28cae234f3cd931eb54db07e1e79cc73ffb7a7b250cf174d4640"
   },
   {
     "path": "kywa-next/frontend/public/kywa_logo.png",
     "bytes": 46431,
     "sha256": "32a7ddaf940668633a0f34dbe1238fb35a7205f8e608984298a4c6ecaf39cdbc"
+  },
+  {
+    "path": "kywa-next/frontend/scripts/write-build-config.mjs",
+    "bytes": 225,
+    "sha256": "360dc41ee7ce27c40c6bd2d9c2db9c3b0ea11119ad8f7ede53b6a16d7e1de407"
+  },
+  {
+    "path": "kywa-next/frontend/tests/ax-prefix.spec.ts",
+    "bytes": 2929,
+    "sha256": "065dc1e0ab936040f61e98699775dae6b067f35ef709067ddd70d4a7838f8b58"
+  },
+  {
+    "path": "kywa-next/frontend/tests/design.spec.ts",
+    "bytes": 4147,
+    "sha256": "b970cf7ada1d0498000355d032425256d70ec04bc1792b99fd7728edf45d513f"
   },
   {
     "path": "kywa-next/frontend/tests/download-name.unit.mjs",
@@ -557,7 +637,7 @@
   {
     "path": "kywa-next/frontend/tests/institution-branding.spec.ts",
     "bytes": 6820,
-    "sha256": "730166188e713f7bb4f1fe6ef0ba2a656e7faa5e4a2440b75a793191a34495d5"
+    "sha256": "c034edb423ff939e3612702944579041b0ab95a9fd8e8a3944d667e756384f0d"
   },
   {
     "path": "kywa-next/frontend/tests/kywa-upgrade.spec.ts",
@@ -591,8 +671,8 @@
   },
   {
     "path": "kywa-next/frontend/tests/theme.spec.ts",
-    "bytes": 3816,
-    "sha256": "69b371e9b5d4e6d56478dddd731d129162438e72a90ed6b9e291514075a69ee4"
+    "bytes": 3997,
+    "sha256": "c77851c21b9cdbe2b0f9fc6a300d95b0c03c93fb24505e4383605cd7cc2affc8"
   },
   {
     "path": "kywa-next/frontend/tests/workflow.spec.ts",
@@ -606,8 +686,8 @@
   },
   {
     "path": "kywa-next/HANDOFF.md",
-    "bytes": 18162,
-    "sha256": "8759789eae336caa277709f4a60877cd1da63efbe884da1ddbc8b71b092fe754"
+    "bytes": 21102,
+    "sha256": "7420e6d72d38d791da58bd58f5e5d1585b1a377cac900682663840543e418e21"
   },
   {
     "path": "kywa-next/KYWA-UPGRADE.ko.md",
@@ -645,14 +725,24 @@
     "sha256": "98eb03f02d4752d4adde0053158532f06d6e5d7364c364d12d3365c9f1dfc652"
   },
   {
+    "path": "kywa-next/requirements.txt",
+    "bytes": 96,
+    "sha256": "e53646882ff28dc0a1a363622fc6d5529d31d8cdf9742b293fb3b4725a39ad61"
+  },
+  {
     "path": "kywa-next/scripts/load_check.py",
     "bytes": 2046,
     "sha256": "c00267f7354e1700c43de4554551b8e6ba0f35f799cac049a3171dc8f70d0c9d"
   },
   {
+    "path": "kywa-next/scripts/package_ax.py",
+    "bytes": 2489,
+    "sha256": "fd1fadeba4c59fbf7f05fafbdca807b92e34fbd109db2f1a11ea07fe55961d05"
+  },
+  {
     "path": "kywa-next/scripts/package_source.py",
-    "bytes": 2327,
-    "sha256": "9c6f52ba2b4f91572253101aef4f632e3e1cf47e576222277072f9e65e0d6c43"
+    "bytes": 2496,
+    "sha256": "db368f9f3a6d7955de2ed555fd0a278c1d240defe273886bd3f1bc72a462f5d3"
   },
   {
     "path": "kywa-next/scripts/set_admin_pin.py",
@@ -675,14 +765,19 @@
     "sha256": "cfb6dd50095207e3ecb9a4ecccbacfe8d15917b6595c7124d33dacf2c6d1e7bc"
   },
   {
+    "path": "kywa-next/scripts/verify_ax_container.py",
+    "bytes": 4759,
+    "sha256": "b4451fb926c2d3d593af99ac1d6c30c73d17927c394faf188b764b28219954be"
+  },
+  {
     "path": "kywa-next/SETUP-GUIDE.ko.md",
     "bytes": 10979,
     "sha256": "d85dc728d3fc8a25635b12c763d1b9bd14dbcef8b522eb490a4dc8cff29c1a05"
   },
   {
     "path": "kywa-next/SETUP.md",
-    "bytes": 4322,
-    "sha256": "68606efa476bc649f9f1a4ff564d9379ee39e7c6a6db0bc013a9f9724feb8a5d"
+    "bytes": 4916,
+    "sha256": "bdbf3beea564ad450ab0cb43abab585f3ae122e3be7b3edbacdb6d358f8956f8"
   },
   {
     "path": "kywa-next/SHEET-EDITING.ko.md",
@@ -691,8 +786,8 @@
   },
   {
     "path": ".github/workflows/kywa-next-ci.yml",
-    "bytes": 1979,
-    "sha256": "298e07f0826927fd3f4cc64609768a8c1dc175c36d70edf8e108d2fa0c7f04b4"
+    "bytes": 3471,
+    "sha256": "d4c1a4e2ab9309238f579aa79c823b8102a126f587a1df27dd9ac1562c007ffb"
   },
   {
     "path": ".github/workflows/kywa-render-health.yml",
