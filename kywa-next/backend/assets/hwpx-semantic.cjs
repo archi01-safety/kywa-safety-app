@@ -18131,7 +18131,8 @@ async function generate(input) {
   body += p("\uD3C9\uAC00 \uAE30\uAC04  " + f.period, { after: 2 }) + p("\uD3C9\uAC00 \uB300\uC0C1  " + (f.facility_label || f.facilities.join(", ")), { after: 4 });
   body += textTable([["\uCD1D \uD3C9\uAC00", "\uAC1C\uC120 \uC644\uB8CC", "\uBBF8\uC644\uB8CC"], [`${f.total}\uAC74`, `${f.complete}\uAC74`, `${f.incomplete}\uAC74`]], 24, 11);
   body += heading("2. \uCD5C\uCD08 \uC704\uD5D8\uB4F1\uAE09\uBCC4 \uD604\uD669");
-  const grades = ["\uB9E4\uC6B0 \uB192\uC74C", "\uB192\uC74C", "\uC57D\uAC04 \uB192\uC74C", "\uBCF4\uD1B5", "\uB0AE\uC74C", "\uB9E4\uC6B0 \uB0AE\uC74C", ...Object.keys(f.grades).filter((x) => !["\uB9E4\uC6B0 \uB192\uC74C", "\uB192\uC74C", "\uC57D\uAC04 \uB192\uC74C", "\uBCF4\uD1B5", "\uB0AE\uC74C", "\uB9E4\uC6B0 \uB0AE\uC74C"].includes(x))];
+  const gradeOrder = f.grade_order || ["\uB9E4\uC6B0 \uB192\uC74C", "\uB192\uC74C", "\uC57D\uAC04 \uB192\uC74C", "\uBCF4\uD1B5", "\uB0AE\uC74C", "\uB9E4\uC6B0 \uB0AE\uC74C"];
+  const grades = [...gradeOrder, ...Object.keys(f.grades).filter((x) => !gradeOrder.includes(x))];
   body += textTable([grades, grades.map((g) => `${f.grades[g] || 0}\uAC74`)], 22, 9.5);
   body += heading("3. \uC720\uD574\uC704\uD5D8\uC694\uC778 \uBD84\uB958");
   const categories = Object.entries(f.categories);
