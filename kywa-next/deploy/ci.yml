@@ -48,3 +48,20 @@ jobs:
           name: browser-verification
           path: kywa-next/frontend/test-results/
       - run: docker build -t kywa-safety:test .
+      - name: Build AX subpath and test desktop/mobile
+        env:
+          APP_BASE_PATH: /apps/kywa-safety
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: npm run build && npm run test:e2e -- ax-prefix.spec.ts --output=test-results/ax
+        working-directory: kywa-next/frontend
+      - name: Read-only non-root AX runtime and restart
+        run: |
+          docker build --build-arg APP_BASE_PATH=/apps/kywa-safety -t kywa-safety:ax .
+          python scripts/verify_ax_container.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ax-verification
+          path: |
+            kywa-next/frontend/test-results/ax/
+            kywa-next/artifacts/ax-container-verification.json
