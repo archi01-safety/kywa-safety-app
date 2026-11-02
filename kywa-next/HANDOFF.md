@@ -2,6 +2,12 @@
 
 최종 갱신: 2026-11-02. 이 문서는 새 PC와 새 대화에서 가장 먼저 읽는 현재 상태 문서다. 과거 날짜가 적힌 DEPLOYMENT-NOTES.md 등의 기록과 충돌하면 현재 상태를 실제 서비스에서 확인한다.
 
+## AX 호환 준비와 다음 작업
+
+7개 지원기관 배포를 완료한 뒤 사용자 TXT 요청에 따라 AX `/apps/{slug}/` 호환 작업을 진행했다. `app.py`가 PORT/HOST를 받아 실행하며 정적 화면과 서버의 APP_BASE_PATH를 일치시킨다. 데이터·임시 폴더는 소스 밖으로 설정할 수 있다. 백엔드 256개·프런트 단위 15개·접두 경로 빌드를 로컬에서 통과했다. Linux/PC/모바일 CI 상태와 최종 ZIP은 AX-VERIFICATION.ko.md 및 artifacts/ax-package.json을 확인한다.
+
+AX 서버/Apache/systemd와 8개 Render 운영 서비스는 이 AX 작업에서 변경하지 않는다. GitHub 최신 코드와 운영 배포 버전은 다르다. AX 등록 시 실제 슬러그·할당 포트·쓰기 폴더·비밀설정이 필요하며 AX-DEPLOYMENT.ko.md를 따른다. 사용자가 추가한 다음 작업은 7개 기관의 지정 메인·서브 컬러 적용이며 KYWA 핑크 테마는 유지한다.
+
 ## 작업 위치와 운영 원칙
 
 - 저장소: https://github.com/archi01-safety/kywa-safety-app

@@ -2,6 +2,8 @@
 
 먼저 HANDOFF.md와 AGENTS.md를 읽고 현재 브랜치·배포 상태를 확인한다. 운영 데이터 변경 없이 체험 환경부터 실행한다.
 
+AX 등록은 [AX-DEPLOYMENT.ko.md](AX-DEPLOYMENT.ko.md)를 별도로 따른다. 실행 진입점은 `python app.py`, 지정된 `PORT`와 `APP_BASE_PATH`, 소스 밖 `APP_DATA_DIR`를 사용한다. 기존 Render/root 화면은 APP_BASE_PATH를 비워 빌드한다. AX용 ZIP의 경로를 다른 슬러그로 바꾸면 화면도 재빌드해야 한다.
+
 ## 소스와 개발 환경
 
 Git, Python 3.12, Node.js 22를 준비한다. Windows에서 한글 출력 검증은 한글 2020, Excel 인쇄 검증은 Microsoft Excel을 별도로 사용한다. 한글 2014 호환은 별도 검증 대상이다.
