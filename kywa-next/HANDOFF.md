@@ -11,13 +11,34 @@
 - 기관별 독립 서비스·Google 저장소·평가표·색상을 유지한다. 승인된 후속 작업은 AYF 연결과 7개 지원기관 개선 적용이다. 배포는 AYF → FoWI → KHIDI → KNPS·KNF·KOHI·CAYF 순서로 개별 수행한다.
 - 브랜치 최신 코드와 실제 배포는 다를 수 있다. 2026-11-02 KYWA 배포 커밋은 `8b396719eb84fd8badf3f1246908a00cb8391eee`, Render 배포는 `dep-dbk1ffajnfac739aj3gg`(Live)이다. 이후 문서 갱신만으로 운영 코드가 바뀌지는 않는다.
 
-## 지원기관 개선 — 구현 및 사본 검증 진행 중
+## 지원기관 개선 — 7개 기관 배포·운영 검증 완료
 
-AYF 전용 시트와 기존 공용 사진 폴더의 권한을 확인했다. 기관 설정의 `experience_version=2`로 최신 입력·사진·로그인·출력 기능을 사용하고 `branding.technical_support`로 7개 기관의 기술지원 표시를 제어한다. KYWA 운영 사이트는 변경하지 않는다.
+2026-11-02 AYF → FoWI → KHIDI → KNPS → KNF → KOHI → CAYF 순서로 커밋 `d1d195fd833bc810af8bce34562666edf9d26fe3`를 개별 배포했다. AYF는 전용 시트와 기존 공용 사진 폴더를 연결하여 production으로 전환했다. KYWA 운영 커밋·시트·서비스 설정은 변경하지 않았다. 전체 Blueprint 동기화와 절전 방지 호출은 수행하지 않았다.
 
-`visible_layout.py`는 기관별 19열을 내부 공통 순서와 연결한다. `migrate_partners.py`는 관리 5열을 숨김 탭으로 이관하면서 KHIDI D열 이름과 기존 열 순서를 보존한다. Google 기본 시트 ID 0이 응답에서 생략되는 경우도 처리한다. 프롬프트 원본 지침은 `backend/prompt_profiles/`에 분리했고 기관별 평가표는 그대로 유지했다.
+| 기관 | 보존한 기존 평가 | 저장 구조 | 배포 및 운영 검증 |
+|---|---:|---|---|
+| [AYF](https://ayf-safety.onrender.com) | 0건 | 19열 + 숨김 관리 | 완료 |
+| [FoWI](https://fowi-safety.onrender.com) | 131건 | 19열 + 숨김 관리 | 완료 |
+| [KHIDI](https://khidi-safety.onrender.com) | 98건 | 19열 + 숨김 관리 | 완료 |
+| [KNPS](https://knps-safety.onrender.com) | 96건 | 19열 + 숨김 관리 | 완료 |
+| [KNF](https://knf-safety.onrender.com) | 13건 | 19열 + 숨김 관리 | 완료 |
+| [KOHI](https://kohi-safety.onrender.com) | 125건 | 19열 + 숨김 관리 | 완료 |
+| [CAYF](https://cayf-safety.onrender.com) | 6건 | 19열 + 숨김 관리 | 완료 |
 
-현재 로컬 백엔드/프런트 빌드 검사를 통과했고 Google 비공개 사본에서 이관·행 삭제·수정·재시도를 검사 중이다. **이 단락 작성 시점에 운영 시트 변경·7개 기관 배포는 아직 하지 않았다.** 비공개 진행 근거는 `local-data/partner-rollout/targets.json`이며 실제 자료는 공개 저장소에 올리지 않는다. Google 사본은 공개 사진 폴더가 아닌 비공개 공유 드라이브 폴더에 보관한다. 최종 상태와 커밋은 배포 검증 후 이 문서에 갱신한다. 운영 절차는 PARTNER-ROLLOUT.ko.md를 따른다.
+
+기관별 전체 파일을 비공개 공유 드라이브에 백업하고 로컬 값·서식·이력 스냅샷을 남겼다. 기존 6개 기관의 관리 5열을 숨김 `_시스템관리`로 이관했고 KHIDI D열 ‘이름’을 보존했다. 공개 사진 폴더에 업무 백업을 저장하지 않았다. 이전 24열 이관 기록을 근거로 관리 열을 다시 추가하지 않는다.
+
+`experience_version=2`로 개선 입력·홈 초기화·진행 팝업·타원형 머리 블러·수동 로그인 연장·행 삭제/수정·Excel/PDF/문단형 HWPX를 적용한다. `branding.technical_support`로 7개 기관의 공동 기관명·기술지원 안내·Powered by KYWA·개발자정보 팝업을 표시한다. 기관별 점수표·원본 프롬프트 지침·색상·사진 폴더는 유지한다. AYF는 CAYF 지침을 따른다.
+
+[CI 41403837004](https://github.com/archi01-safety/kywa-safety-app/actions/runs/41403837004)의 백엔드·프런트 단위·Next 빌드·KYWA 회귀·7개 기관 PC/모바일 테마 및 동작·Docker 검사를 통과했다. 7개 비공개 사본에서 기존 값/이력 보존, 재이관, 직접 수정/삭제, 잘못된 행 격리, 요청 재시도, 기존 Streamlit 방식 append, 최초/개선 후 사진, 공유 폴더 기관 구분, 조치이력을 검사했다.
+
+7개 운영 서비스에서 실제 AI 탐지/블러→분석→사진·평가 제출→동일 요청 재시도→재평가/조치→재조회와 시설/전체 각각 Excel·PDF·HWPX 총 42개 다운로드를 확인했다. 사진 바이트·공식 Drive 링크·Roboto 서식·파일명 및 기록 일치를 대조했다. 로그인 1시간 연장·로그아웃·KOSHA 조회도 통과했다. 시험 행·사진만 정리했고 기존 평가/조치/성명/사진/버전/시각은 보존했다. 삭제된 시험 요청과 감사 이력은 복구 정책상 숨김 관리에 남는다.
+
+실제 한글 2020에서 AYF 5등급/FoWI 6등급 16건 HWPX를 각각 9쪽 PDF로 출력했다. FoWI 일반 문단을 편집·저장·닫기·재열기하여 수정 유지도 확인했다. 표/사진 편집 경로는 기존 공통 생성기의 KYWA 검증과 함께 적용한다. KHIDI Excel의 실제 인쇄 화면에서 활성 시트·한 부씩·A3 가로·보통 여백·모든 열 한 페이지를 확인했다.
+
+미검증 범위: 저장된 브라우저 권한이 AYF 운영 화면과 Google Sheets를 차단하여 AYF 운영 UI 직접 조작 및 시트 호버 미리보기는 완료로 표시하지 않는다. 7개 기관의 PC/모바일 화면 검증은 승인된 CI에서 수행했고, 접근 가능한 운영 사이트는 기관명·지원 안내·팝업·홈 초기화를 추가 확인했다. 한글 2014·실제 모바일 진동·다른 PC 프린터 설정은 별도 확인이 필요하다. 기존 Streamlit 웹 화면 자체가 아닌 기존 append 저장 방식으로 호환을 검사했다.
+
+현재 검증 요약은 `artifacts/partner-rollout-verification.json`, 실제 Render 배포는 `artifacts/render-deployments.json`에 기록한다. 비공개 근거는 `local-data/partner-rollout/`의 targets/extended, production/*/cloud-backup·migration·baseline·live, documents/native-verification, ci-ui에 보관하며 GitHub에 올리지 않는다. 운영·복구 절차는 PARTNER-ROLLOUT.ko.md를 따른다.
 
 ## 사진·저장 속도·다운로드 개선 — KYWA 배포 완료
 
@@ -64,7 +85,7 @@ AYF 전용 시트와 기존 공용 사진 폴더의 권한을 확인했다. 기�
 
 ## 다음 작업과 검증 범위
 
-1. 승인된 지원기관 개선 작업을 완료한다. 기관별 기준을 보존하고 KYWA 서비스는 재배포하지 않는다.
+1. 지원기관 개선은 완료됐다. 후속 수정은 대상 기관·배포 커밋·현행 시트 구조를 확인한 뒤 진행하고, KYWA 변경은 별도 요청 범위에 따른다.
 2. 현재 운영 평가표는 19열이다. 새 PC에서 예전 24열 이관 계획을 보고 재이관하거나 기존 데이터를 되돌리지 않는다. 변경 전 실제 헤더·배포 커밋을 재확인한다.
 3. 한글 2020의 문단·표·사진 편집/저장/재열기/PDF 출력은 완료했다. 30건 검사는 배치 검증용 복제 자료로 16쪽을 확인했으며, 실제 30건 총평 정확성 검사와 구분한다. 한글 2014와 실제 모바일 기기의 물리적 진동은 미검증이다.
 4. 단면·한 부씩 인쇄는 검증 PC에서 확인했으며 다른 PC의 프린터 드라이버 설정은 다시 확인한다.
