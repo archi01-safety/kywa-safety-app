@@ -48,6 +48,25 @@ jobs:
           name: browser-verification
           path: kywa-next/frontend/test-results/
       - run: docker build -t kywa-safety:test .
+  ax:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: kywa-next
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: kywa-next/frontend/package-lock.json
+      - run: sudo apt-get update && sudo apt-get install -y fonts-nanum libvips42 libheif1 libheif-plugin-libde265
+      - run: pip install -r backend/requirements.lock -r backend/requirements-dev.txt
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: kywa-next/frontend
       - name: Build AX subpath and test desktop/mobile
         env:
           APP_BASE_PATH: /apps/kywa-safety
