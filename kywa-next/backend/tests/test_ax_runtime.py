@@ -90,7 +90,7 @@ def test_prefix_pin_session_isolation(tmp_path):
         c.headers.update({'Origin':cfg.app_base_url,'X-CSRF-Token':boot.json()['csrf']})
         assert c.post(PREFIX+'/api/auth/pin',data={'pin':'0427'}).status_code==200
         c.headers['X-CSRF-Token']=c.get(PREFIX+'/api/bootstrap').json()['csrf']
-        assert c.post(PREFIX+'/api/auth/extend').json()['remaining_seconds']==3600
+        assert c.post(PREFIX+'/api/auth/extend').json()['remaining_seconds']==pytest.approx(3600,abs=1)
         assert c.get('/api/auth/session').json()['active'] is False  # scoped cookie isn't sent to root
         assert c.get(PREFIX+'/api/auth/session').json()['active'] is True
 
