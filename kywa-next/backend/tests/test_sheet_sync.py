@@ -13,14 +13,16 @@ from backend.sheet_sync import CONFIG, Store, SyncError, blank, fingerprint, pre
 from backend.tests.test_institutions import current_record
 
 
-def test_google_snapshot_reads_cells_and_identity_in_one_response():
+@pytest.mark.parametrize('sheet_id',[0,1])
+def test_google_snapshot_reads_cells_and_identity_in_one_response(sheet_id):
     from backend.sheet_sync import GoogleRows,KEY
     from backend.repository import cells
-    g=GoogleRows.__new__(GoogleRows);g.sid='test';g.sheet_id=1
-    g.repo=SimpleNamespace(settings=SimpleNamespace(sheet_name='평가'))
+    g=GoogleRows.__new__(GoogleRows);g.sid='test';g.sheet_id=sheet_id
+    g.repo=SimpleNamespace(settings=SimpleNamespace(sheet_name='평가',organization=load_organization('kywa')))
     row=visible(current_record(load_organization('kywa')))
     metadata={'metadataId':12,'metadataKey':KEY,'metadataValue':'stable-id','visibility':'DOCUMENT',
-        'location':{'dimensionRange':{'sheetId':1,'dimension':'ROWS','startIndex':1,'endIndex':2}}}
+        'location':{'dimensionRange':{'dimension':'ROWS','startIndex':1,'endIndex':2}}}
+    if sheet_id: metadata['location']['dimensionRange']['sheetId']=sheet_id
     calls=[]
     def get(**kw):
         calls.append(kw)

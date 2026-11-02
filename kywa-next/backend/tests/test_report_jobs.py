@@ -18,7 +18,7 @@ def finish(jobs,owner,key):
 
 def test_report_cache_shared_by_formats_but_session_owned(monkeypatch):
     cfg=settings('kywa');calls=[]
-    monkeypatch.setattr('backend.report_jobs.compose',lambda records,ai,stage:calls.append(1) or {'facts':{}})
+    monkeypatch.setattr('backend.report_jobs.compose',lambda records,ai,stage,org:calls.append(1) or {'facts':{}})
     monkeypatch.setattr('backend.report_jobs.report_semantic.Photos',lambda *args:None)
     monkeypatch.setattr('backend.report_jobs.report_layout.build',lambda *args:['pages'])
     monkeypatch.setattr('backend.report_jobs.report_layout.pdf',lambda pages:b'pdf')

@@ -77,20 +77,21 @@ def test_drive_retry_keeps_name_time_link_and_distinguishes_identical_names(monk
     assert first['created_at']==at and first['view_url'].endswith('?usp=drivesdk')
 
 
-def test_google_clients_reused_per_thread_and_credentials_only_for_kywa(monkeypatch):
+def test_google_clients_reused_per_thread_and_credentials_for_enabled_institutions(monkeypatch):
     built=[]
     monkeypatch.setattr('backend.repository.google_credentials',lambda _:object())
     def build(*args,**kw):
         value=object();built.append(value);return value
     monkeypatch.setattr('googleapiclient.discovery.build',build)
-    cfg=SimpleNamespace(organization_id='kywa',google_service_account_json='cache-test-credential',google_delegate_email='')
+    cfg=SimpleNamespace(organization_id='kywa',organization=Settings(_env_file=None).organization,google_service_account_json='cache-test-credential',google_delegate_email='')
     main=google_client(cfg,'sheets','v4');assert google_client(cfg,'sheets','v4') is main
     with ThreadPoolExecutor(max_workers=1) as pool:
         other=pool.submit(google_client,cfg,'sheets','v4').result()
         assert other is not main
         assert pool.submit(google_client,cfg,'sheets','v4').result() is other
     cfg.google_service_account_json='changed-credential';assert google_client(cfg,'sheets','v4') is not main
-    cfg.organization_id='fowi';assert google_client(cfg,'sheets','v4') is not google_client(cfg,'sheets','v4')
+    cfg.organization=Settings(_env_file=None,organization_id='fowi').organization
+    assert google_client(cfg,'sheets','v4') is google_client(cfg,'sheets','v4')
 
 
 def test_store_cache_is_request_scoped_and_fast_apply_skips_global_rows(monkeypatch):

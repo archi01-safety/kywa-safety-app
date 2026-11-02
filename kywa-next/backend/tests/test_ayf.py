@@ -16,7 +16,8 @@ def test_ayf_configuration():
     assert org.departments.count('활동사업팀') == 1
     assert org.policy.risk(5, 3)['grade'] == '높음'
     assert org.submitter_name.mode == 'required'
-    assert org.storage.spreadsheet_id == ''
+    assert org.storage.spreadsheet_id == '15wZwBo5_m4BP1_BMQ0qVZo7elNBVy9WZAhdTe64_KnQ'
+    assert org.enhanced and org.branding.technical_support
     assert org.storage.drive_folder_id == load_organization('kywa').storage.drive_folder_id
     with pytest.raises(ValueError):
         Settings(_env_file=None, organization_id='ayf', app_env='production').validate_runtime()
@@ -27,6 +28,7 @@ def test_setup_allows_real_analysis_path_but_blocks_storage(tmp_path):
         app_base_url='https://testserver', session_secret='s'*40, auth_mode='pin',
         admin_pin_hash=make_pin_hash('1234'), gemini_api_key='test-key', kosha_api_key='test-key',
         demo_data_path=str(tmp_path/'empty.json'))
+    cfg.organization = cfg.organization.model_copy(update={"storage":cfg.organization.storage.model_copy(update={"spreadsheet_id":""})})
     calls = []
     def analyze(*args):
         calls.append(args)

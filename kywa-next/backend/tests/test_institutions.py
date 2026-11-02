@@ -274,7 +274,8 @@ def test_api_legacy_and_new_app_submit_retry_action_exports(monkeypatch,tmp_path
     xlsx=c.post('/api/reports',json={'format':'xlsx'})
     assert xlsx.status_code==200,xlsx.text
     ws=load_workbook(io.BytesIO(xlsx.content)).active
-    assert {ws.cell(i,25).value for i in range(2,5)}=={'홍㉠㉢','김㉤'}
+    name_column = next(c.column for c in ws[1] if c.value=='제출자 성명')
+    assert {ws.cell(i,name_column).value for i in range(2,5)}=={'홍㉠㉢','김㉤'}
     pdf=c.post('/api/reports',json={'format':'pdf'})
     assert pdf.status_code==200
     text=''.join(p.extract_text() for p in PdfReader(io.BytesIO(pdf.content)).pages)
