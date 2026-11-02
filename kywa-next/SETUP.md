@@ -10,7 +10,7 @@ Git, Python 3.12, Node.js 22를 준비한다. Windows에서 한글 출력 검증
 git clone --branch codex/kywa-next https://github.com/archi01-safety/kywa-safety-app.git
 cd kywa-safety-app/kywa-next
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.lock -r backend/requirements-dev.txt
 Copy-Item .env.example .env
 cd frontend
 npm ci
