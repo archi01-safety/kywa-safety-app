@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const colors: Record<string, string> = {kywa:'#ED174F',fowi:'#00A651',knps:'#006633',knf:'#005995',kohi:'#0059A6',khidi:'#FF701E',cayf:'#507C5F',ayf:'#64748B'};
+const colors: Record<string, string> = {kywa:'#F0145A',fowi:'#129F4A',knps:'#3B9F49',knf:'#014099',kohi:'#E24E2C',khidi:'#F2682A',cayf:'#53805A',ayf:'#FCD600'};
 const names: Record<string,string> = {kywa:'KYWA',fowi:'FoWI',knps:'KNPS',knf:'KNF',kohi:'KOHI',khidi:'KHIDI',cayf:'CAYF',ayf:'AYF'};
 const institution = process.env.ORGANIZATION_ID || 'kywa';
 
