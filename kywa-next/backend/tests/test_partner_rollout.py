@@ -41,6 +41,7 @@ def test_partner_export_names_grades_and_editable_structure(identity):
     xml=z.read('Contents/section0.xml').decode()
     assert xml.count('pageBreak="1"')==1 and '<hp:drawText' not in xml
     assert org.name in xml or len(org.facilities)==1
+    if '약간 높음' not in model['facts']['grade_order']: assert '약간 높음' not in xml
     book=load_workbook(io.BytesIO(excel(records,photos,org)))
     sheet=book['위험성평가']
     assert sheet.page_setup.orientation=='landscape' and sheet.page_setup.paperSize==int(sheet.PAPERSIZE_A3)
