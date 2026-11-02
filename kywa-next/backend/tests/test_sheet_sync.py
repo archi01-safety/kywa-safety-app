@@ -13,6 +13,26 @@ from backend.sheet_sync import CONFIG, Store, SyncError, blank, fingerprint, pre
 from backend.tests.test_institutions import current_record
 
 
+def test_google_snapshot_reads_cells_and_identity_in_one_response():
+    from backend.sheet_sync import GoogleRows,KEY
+    from backend.repository import cells
+    g=GoogleRows.__new__(GoogleRows);g.sid='test';g.sheet_id=1
+    g.repo=SimpleNamespace(settings=SimpleNamespace(sheet_name='평가'))
+    row=visible(current_record(load_organization('kywa')))
+    metadata={'metadataId':12,'metadataKey':KEY,'metadataValue':'stable-id','visibility':'DOCUMENT',
+        'location':{'dimensionRange':{'sheetId':1,'dimension':'ROWS','startIndex':1,'endIndex':2}}}
+    calls=[]
+    def get(**kw):
+        calls.append(kw)
+        data={'sheets':[{'data':[{'rowData':[{'values':[{'effectiveValue':c['userEnteredValue']} for c in cells(r)['values']]} for r in (VISIBLE,row)],
+            'rowMetadata':[{}, {'developerMetadata':[metadata]}]}]}]}
+        return SimpleNamespace(execute=lambda:data)
+    g.api=SimpleNamespace(get=get)
+    rows,identities,_,_=g.snapshot()
+    assert len(calls)==1 and 'rowMetadata(developerMetadata)' in calls[0]['fields']
+    assert rows[1]==row and identities['stable-id']=={'row':1,'metadata_id':12}
+
+
 class Rows:
     def __init__(self):
         self.sheet_id=1
