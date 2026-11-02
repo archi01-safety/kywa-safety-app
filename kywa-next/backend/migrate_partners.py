@@ -94,7 +94,15 @@ def migrate(settings, apply=False, backup_dir='local-data/partner-backups'):
         raise SheetSchemaError('이관 후 값 대조가 다릅니다. 백업으로 복구해야 합니다.')
     linked = prepare(repo,apply=True)
     def preserved(record):
-        value=clean(record);value.pop('legacy_values',None);return value
+        value=clean(record);value.pop('legacy_values',None)
+        # Visible cells are compared byte-for-byte above (dates numerically).
+        # The app's read model trims only display text, including legacy whitespace.
+        for key in ('facility','department'):
+            value[key]=value[key].strip()
+        value['before']=dict(value['before'])
+        for key in ('location','category','scenario','solution','law'):
+            value['before'][key]=value['before'][key].strip()
+        return value
     current = {r['id']:preserved(r) for r in repo.records()}
     if any(current.get(r['id']) != preserved(r) for r in records) or repo.events()!=events:
         raise SheetSchemaError('기존 평가 또는 조치이력 대조가 다릅니다. 쓰기를 재개하지 마세요.')
