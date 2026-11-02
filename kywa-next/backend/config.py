@@ -1,4 +1,6 @@
 import json
+import os
+import re
 from urllib.parse import urlparse
 from functools import lru_cache, cached_property
 from pathlib import Path
@@ -9,11 +11,16 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=ROOT / '.env', extra='ignore')
+    model_config = SettingsConfigDict(env_file=os.environ.get('APP_ENV_FILE') or ROOT / '.env', extra='ignore')
     organization_id: str = 'kywa'
     organization_config_dir: str = ''
     app_env: str = 'demo'
     app_base_url: str = 'http://localhost:8000'
+    app_base_path: str = ''
+    app_data_dir: str = ''
+    app_upload_dir: str = ''
+    app_log_dir: str = ''
+    require_frontend: bool = False
     session_secret: str = 'local-demo-only-change-this-before-real-deployment'
     google_client_id: str = ''
     google_client_secret: str = ''
@@ -51,7 +58,21 @@ class Settings(BaseSettings):
     def accounts(self):
         return json.loads(self.access_accounts_json)
 
+    def public_path(self, path: str):
+        return self.app_base_path + path
+
+    def public_url(self, path: str):
+        return self.app_base_url.rstrip('/') + self.public_path(path)
+
     def validate_runtime(self):
+        # A fixed, explicitly configured prefix; never trust a client-supplied prefix header.
+        if self.app_base_path == '/': self.app_base_path = ''
+        self.app_base_path = self.app_base_path.rstrip('/')
+        if self.app_base_path and not re.fullmatch(r'(?:/[A-Za-z0-9_-]+)+', self.app_base_path):
+            raise ValueError('APP_BASE_PATH는 /apps/앱슬러그 형태의 영문·숫자·_- 경로로 설정하세요.')
+        for key in ('app_data_dir', 'app_upload_dir', 'app_log_dir'):
+            if getattr(self, key) and not Path(getattr(self, key)).is_absolute():
+                raise ValueError(key.upper() + '에는 절대 경로를 사용하세요.')
         org = self.organization
         if not self.spreadsheet_id: self.spreadsheet_id = org.storage.spreadsheet_id
         if not self.drive_folder_id: self.drive_folder_id = org.storage.drive_folder_id
@@ -60,8 +81,9 @@ class Settings(BaseSettings):
             raise ValueError('평가 탭과 조치이력 탭은 서로 달라야 합니다.')
         if org.demo_only and not self.demo:
             raise ValueError("시험 기관 설정은 실제 연동 환경에서 사용할 수 없습니다.")
-        if org.id != "kywa" and "demo_data_path" not in self.model_fields_set:
-            self.demo_data_path = str(ROOT / "local-data" / org.id / "demo.json")
+        if 'demo_data_path' not in self.model_fields_set:
+            folder = Path(self.app_data_dir) if self.app_data_dir else ROOT / 'local-data'
+            self.demo_data_path = str(folder / org.id / 'demo.json') if org.id != 'kywa' else str(folder / 'demo.json')
         if self.auth_mode not in {'google', 'pin'}:
             raise ValueError('AUTH_MODE는 google 또는 pin이어야 합니다.')
         if self.auth_mode == 'pin':

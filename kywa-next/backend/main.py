@@ -1,6 +1,7 @@
 import base64
 import copy
 import hmac
+import hashlib
 import logging
 import secrets
 import threading
@@ -16,6 +17,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
+from starlette._utils import get_route_path
 
 from .config import Settings, ROOT
 from .domain import (FACILITIES, DEPARTMENTS, CATEGORIES, POLICY, now, risk, digest,
@@ -48,7 +50,7 @@ class BodySizeLimit:
             message = await receive()
             if message['type'] == 'http.request':
                 size += len(message.get('body', b''))
-                limit = self.max_bytes if scope.get('path') == '/api/photos/prepare' else 11*1024*1024
+                limit = self.max_bytes if get_route_path(scope) == '/api/photos/prepare' else 11*1024*1024
                 if size > limit:
                     raise HTTPException(413, '요청 크기 제한을 초과했습니다.')
             return message
@@ -58,6 +60,8 @@ class BodySizeLimit:
 def create_app(settings=None, repo=None, drive=None, ai=None):
     cfg = settings or Settings()
     cfg.validate_runtime()
+    from .runtime import prepare_runtime
+    prepare_runtime(cfg, ROOT / 'frontend' / 'out')
     org = cfg.organization
     FACILITIES, DEPARTMENTS, CATEGORIES = org.facilities, org.departments, org.categories
     POLICY = org.policy.version
@@ -73,13 +77,14 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     expensive, memory_lock = threading.BoundedSemaphore(2), threading.BoundedSemaphore(1)
     from .report_jobs import ReportJobs, MIMES
     report_jobs = ReportJobs(ai,drive,org,memory_lock)
-    app = FastAPI(title=f'{org.short_name} Safety API', docs_url='/api/docs' if cfg.demo else None, redoc_url=None,
+    app = FastAPI(title=f'{org.short_name} Safety API', root_path=cfg.app_base_path, docs_url='/api/docs' if cfg.demo else None, redoc_url=None,
                   openapi_url='/api/openapi.json' if cfg.demo else None)
     app.state.repo, app.state.drafts, app.state.settings = repo, drafts, cfg
     app.state.pin_auth = pin_auth
     app.state.storage_pause_until = 0.0
-    app.add_middleware(SessionMiddleware, secret_key=cfg.session_secret, session_cookie='kywa_session',
-                       max_age=SESSION_SECONDS if pin_auth and not org.enhanced else 28800, same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
+    cookie_name = 'kywa_session' + ('_' + hashlib.sha256(cfg.app_base_path.encode()).hexdigest()[:12] if cfg.app_base_path else '')
+    app.add_middleware(SessionMiddleware, secret_key=cfg.session_secret, session_cookie=cookie_name,
+                       max_age=SESSION_SECONDS if pin_auth and not org.enhanced else 28800, path=cfg.app_base_path or '/', same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
     app.add_middleware(BodySizeLimit, max_bytes=(21 if org.enhanced else 11)*1024*1024)
     oauth = OAuth()
     oauth.register(name='google', client_id=cfg.google_client_id, client_secret=cfg.google_client_secret,
@@ -88,7 +93,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     @app.middleware('http')
     async def security_headers(request, call_next):
-        if cfg.setup and request.method == 'POST' and request.url.path not in {
+        route_path = get_route_path(request.scope)
+        if cfg.setup and request.method == 'POST' and route_path not in {
             '/api/auth/pin', '/api/auth/logout', '/api/photos/prepare', '/api/analyses'
         }:
             return JSONResponse({'detail': '기관별 저장소 연결을 준비 중입니다. 분석은 가능하지만 제출·저장은 아직 사용할 수 없습니다.'}, status_code=503)
@@ -96,16 +102,16 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             return JSONResponse({'detail': '로컬 시험 공간은 이 PC에서만 접근할 수 있습니다.'}, status_code=403)
         # Reject oversized multipart bodies before python-multipart can spool to disk.
         length = request.headers.get('content-length')
-        max_body = 21 if org.enhanced and request.url.path == '/api/photos/prepare' else 11
+        max_body = 21 if org.enhanced and route_path == '/api/photos/prepare' else 11
         if length and (not length.isdigit() or int(length) > max_body * 1024 * 1024):
             return JSONResponse({'detail': '요청 크기 제한을 초과했습니다.'}, status_code=413)
-        if request.method == 'POST' and request.url.path == '/api/photos/prepare' and not length:
+        if request.method == 'POST' and route_path == '/api/photos/prepare' and not length:
             return JSONResponse({'detail': 'Content-Length가 필요합니다.'}, status_code=411)
         response = await call_next(request)
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['Referrer-Policy'] = 'same-origin'
-        if request.url.path.startswith('/api/') or request.url.path == '/healthz':
+        if route_path.startswith('/api/') or route_path == '/healthz':
             response.headers['Cache-Control'] = 'no-store'
         return response
 
@@ -208,7 +214,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         for target in [r, r.get('after') or {}]:
             target.pop('photo_view_url', None)
             fid = target.get('photo_id')
-            target['photo_url'] = f"/api/assessments/{r['id']}/photos/{fid}" if fid else ''
+            target['photo_url'] = cfg.public_path(f"/api/assessments/{r['id']}/photos/{fid}") if fid else ''
         r['reassessment_policy'] = None
         try:
             r['reassessment_policy'] = record_policy(r, org).model_dump()
@@ -316,7 +322,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             raise HTTPException(404)
         if cfg.demo:
             raise HTTPException(400, '체험 모드에서는 체험 계정을 사용하세요.')
-        return await oauth.google.authorize_redirect(request, cfg.app_base_url.rstrip('/') + '/api/auth/google/callback')
+        return await oauth.google.authorize_redirect(request, cfg.public_url('/api/auth/google/callback'))
 
     @app.get('/api/auth/google/callback')
     async def callback(request: Request):
@@ -331,9 +337,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             request.session.clear()
             session(request)
             request.session.update(email=email, name=info.get('name', email))
-            return RedirectResponse('/#actions')
+            return RedirectResponse(cfg.public_path('/#actions'))
         except Exception:
-            return RedirectResponse('/?login_error=1')
+            return RedirectResponse(cfg.public_path('/?login_error=1'))
 
     @app.post('/api/auth/demo')
     def demo_login(request: Request, role: str = Form('admin')):
@@ -388,7 +394,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             else:
                 data = prepare_image(raw)
             key = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data})
-            return {'id': key, 'url': f'/api/drafts/{key}/photo',
+            return {'id': key, 'url': cfg.public_path(f'/api/drafts/{key}/photo'),
                     'notice': '자동 얼굴 처리에는 누락이 있을 수 있습니다. 미리보기에서 얼굴·개인정보를 확인하세요.'}
         finally:
             photo.file.close()
@@ -414,7 +420,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             raise HTTPException(422, '사진을 다시 선택해 주세요.')
         if original.get('processed_id'):
             saved = drafts.get(draft_owner(request), original['processed_id'])
-            return {'id': original['processed_id'], 'url': f"/api/drafts/{original['processed_id']}/photo", 'processed': True}
+            return {'id': original['processed_id'], 'url': cfg.public_path(f"/api/drafts/{original['processed_id']}/photo"), 'processed': True}
         draft_owner(request)
         guard_ai(request)
         try:
@@ -423,7 +429,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 data = deidentify_photo(ai, original['photo'])
             processed_id = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data, 'deidentified': True})
             original['processed_id'] = processed_id
-            return {'id': processed_id, 'url': f'/api/drafts/{processed_id}/photo', 'processed': True}
+            return {'id': processed_id, 'url': cfg.public_path(f'/api/drafts/{processed_id}/photo'), 'processed': True}
         finally:
             expensive.release()
 
@@ -464,7 +470,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                      'items': results, 'photo': photo, 'policy_snapshot': org.policy.model_dump()}
             key = drafts.put(draft_owner(request), value)
             return {'draft_id': key, 'items': results, 'guide_keywords': guide_keywords(results),
-                    'photo_url': f'/api/drafts/{key}/photo' if photo else ''}
+                    'photo_url': cfg.public_path(f'/api/drafts/{key}/photo') if photo else ''}
         finally:
             expensive.release()
 
@@ -572,7 +578,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             result.update(policy.risk(result['p'], result['s']))
             draft_id = drafts.put(draft_owner(request), dict(type='after', record_id=record_id,
                                 revision=record['revision'], text=text, photo=photo, result=result))
-            return {'draft_id': draft_id, 'revision': record['revision'], 'photo_url': f'/api/drafts/{draft_id}/photo' if photo else '', **result}
+            return {'draft_id': draft_id, 'revision': record['revision'], 'photo_url': cfg.public_path(f'/api/drafts/{draft_id}/photo') if photo else '', **result}
         finally:
             expensive.release()
 
