@@ -56,6 +56,8 @@ def aggregate(records, org=None):
     complete = sum(r['status']=='완료' for r in records)
     return {'title':f'{year}년 {facility}\n위험성평가 및 개선조치 보고서',
         'facilities':[names.get(f,f) for f in facilities],
+        'facility_label': (names.get(facilities[0],facilities[0]) if len(facilities)==1 else
+            (str(len(facilities))+'개 시설 · '+', '.join(facilities) if org.id=='kywa' else org.name+' '+str(len(facilities))+'개 시설')),
         'period':min(r['created_at'][:10] for r in records)+' ~ '+max(r['created_at'][:10] for r in records),
         'grade_order':[g.name for g in reversed(org.policy.grades)],'total':len(records),'complete':complete,'incomplete':len(records)-complete,
         'statuses':dict(Counter(r['status'] for r in records)),
