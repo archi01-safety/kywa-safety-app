@@ -397,7 +397,7 @@
         },
         {
           "key": "APP_ENV",
-          "value": "setup"
+          "value": "production"
         },
         {
           "key": "ALLOW_LEGACY_WRITES",
