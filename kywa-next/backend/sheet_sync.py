@@ -262,7 +262,12 @@ class Store:
             for index,cell in enumerate(row['values']): cell['userEnteredFormat']=copy.deepcopy(template[index])
             for index in (12,17):
                 # Do not inherit an earlier photo's explicitly formatted hyperlink.
-                row['values'][index]['userEnteredFormat'].get('textFormat',{}).pop('link',None)
+                text = row['values'][index]['userEnteredFormat'].setdefault('textFormat',{})
+                text.pop('link',None)
+                link = visible(record)[index]
+                if isinstance(link,str) and link.startswith('https://drive.google.com/file/d/'):
+                    # appendCells with stringValue does not create a clickable link.
+                    text['link']={'uri':link}
             row['values'][0]['note']=NOTE+operation+':'+record['id']
             appended.append(row)
         journal={'version':2,'state':'appending','records':[clean(r) for r in records], 'at':now()}
