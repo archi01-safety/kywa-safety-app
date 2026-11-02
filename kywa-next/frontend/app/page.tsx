@@ -122,7 +122,13 @@ export default function Home() {
     return { ...result, confirmed: true } as NonNullable<Photo>;
   };
   const requestId = (scope: string, body: object) => { const key = scope + JSON.stringify(body); if (!requests.current.has(key)) requests.current.set(key, crypto.randomUUID()); return requests.current.get(key)!; };
-  useEffect(() => { bootstrap().catch(e => setError(e.message)); if (["inspect", "actions", "reports"].includes(location.hash.slice(1))) setTab(location.hash.slice(1)); if (new URLSearchParams(location.search).has("login_error")) setError("로그인하지 못했습니다. 승인된 Google 계정인지 확인해 주세요."); }, [bootstrap]);
+  useEffect(() => {
+    bootstrap().catch(e => setError(e.message));
+    const restoreHash = () => { const next=location.hash.slice(1); if (["inspect", "actions", "reports"].includes(next)) setTab(next); };
+    restoreHash(); window.addEventListener("hashchange",restoreHash);
+    if (new URLSearchParams(location.search).has("login_error")) setError("로그인하지 못했습니다. 승인된 Google 계정인지 확인해 주세요.");
+    return () => window.removeEventListener("hashchange",restoreHash);
+  }, [bootstrap]);
   useEffect(() => {
     if (!boot?.user) return;
     let lastRefresh = 0;
