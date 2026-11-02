@@ -16,6 +16,7 @@ test('KYWA session countdown extends explicitly and preserves selected work afte
   await page.clock.install();
   await page.goto('/');
   await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
+  await expect(page.getByText(/성명 입력란의 원본은 DB 및 AI에 전송하지 않습니다/)).toBeVisible();
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill(`로그인 연장 검증 ${info.project.name}`);
   await page.getByRole('button',{name:'KYWA AI 위험요인 분석 시작',exact:true}).click();
   await expect(page.getByRole('dialog')).toBeHidden();
@@ -41,6 +42,7 @@ test('KYWA session countdown extends explicitly and preserves selected work afte
   await expect(page.getByRole('heading',{name:'담당자 로그인',exact:true})).toBeVisible();
   expired=false;remaining=3600;
   await page.getByRole('button',{name:'관리자로 체험하기',exact:true}).click();
+  await expect(page.getByRole('dialog')).toBeHidden();
   await expect(page.getByLabel('실제 조치내용',{exact:true})).toHaveValue('저장하지 않은 조치 초안');
   expect(extensions).toBe(1);
 });
