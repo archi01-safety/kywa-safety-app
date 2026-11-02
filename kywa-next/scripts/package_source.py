@@ -8,7 +8,7 @@ root=Path(__file__).resolve().parent.parent
 out=root/'artifacts'
 out.mkdir(exist_ok=True)
 patterns=['.gitignore','.dockerignore','.env.example','*.md','Dockerfile','render.yaml','pytest.ini','backend/assets/*.cjs','backend/assets/*LICENSE.txt','backend/assets/hwpx-semantic-source.zip','backend/tests/fixtures/*.heic',
-          'backend/policies/*.json','backend/organizations/*.json','backend/*.py','backend/requirements*','backend/tests/*.py','frontend/app/*.tsx','frontend/app/*.ts','frontend/app/*.css',
+          'backend/prompt_profiles/*.txt','backend/prompt_profiles/*.json','backend/policies/*.json','backend/organizations/*.json','backend/*.py','backend/requirements*','backend/tests/*.py','frontend/app/*.tsx','frontend/app/*.ts','frontend/app/*.css',
           'frontend/public/*.png','frontend/package*.json','frontend/next.config.ts','frontend/next-env.d.ts',
           'frontend/tsconfig.json','frontend/playwright.config.ts','frontend/tests/*.ts','frontend/tests/*.mjs','scripts/*.py','scripts/*.ps1','deploy/*.yml']
 files=sorted({path for pattern in patterns for path in root.glob(pattern) if path.is_file()})
