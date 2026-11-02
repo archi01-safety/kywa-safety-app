@@ -2,20 +2,30 @@
 
 최종 갱신: 2026-11-02. 이 문서는 새 PC와 새 대화에서 가장 먼저 읽는 현재 상태 문서다. 과거 날짜가 적힌 DEPLOYMENT-NOTES.md 등의 기록과 충돌하면 현재 상태를 실제 서비스에서 확인한다.
 
-## AX 호환 준비와 다음 작업
+## 최신 상태 — 디자인 검증·8개 Render 배포 완료
 
-7개 지원기관 배포를 완료한 뒤 사용자 TXT 요청에 따라 AX `/apps/{slug}/` 호환 작업을 진행했다. `app.py`가 PORT/HOST를 받아 실행하며 정적 화면과 서버의 APP_BASE_PATH를 일치시킨다. 데이터·임시 폴더는 소스 밖으로 설정할 수 있다. 백엔드 256개·프런트 단위 15개·접두 경로 빌드를 로컬에서 통과했다. Linux/PC/모바일 CI 상태와 최종 ZIP은 AX-VERIFICATION.ko.md 및 artifacts/ax-package.json을 확인한다.
+2026-11-02 최종 디자인.txt와 UI 콘셉트 이미지를 적용하고 KYWA → AYF → FoWI → KHIDI → KNPS → KNF → KOHI → CAYF에 검증 커밋 `eee38a37f4bcd072f02d5c9d5ce5be19810c7704`를 개별 수동 배포했다. 8개 모두 Render의 **Deploy succeeded / Live**를 확인했다. 서비스별 배포 ID와 이전 커밋은 `artifacts/render-deployments.json`에 기록한다. 이후 문서·패키지 갱신 커밋은 런타임 코드 변경이 아니며 운영은 이 검증 SHA로 고정했다.
 
-AX 서버/Apache/systemd와 8개 Render 운영 서비스는 이 AX 작업에서 변경하지 않는다. GitHub 최신 코드와 운영 배포 버전은 다르다. AX 등록 시 실제 슬러그·할당 포트·쓰기 폴더·비밀설정이 필요하며 AX-DEPLOYMENT.ko.md를 따른다. 사용자가 추가한 다음 작업은 7개 기관의 지정 메인·서브 컬러 적용이며 KYWA 핑크 테마는 유지한다.
+KYWA만 #F0145A/#2A8FD8의 네이비·핑크/블루 프리미엄 화면이다. 다른 7개는 기존 레이아웃·크기·문구·배경을 유지하고 지정 메인/서브 컬러만 적용한다. 대비 보정값과 파일 목록은 DESIGN-REVIEW.ko.md 및 artifacts/design-colors.json을 따른다. 기관별 평가·Google 저장소·권한·보고서 업무 로직과 로고 원본은 디자인 단계에서 변경하지 않았다.
+
+[최종 CI 41420384220](https://github.com/archi01-safety/kywa-safety-app/actions/runs/41420384220): 백엔드 264개·프런트 단위 15개·Next 빌드·8개 기관 3개 화면·PC/태블릿/모바일·다크/라이트·root Docker·AX 비root/읽기 전용/재시작 검사 통과. 배포 전 합성 자료의 화면도 검토했다. 사용자의 명시적 지시에 따라 **배포 후에는 Render 완료 상태만 확인하고 제출·사진·보고서 등 별도 운영 시험은 수행하지 않았다.** CI 화면의 체험 환경 배너는 시험 설정이며 운영 환경변수를 바꾸지 않았다.
+
+AX 호환 소스와 등록 ZIP도 준비했다. 실제 AX 등록·Apache/systemd 변경은 수행하지 않았으며 실제 슬러그·할당 포트·환경설정이 있어야 등록할 수 있다. AX-DEPLOYMENT.ko.md와 AX-VERIFICATION.ko.md를 따른다. 현재 승인된 디자인·Render 배포 작업은 완료했다.
+
+## AX 호환 준비 — 실제 플랫폼 등록은 별도
+
+7개 지원기관 배포를 완료한 뒤 사용자 TXT 요청에 따라 AX `/apps/{slug}/` 호환 작업을 진행했다. `app.py`가 PORT/HOST를 받아 실행하며 정적 화면과 서버의 APP_BASE_PATH를 일치시킨다. 데이터·임시 폴더는 소스 밖으로 설정할 수 있다. 백엔드 256개·프런트 단위 15개·접두 경로 빌드를 로컬에서 통과했다. CI 41415666818의 root/AX PC·모바일 및 비root·읽기 전용 Docker·재시작 검사를 모두 통과했다. 최종 ZIP은 AX-VERIFICATION.ko.md 및 artifacts/ax-package.json을 확인한다.
+
+AX 서버/Apache/systemd는 변경하지 않았다. Render는 후속 디자인 배포에서 위 검증 SHA로 갱신했다. AX 등록 시 실제 슬러그·할당 포트·쓰기 폴더·비밀설정이 필요하며 AX-DEPLOYMENT.ko.md를 따른다.
 
 ## 작업 위치와 운영 원칙
 
 - 저장소: https://github.com/archi01-safety/kywa-safety-app
 - 작업 브랜치: `codex/kywa-next`, 앱 폴더: `kywa-next`, PR: https://github.com/archi01-safety/kywa-safety-app/pull/1
-- KYWA: https://kywa-safety.onrender.com/ — 현재 운영 커밋을 유지하며 이번 지원기관 배포에서 제외한다.
+- KYWA: https://kywa-safety.onrender.com/ — 최신 디자인 배포 포함. 현재 SHA는 이 문서의 최신 상태를 따른다.
 - Next.js 정적 화면과 FastAPI를 하나의 무료 Docker 웹서비스에서 구동한다. 첫 접속 대기를 수용하며 절전 방지 주기 호출은 추가하지 않는다.
-- 기관별 독립 서비스·Google 저장소·평가표·색상을 유지한다. 승인된 후속 작업은 AYF 연결과 7개 지원기관 개선 적용이다. 배포는 AYF → FoWI → KHIDI → KNPS·KNF·KOHI·CAYF 순서로 개별 수행한다.
-- 브랜치 최신 코드와 실제 배포는 다를 수 있다. 2026-11-02 KYWA 배포 커밋은 `8b396719eb84fd8badf3f1246908a00cb8391eee`, Render 배포는 `dep-dbk1ffajnfac739aj3gg`(Live)이다. 이후 문서 갱신만으로 운영 코드가 바뀌지는 않는다.
+- 기관별 독립 서비스·Google 저장소·평가표·색상을 유지한다. AYF 연결과 7개 지원기관 기능 배포, 후속 8개 디자인 배포를 완료했다. 배포는 검증한 커밋을 기관별로 개별 수행한다.
+- 브랜치 최신 코드와 실제 배포는 다를 수 있다. 최신 8개 운영 커밋은 `eee38a37f4bcd072f02d5c9d5ce5be19810c7704`다. 이후 문서 갱신만으로 운영 코드가 바뀌지는 않는다. 아래 기능 배포 기록은 각 작업 당시의 이력이며 현재 배포 판단에는 맨 위 최신 상태를 사용한다.
 
 ## 지원기관 개선 — 7개 기관 배포·운영 검증 완료
 

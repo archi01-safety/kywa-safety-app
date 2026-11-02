@@ -53,7 +53,7 @@ E2E 실행 전 Playwright Chromium을 설치한다(`npx playwright install chrom
 
 기관별 저장소 설정과 서비스 계정 편집 권한을 확인하되 기존 권한을 이유 없이 재부여하지 않는다. `APP_ENV=production`, `AUTH_MODE=pin` 등은 기존 Render 설정과 대조한다. `scripts/set_admin_pin.py`로 해시를 만들고 원문 PIN은 코드에 넣지 않는다.
 
-2026-11-02 **AYF와 6개 지원기관**의 개별 배포·19열 이관·운영 검증을 완료했다. 재설치나 소스 복제만으로 이관을 반복하지 않는다. 후속 배포는 대상 기관을 명시한다. GitHub Actions와 사본 검사 후 PARTNER-ROLLOUT.ko.md의 순서대로 개별 수동 배포한다. KYWA 서비스와 Blueprint 전체 동기화는 실행하지 않는다. HEAD만 보고 이미 운영 반영됐다고 판단하지 않는다.
+2026-11-02 **AYF와 6개 지원기관**의 개별 배포·19열 이관·운영 검증을 완료했다. 재설치나 소스 복제만으로 이관을 반복하지 않는다. 후속 배포는 대상 기관을 명시한다. GitHub Actions와 사본 검사 후 PARTNER-ROLLOUT.ko.md의 순서대로 개별 수동 배포한다. 대상 서비스의 검증된 커밋을 개별 수동 배포하며 Blueprint 전체 동기화는 실행하지 않는다. 디자인 후속 작업은 KYWA를 포함한 8개 서비스를 대상으로 별도 승인됐다. HEAD만 보고 이미 운영 반영됐다고 판단하지 않는다. 최신 배포 SHA와 기록은 HANDOFF.md 및 artifacts/render-deployments.json을 따른다.
 
 KYWA 행 삭제·셀 수정 기능은 SHEET-EDITING.ko.md를 따른다. `python -m backend.migrate_row_identity`는 읽기 전용 계획 확인이며 `--apply`가 있을 때만 전체 백업 후 행 식별정보를 준비한다. 평가 탭 19열은 그대로 유지한다. 이미 준비된 운영 파일에는 이관을 반복할 필요가 없다. Google 행 메타데이터·숨김 관리 정보·평가표·조치이력은 동일 시점의 묶음으로 복구한다.
 
