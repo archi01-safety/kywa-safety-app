@@ -32,7 +32,7 @@ test('design scope, responsive screens and color-only partner geometry', async (
     await page.screenshot({path:info.outputPath(`${institution}-${theme}-inspect.png`),fullPage:true});
     await page.screenshot({path:info.outputPath(`${institution}-${theme}-viewport.png`)});
   }
-  await page.getByRole('button',{name:'어두운 테마',exact:true}).click();
+  await page.getByRole('button',{name:'밝은 테마',exact:true}).click();
   await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('시연용 테라스 난간 흔들림');
   await page.locator('.analyze-button').click();
@@ -52,7 +52,7 @@ test('design scope, responsive screens and color-only partner geometry', async (
       expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
       await page.screenshot({path:info.outputPath(`${institution}-${theme}-${tab}.png`),fullPage:true});
     }
-    await page.getByRole('button',{name:'어두운 테마',exact:true}).click();
+    await page.getByRole('button',{name:'밝은 테마',exact:true}).click();
   }
   await page.emulateMedia({reducedMotion:'reduce'});
   if(premium) {
