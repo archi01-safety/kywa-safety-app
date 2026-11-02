@@ -14,6 +14,7 @@ import { calculated, Criteria, type Policy, type Organization } from "./policy";
 import { SubmitterNameInput } from "./submitter-name-input";
 import { submissionName } from "./submitter-name";
 import { ThemeToggle } from "./theme-toggle";
+import { downloadName } from "./download-name";
 
 type User = { name: string; email: string; role: string; facilities: string[] };
 type Bootstrap = { auth_session?: AuthSession | null; organization: Organization; mode: string; auth_mode: "google" | "pin"; local_workspace: boolean; csrf: string; user: User | null; facilities: string[]; departments: string[]; policy: string; report_max_rows: number };
@@ -113,7 +114,7 @@ export default function Home() {
   };
   const protect = async (value: NonNullable<Photo>) => {
     if (!enhanced || value.processed) return value;
-    setBusy("사진 속 얼굴을 찾아 모자이크하고 있습니다");
+    setBusy("사진 속 얼굴을 찾아 블러 처리하고 있습니다");
     const result = await (await api(`/photos/${value.id}/deidentify`, {})).json();
     setBusy("처리한 사진과 현장 내용을 분석하고 있습니다");
     return { ...result, confirmed: true } as NonNullable<Photo>;
@@ -177,8 +178,9 @@ export default function Home() {
       }
       res = await api(`/report-jobs/${job.id}/download`);
     } else res = await api("/reports", { ...filters, format });
+    const filename = enhanced ? downloadName(res.headers.get("Content-Disposition")) : `${org?.short_name || "Safety"}_위험성평가_${new Date().toLocaleDateString("sv-SE")}.${format}`;
     const url = URL.createObjectURL(await res.blob());
-    const a = document.createElement("a"); a.href = url; a.download = `${org?.short_name || "Safety"}_위험성평가_${new Date().toLocaleDateString("sv-SE")}.${format}`; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000); setNotice("보고서가 준비되어 다운로드를 시작했습니다.");
+    const a = document.createElement("a"); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000); setNotice("보고서가 준비되어 다운로드를 시작했습니다.");
   });
   const selected = records.find(r => r.id === selectedId);
   const completeCount = records.filter(r => r.status === "완료").length;
@@ -281,7 +283,7 @@ function SiteFooter({ brand }: { brand: typeof defaultBrand }) {
 
 function PhotoInput({ enhanced = false, value, disabled, onUpload, onChange }: { enhanced?: boolean; value: Photo; disabled: boolean; onUpload: (file: File) => Promise<void>; onChange: (p: Photo) => void }) {
   const input = useRef<HTMLInputElement>(null);
-  return <div className="photo-input"><input ref={input} className="sr-only" type="file" accept={enhanced ? ".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif" : "image/jpeg,image/png"} aria-label="현장 사진 선택" disabled={disabled} onChange={e => { const f = e.target.files?.[0]; if (f) void onUpload(f); e.target.value = ""; }} />{value ? <><div className="photo-preview"><img src={value.url} alt={value.processed || !enhanced ? "제출할 사진 미리보기" : "분석 전 사진 미리보기"} /><button type="button" className="icon-button remove-photo" aria-label="사진 제거" disabled={disabled} onClick={() => onChange(null)}><X size={17} /></button></div>{(!enhanced || value.processed) && <label className="checkbox-label photo-confirm"><input type="checkbox" checked={value.confirmed} disabled={disabled} onChange={e => onChange({ ...value, confirmed: e.target.checked })} /><span>사진에 남은 얼굴·개인정보가 없는지 확인했습니다.</span></label>}{!enhanced && <p className="small muted">자동 처리에 누락이 있다면 사진을 제거하고, 직접 가린 사진을 다시 올려주세요.</p>}</> : <button type="button" className="upload-zone" disabled={disabled} onClick={() => input.current?.click()}><span className="upload-icon"><ImagePlus size={25} strokeWidth={1.5} /></span><strong>현장 사진을 추가해 주세요</strong><span>사진 선택 또는 모바일 카메라 촬영</span><small>{enhanced ? "JPG, PNG, WebP, HEIC · 최대 20MB · 가로사진 권장" : "JPG, PNG · 최대 10MB"}</small><span className="upload-pill"><Plus size={14} />사진 추가</span></button>}{enhanced && <p className="small muted">분석 시 얼굴을 찾아 모자이크합니다. 회사 문서·개인정보·민감정보가 포함되지 않았는지 확인해 주세요. <br />위험상황을 설명해주면 더 정확한 결과가 나옵니다.</p>}</div>;
+  return <div className="photo-input"><input ref={input} className="sr-only" type="file" accept={enhanced ? ".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif" : "image/jpeg,image/png"} aria-label="현장 사진 선택" disabled={disabled} onChange={e => { const f = e.target.files?.[0]; if (f) void onUpload(f); e.target.value = ""; }} />{value ? <><div className="photo-preview"><img src={value.url} alt={value.processed || !enhanced ? "제출할 사진 미리보기" : "분석 전 사진 미리보기"} /><button type="button" className="icon-button remove-photo" aria-label="사진 제거" disabled={disabled} onClick={() => onChange(null)}><X size={17} /></button></div>{(!enhanced || value.processed) && <label className="checkbox-label photo-confirm"><input type="checkbox" checked={value.confirmed} disabled={disabled} onChange={e => onChange({ ...value, confirmed: e.target.checked })} /><span>사진에 남은 얼굴·개인정보가 없는지 확인했습니다.</span></label>}{!enhanced && <p className="small muted">자동 처리에 누락이 있다면 사진을 제거하고, 직접 가린 사진을 다시 올려주세요.</p>}</> : <button type="button" className="upload-zone" disabled={disabled} onClick={() => input.current?.click()}><span className="upload-icon"><ImagePlus size={25} strokeWidth={1.5} /></span><strong>현장 사진을 추가해 주세요</strong><span>사진 선택 또는 모바일 카메라 촬영</span><small>{enhanced ? "JPG, PNG, WebP, HEIC · 최대 20MB · 가로사진 권장" : "JPG, PNG · 최대 10MB"}</small><span className="upload-pill"><Plus size={14} />사진 추가</span></button>}{enhanced && <p className="small muted">분석 시 얼굴을 찾아 블러 처리합니다. 회사 문서·개인정보·민감정보가 포함되지 않았는지 확인해 주세요. <br />위험상황을 설명해주면 더 정확한 결과가 나옵니다.</p>}</div>;
 }
 
 function Stat({ title, value, unit, icon, note, accent }: { title: string; value: number; unit: string; icon: React.ReactNode; note: string; accent?: boolean }) { return <section className={`stat ${accent ? "accent" : ""}`}><div><span>{title}</span>{icon}</div><strong>{value.toLocaleString()}<small>{unit}</small></strong><p>{note}</p></section>; }
