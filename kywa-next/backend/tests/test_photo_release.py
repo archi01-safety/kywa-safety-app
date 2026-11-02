@@ -120,3 +120,21 @@ def test_completed_job_filename_remains_fixed_after_midnight(context,monkeypatch
     monkeypatch.setattr('backend.report_jobs.now',lambda:'2026-11-03T00:01:00+09:00')
     assert client.post('/api/report-jobs',json={'format':'xlsx','facility':'우주'}).json()['id']==job
     assert client.get(path).headers['content-disposition']==first.headers['content-disposition']
+
+
+def test_appended_photo_has_explicit_canonical_hyperlink():
+    from backend.tests.test_sheet_sync import Rows, Store
+    from backend.organization import load_organization
+    from backend.tests.test_institutions import current_record
+    import uuid
+    org=load_organization('kywa');g=Rows();captured=[];batch=g.batch
+    def capture(requests):
+        captured.extend(copy.deepcopy(requests));return batch(requests)
+    g.batch=capture
+    r=current_record(org);r.update(operation_id=str(uuid.uuid4()),photo_id='file-id',photo_view_url='https://drive.google.com/file/d/file-id/view?usp=drivesdk')
+    Store(SimpleNamespace(settings=SimpleNamespace(organization=org)),g).append([r])
+    row=next(x['appendCells']['rows'][0] for x in captured if 'appendCells' in x)
+    cell=row['values'][12]
+    assert cell['userEnteredValue']['stringValue']==r['photo_view_url']
+    assert cell['userEnteredFormat']['textFormat']['link']['uri']==r['photo_view_url']
+    assert cell['userEnteredFormat']['textFormat']['fontFamily']=='Roboto'
