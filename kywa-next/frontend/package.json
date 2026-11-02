@@ -7,7 +7,7 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "test:unit": "node --experimental-strip-types --test tests/submitter-name.unit.mjs"
+    "test:unit": "node --experimental-strip-types --test tests/submitter-name.unit.mjs tests/download-name.unit.mjs"
   },
   "dependencies": {
     "next": "^16.0.0",
