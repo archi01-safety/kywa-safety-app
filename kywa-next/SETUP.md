@@ -36,6 +36,7 @@ npm run build
 $env:KYWA_TEST_PYTHON=(Resolve-Path '..\.venv\Scripts\python.exe').Path
 npm run test:e2e
 cd ..
+Expand-Archive backend/assets/hwpx-semantic-source.zip -DestinationPath tools/hwpx -Force
 cd tools/hwpx
 npm ci
 npm run build

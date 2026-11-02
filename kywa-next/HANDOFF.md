@@ -27,7 +27,7 @@
 ## 중요한 결정과 파일
 
 - `backend/organizations/`, `backend/policies/`: 기관별 시설·부서·성명 설정과 서버 점수표. KYWA 6등급 및 15점 '높음' 유지.
-- `backend/prompts.py`, `backend/kywa_prompts.py` 등 실제 프롬프트 파일은 `rg "경미|담당자|PROMPT" backend`로 확인한다. 과거 등급은 새 기준으로 재계산하지 않는다.
+- `backend/prompts.py`의 `kywa_prompt`: KYWA 분석 지침. 과거 등급은 새 기준으로 재계산하지 않는다.
 - `backend/compact_storage.py`, `migrate_compact.py`, `sheet_format.py`: 평가 탭 A:R + S 제출자 성명, `_시스템관리`에 평가ID·평가기준버전·처리상태·수정버전·시스템데이터 및 요청 관리. 조치이력 탭 유지. 운영 탭 수동 행 이동·삭제·정렬은 동시 운영 지원 밖이다.
 - `backend/report_model.py`, `report_semantic.py`, `report_layout.py`, `report_jobs.py`: 집계·검증된 총평·PDF/HWPX 공통 모델 및 작업 API.
 - `backend/excel_kywa.py`, `chart_colors.py`: KYWA Excel 출력과 고정 분류/시설 색상.

@@ -1,5 +1,7 @@
 # KYWA Safety · Next.js 개발 앱
 
+현재 운영·인수인계 상태는 [HANDOFF.md](HANDOFF.md), 새 PC 실행은 [SETUP.md](SETUP.md), 변경 이력은 [CHANGELOG.md](CHANGELOG.md)를 먼저 확인하세요. 아래 날짜가 표시된 초기 구축 기록은 현재 배포 상태와 구분합니다.
+
 기존 Streamlit을 유지하면서 `Next.js 정적 화면 + FastAPI`를 하나의 Render 무료 Docker 서비스로 실행합니다. 2026-09-29 **https://kywa-safety.onrender.com**에 체험 환경을 배포했습니다. `v2` 접미사는 사용하지 않습니다.
 
 개발 PR: https://github.com/archi01-safety/kywa-safety-app/pull/1 · 최초 Linux 검사: https://github.com/archi01-safety/kywa-safety-app/actions/runs/36525400277
