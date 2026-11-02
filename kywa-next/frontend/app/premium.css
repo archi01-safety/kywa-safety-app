@@ -7,7 +7,7 @@
   }
   .premium-app { background: radial-gradient(ellipse at 100% 8%,#2a8fd80b,transparent 36%),var(--bg); }
   .premium-app .institution-header {
-    background: linear-gradient(110deg,#202335,#141d2b 58%,#152437);
+    background: #141d2b linear-gradient(110deg,#202335,#141d2b 58%,#152437);
     color: #f0f3f8; border-bottom-color: #465367; color-scheme: dark;
   }
   .premium-app .institution-header::after {
