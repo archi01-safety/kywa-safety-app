@@ -1,7 +1,7 @@
 export type SheetIssue = { id: string; row: number; revision: number; code: string; messages: string[]; can_confirm_policy: boolean; facility: string };
 
-export function SheetIssues({ items, admin, busy, onConfirm, onRefresh }: {
-  items: SheetIssue[]; admin: boolean; busy: boolean;
+export function SheetIssues({ institution = "KYWA", items, admin, busy, onConfirm, onRefresh }: {
+  institution?: string; items: SheetIssue[]; admin: boolean; busy: boolean;
   onConfirm: (item: SheetIssue) => void; onRefresh: () => void;
 }) {
   if (!items.length) return null;
@@ -12,7 +12,7 @@ export function SheetIssues({ items, admin, busy, onConfirm, onRefresh }: {
     {items.map(item => <div className="sheet-issue" key={item.id}>
       <div><strong>{item.row}행{item.facility ? ` · ${item.facility}` : ""}</strong>
         <ul>{item.messages.map((text, i) => <li key={i}>{text}</li>)}</ul></div>
-      {admin && item.can_confirm_policy && <button className="button secondary" disabled={busy} onClick={() => onConfirm(item)}>현재 KYWA 기준 적용</button>}
+      {admin && item.can_confirm_policy && <button className="button secondary" disabled={busy} onClick={() => onConfirm(item)}>현재 {institution} 기준 적용</button>}
     </div>)}
   </section>;
 }

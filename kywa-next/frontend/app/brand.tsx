@@ -2,10 +2,10 @@ import type { CSSProperties } from 'react';
 
 // Deployment branding only. Risk and workflow status colors remain independent.
 export type BrandColors = { original: string; button: string; buttonText: string; hover: string; darkText: string; lightText: string };
-export type PublicBranding = { primary: string; logo: string; website: string; department: string; email: string; phone: string; colors: BrandColors };
+export type PublicBranding = { technical_support: boolean; primary: string; logo: string; website: string; department: string; email: string; phone: string; colors: BrandColors };
 // Neutral until /api/bootstrap supplies the selected institution. Never flash KYWA red.
 export const brand = {
-  name: '안전관리 시스템', shortName: '', logo: '',
+  name: '안전관리 시스템', shortName: '', logo: '', technical_support: false,
   department: '', email: '', phone: '', telephone: '',
   colors: { original: '#64748B', button: '#475569', buttonText: '#FFFFFF', hover: '#334155', darkText: '#CBD5E1', lightText: '#475569' },
 };

@@ -7,7 +7,7 @@ export type Policy = {
   cells: {p: number; s: number; score: number; grade: string}[];
 };
 export type Organization = {
-  id: string; name: string; short_name: string; policy: Policy; branding: PublicBranding;
+  experience_version?: number; id: string; name: string; short_name: string; policy: Policy; branding: PublicBranding;
   submitter_name: {mode: "disabled" | "optional" | "required"; label: string; notice: string; show_in_reports: boolean};
 };
 export function calculated(policy: Policy, p: number, s: number) {
