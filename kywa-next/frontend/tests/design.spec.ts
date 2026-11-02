@@ -56,7 +56,7 @@ test('design scope, responsive screens and color-only partner geometry', async (
   }
   await page.emulateMedia({reducedMotion:'reduce'});
   if(premium) {
-    const transitions=await page.locator('.primary').first().evaluate(el=>getComputedStyle(el).transitionDuration);
+    const transitions=await page.locator('.sidebar nav button.active').evaluate(el=>getComputedStyle(el).transitionDuration);
     expect(transitions).toBe('0s');
   }
 });

@@ -5,7 +5,9 @@ test('dark default, keyboard switch, persistence and independent risk colors', a
   page.on('pageerror', e => errors.push(e.message));
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await expect(page.locator('.institution-header')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(page.locator('html')).toHaveAttribute('data-design', 'premium');
+  await expect(page.locator('.institution-header')).toHaveCSS('background-color', 'rgb(20, 29, 43)');
+  await expect(page.locator('.institution-header')).toHaveCSS('background-image', /linear-gradient/);
   await page.getByLabel('제출자 성명', { exact: true }).fill('홍길동');
   await page.getByLabel('어떤 위험이 있나요?', { exact: false }).fill('테마 검증용 난간 손상');
   await page.getByRole('button', { name: 'KYWA AI 위험요인 분석 시작', exact: true }).click();
