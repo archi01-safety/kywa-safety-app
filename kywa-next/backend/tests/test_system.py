@@ -215,8 +215,8 @@ def test_report_exports_korean_photos_formula_protection(context):
     xlsx=c.post('/api/reports',json={'format':'xlsx','facility':'중앙'})
     assert xlsx.status_code==200,xlsx.text[:200]
     wb=load_workbook(io.BytesIO(xlsx.content))
-    assert wb['위험성평가']['D2'].data_type=='s'
-    assert wb['위험성평가']['D2'].value.startswith("'=")
+    assert wb['위험성평가']['C2'].data_type=='s'
+    assert wb['위험성평가']['C2'].value.startswith("'=")
     assert len(wb['위험성평가']._images)==2
     pdf=c.post('/api/reports',json={'format':'pdf','facility':'중앙'})
     assert pdf.status_code==200,pdf.text[:200]

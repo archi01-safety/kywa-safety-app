@@ -46,7 +46,7 @@ class CompactSheets(MemorySheets):
                 elif 'deleteDimension' in req:
                     x=req['deleteDimension']['range'];name=next(n for n,s in self.ids.items() if s==x['sheetId'])
                     for row in self.data[name]: del row[x['startIndex']:x['endIndex']]
-                elif any(k in req for k in ('copyPaste','repeatCell','updateSheetProperties')):
+                elif any(k in req for k in ('copyPaste','repeatCell','updateSheetProperties','updateSpreadsheetProperties','updateTable')):
                     pass
                 else:
                     super(CompactSheets,self).batchUpdate(body={'requests':[req]}).execute()
@@ -77,7 +77,8 @@ def test_migration_preserves_values_links_ids_and_is_repeatable(monkeypatch,tmp_
     assert result['applied'] and Path(result['backup']).exists()
     assert mem.data[cfg.sheet_name][0]==VISIBLE
     assert [r['id'] for r in repo.records()]==[r['id'] for r in before]
-    assert [r[:len(original)] for r,original in zip(mem.data[cfg.sheet_name][1:],prefix)]==prefix
+    from backend.sheet_format import canonical
+    assert [canonical(r)[:18] for r in mem.data[cfg.sheet_name][1:]]==[canonical(r)[:18] for r in prefix]
     assert migrate(cfg,True)['already_applied']
     assert any('copyPaste' in r for r in mem.requests)
     assert any(r.get('repeatCell',{}).get('cell',{}).get('userEnteredFormat',{}).get('textFormat',{}).get('fontFamily')=='Roboto' for r in mem.requests)
@@ -172,10 +173,13 @@ def test_report_pagination_private_payload_and_editable_hwpx(tmp_path):
     assert '국립평창청소년수련원' in content
     for forbidden in ['홍㉠㉢','제출자 성명','평가 ID','생성시각']:assert forbidden not in content
     import zipfile
-    z=zipfile.ZipFile(io.BytesIO(hwpx(pages)))
+    from backend.report_semantic import Photos, hwpx as semantic_hwpx
+    z=zipfile.ZipFile(io.BytesIO(semantic_hwpx(model,Photos(records,None))))
     sections=[n for n in z.namelist() if n.startswith('Contents/section')]
-    assert len(sections)==9
-    xml=z.read(sections[0]).decode();assert '<hp:tbl' in xml and '<hp:t>' in xml and 'editable="1"' in xml
+    assert len(sections)==1
+    xml=z.read(sections[0]).decode();assert xml.count('pageBreak="1"')==8
+    assert '<hp:drawText' not in xml
+    assert '<hp:tbl' in xml and '<hp:t>' in xml and 'editable="1"' in xml
 
 
 def test_kywa_prompt_restores_original_rules_only_for_kywa():

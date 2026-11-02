@@ -128,3 +128,34 @@ def test_pin_format_and_independent_salts():
         with pytest.raises(ValueError):
             make_pin_hash(invalid)
     assert make_pin_hash(TEST_PIN) != make_pin_hash(TEST_PIN)
+
+
+def test_session_extension_expiry_csrf_and_draft_owner(pin_context):
+    c,app,cfg=pin_context
+    clock=[100.0];app.state.pin_auth.clock=lambda:clock[0]
+    sign_in(c)
+    first=c.get('/api/auth/session').json()
+    assert first['active'] and first['remaining_seconds']==3600
+    clock[0]+=3500
+    assert c.get('/api/auth/session').json()['remaining_seconds']==100
+    assert c.post('/api/auth/extend',headers={'X-CSRF-Token':'wrong'}).status_code==403
+    assert c.post('/api/auth/extend').json()['remaining_seconds']==3600
+    clock[0]+=3601
+    assert c.get('/api/auth/session').json()['active'] is False
+    assert c.post('/api/auth/extend').status_code==401
+    sign_in(c)
+    assert c.get('/api/auth/session').json()['remaining_seconds']==3600
+    c.post('/api/auth/logout')
+    c.headers['X-CSRF-Token']=c.get('/api/bootstrap').json()['csrf']
+    assert c.post('/api/auth/extend').status_code==401
+
+
+def test_storage_maintenance_requires_admin_and_blocks_only_writes(pin_context):
+    c,app,cfg=pin_context
+    assert c.post('/api/admin/storage-maintenance',data={'enabled':'true'}).status_code==401
+    sign_in(c)
+    assert c.post('/api/admin/storage-maintenance',data={'enabled':'true'}).json()['paused']
+    assert c.get('/api/assessments').status_code==200
+    result=c.post('/api/assessments/demo-1/state',json={'request_id':'00000000-0000-4000-8000-000000000001','revision':1,'status':'조치 중'})
+    assert result.status_code==503
+    assert c.post('/api/admin/storage-maintenance',data={'enabled':'false'}).json()['paused'] is False
