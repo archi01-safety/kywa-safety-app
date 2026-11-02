@@ -264,7 +264,9 @@
     ]
   },
   "branding": {
-    "primary": "#0059A6",
+    "primary": "#E24E2C",
+    "secondary": "#F6A12B",
+    "design": "standard",
     "logo": "",
     "website": "https://www.kohi.or.kr/index.do",
     "department": "KYWA 경영지원본부 안전경영부",

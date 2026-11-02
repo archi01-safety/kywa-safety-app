@@ -256,7 +256,9 @@
     ]
   },
   "branding": {
-    "primary": "#ED174F",
+    "primary": "#F0145A",
+    "secondary": "#2A8FD8",
+    "design": "premium",
     "logo": "/kywa_logo.png",
     "website": "https://www.kywa.or.kr/",
     "department": "경영지원본부 안전경영부",

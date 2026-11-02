@@ -276,7 +276,9 @@
     ]
   },
   "branding": {
-    "primary": "#006633",
+    "primary": "#3B9F49",
+    "secondary": "#257ABA",
+    "design": "standard",
     "logo": "",
     "website": "https://www.knps.or.kr/portal/main.do",
     "department": "KYWA 경영지원본부 안전경영부",

@@ -227,7 +227,9 @@
     ]
   },
   "branding": {
-    "primary": "#005995",
+    "primary": "#014099",
+    "secondary": "#E60012",
+    "design": "standard",
     "logo": "",
     "website": "https://www.knfc.co.kr/",
     "department": "KYWA 경영지원본부 안전경영부",

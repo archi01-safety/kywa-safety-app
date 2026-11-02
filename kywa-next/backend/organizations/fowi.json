@@ -250,7 +250,9 @@
     ]
   },
   "branding": {
-    "primary": "#00A651",
+    "primary": "#129F4A",
+    "secondary": "#59C2E0",
+    "design": "standard",
     "logo": "",
     "website": "https://www.fowi.or.kr/user/main/main.do",
     "department": "KYWA 경영지원본부 안전경영부",

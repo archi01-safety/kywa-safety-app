@@ -226,7 +226,9 @@
     ]
   },
   "branding": {
-    "primary": "#FF701E",
+    "primary": "#F2682A",
+    "secondary": "#78777C",
+    "design": "standard",
     "logo": "",
     "website": "https://www.khidi.or.kr/kps",
     "department": "",

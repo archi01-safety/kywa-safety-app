@@ -241,7 +241,9 @@
     ]
   },
   "branding": {
-    "primary": "#507C5F",
+    "primary": "#53805A",
+    "secondary": "#E3B65C",
+    "design": "standard",
     "logo": "",
     "website": "https://cayf.or.kr/",
     "department": "KYWA 경영지원본부 안전경영부",
