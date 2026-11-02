@@ -1,0 +1,78 @@
+{
+  "checked_at": "2026-11-02T17:06:25+09:00",
+  "verification": "Render dashboard visible Live and deployed commit; public application checks recorded separately",
+  "services": [
+    {
+      "org": "ayf",
+      "id": "srv-dbhh880473hc73a09jn0",
+      "status": "Live",
+      "sha": "d1d195fd833bc810af8bce34562666edf9d26fe3",
+      "url": "https://ayf-safety.onrender.com",
+      "deployment": "dep-dbk3hauc6qcc73de8qpg",
+      "plan": "Free"
+    },
+    {
+      "org": "fowi",
+      "id": "srv-dbhh880473hc73a09jlg",
+      "status": "Live",
+      "sha": "d1d195fd833bc810af8bce34562666edf9d26fe3",
+      "url": "https://fowi-safety.onrender.com",
+      "plan": "Free",
+      "deployment": "dep-dbk3kv142hec73ehhsug"
+    },
+    {
+      "org": "knps",
+      "id": "srv-dbhh880473hc73a09jng",
+      "status": "Live",
+      "sha": "d1d195fd833bc810af8bce34562666edf9d26fe3",
+      "url": "https://knps-safety.onrender.com",
+      "plan": "Free",
+      "deployment": "dep-dbk3rivf3r2c738k7png"
+    },
+    {
+      "org": "kohi",
+      "id": "srv-dbhh880473hc73a09jp0",
+      "status": "Live",
+      "sha": "d1d195fd833bc810af8bce34562666edf9d26fe3",
+      "url": "https://kohi-safety.onrender.com",
+      "plan": "Free",
+      "deployment": "dep-dbk42ap42hec73eildm0"
+    },
+    {
+      "org": "knf",
+      "id": "srv-dbhh880473hc73a09jj0",
+      "status": "Live",
+      "sha": "d1d195fd833bc810af8bce34562666edf9d26fe3",
+      "url": "https://knf-safety.onrender.com",
+      "plan": "Free",
+      "deployment": "dep-dbk3usdg1s2s73981o40"
+    },
+    {
+      "org": "khidi",
+      "id": "srv-dbhh880473hc73a09jqg",
+      "status": "Live",
+      "sha": "d1d195fd833bc810af8bce34562666edf9d26fe3",
+      "url": "https://khidi-safety.onrender.com",
+      "plan": "Free",
+      "deployment": "dep-dbk3obajnfac739gktjg"
+    },
+    {
+      "org": "cayf",
+      "id": "srv-dbhh880473hc73a09jpg",
+      "status": "Live",
+      "sha": "d1d195fd833bc810af8bce34562666edf9d26fe3",
+      "url": "https://cayf-safety.onrender.com",
+      "plan": "Free",
+      "deployment": "dep-dbk45pfb9u1s73fiomag"
+    },
+    {
+      "org": "kywa",
+      "id": "srv-datkiq6gekts73b716eg",
+      "status": "Live",
+      "sha": "8b396719eb84fd8badf3f1246908a00cb8391eee",
+      "url": "https://kywa-safety.onrender.com",
+      "plan": "Free",
+      "deployment": "dep-dbk1ffajnfac739aj3gg"
+    }
+  ]
+}
