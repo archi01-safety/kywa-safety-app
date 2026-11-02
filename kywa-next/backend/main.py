@@ -19,7 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .config import Settings, ROOT
 from .domain import (FACILITIES, DEPARTMENTS, CATEGORIES, POLICY, now, risk, digest,
-                     SubmitRequest, ActionRequest, StateRequest, ReportRequest)
+                     SubmitRequest, ActionRequest, StateRequest, ReportRequest, PolicyConfirmRequest)
 from .repository import DemoRepository, SheetsRepository, DriveStore, RepositoryError
 from .services import Drafts, RateLimiter, AIService, ServiceError, prepare_image, kosha_search
 from . import reports
@@ -124,7 +124,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     @app.exception_handler(SheetSchemaError)
     @app.exception_handler(RepositoryError)
     async def repository_error(request, exc):
-        return JSONResponse({'detail': str(exc)}, status_code=409)
+        return JSONResponse({'detail': str(exc), 'code':getattr(exc,'code','storage_conflict')}, status_code=409)
 
     @app.exception_handler(Exception)
     async def unexpected_error(request, exc):
@@ -179,13 +179,25 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     def get_record(request, record_id):
         account = user(request)
-        record = next((r for r in repo.records() if r['id'] == record_id), None)
+        records,issues=repo.snapshot() if hasattr(repo,'snapshot') else (repo.records(),[])
+        issue=next((i for i in issues if i['id']==record_id and can_view(account,i)),None)
+        if issue:
+            from .sheet_sync import SyncError
+            raise SyncError(issue['code'],f"시트 {issue['row']}행 확인 필요: "+' '.join(issue['messages']))
+        record = next((r for r in records if r['id'] == record_id), None)
+        if not record and hasattr(repo,'deleted_record'):
+            deleted=repo.deleted_record(record_id)
+            if deleted and can_view(account,deleted):
+                from .sheet_sync import SyncError
+                raise SyncError('row_deleted','관리자가 시트에서 삭제한 평가입니다. 작성 중인 내용은 유지됩니다.')
         if not record or not can_view(account, record):
             raise HTTPException(404, '평가를 찾을 수 없거나 접근 권한이 없습니다.')
         return record, account
 
     def public_record(record):
         r = copy.deepcopy(record)
+        for key in list(r):
+            if key.startswith('_sheet_'): r.pop(key)
         for key in ('submit_hash', 'operation_id', 'submit_owner', 'legacy_values', '_sheet_row', '_sheet_hash', '_sheet_revision'):
             r.pop(key, None)
         b = r['before']
@@ -209,7 +221,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 target['urgent'] = next((g.urgent for g in org.policy.grades if g.name == target.get('grade')), False)
         return r
 
-    def filtered(request, facility='', department='', status='', start='', end=''):
+    def filtered(request, facility='', department='', status='', start='', end='', strict=False):
         account = user(request)
         try:
             if start: date.fromisoformat(start)
@@ -222,7 +234,19 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             return (can_view(account, r) and (not facility or r['facility'] == facility)
                     and (not department or r['department'] == department) and (not status or r['status'] == status)
                     and (not start or day >= start) and (not end or day <= end))
-        return [r for r in repo.records() if match(r)]
+        records,issues=repo.snapshot() if hasattr(repo,'snapshot') else (repo.records(),[])
+        selected_issues=[i for i in issues if can_view(account,i)
+            and (not facility or not i.get('facility') or i['facility']==facility)
+            and (not department or not i.get('department') or i['department']==department)
+            and (not status or not i.get('status') or i['status']==status)
+            and (not start or not i.get('created_at') or i['created_at'][:10]>=start)
+            and (not end or not i.get('created_at') or i['created_at'][:10]<=end)]
+        request.state.sheet_issues=selected_issues
+        if strict and selected_issues:
+            from .sheet_sync import SyncError
+            lines=', '.join(str(i['row']) for i in selected_issues)
+            raise SyncError('report_invalid_rows',f'시트 {lines}행을 먼저 확인하세요. 문제가 있는 평가를 제외한 보고서는 생성하지 않습니다.')
+        return [r for r in records if match(r)]
 
     def guard_ai(request):
         if not limits.allow('ai-total', 60, 3600) or not limits.allow('ai:' + session(request), 10, 600):
@@ -274,7 +298,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not limits.allow('overview:' + session(request), 30, 60):
             raise HTTPException(429, '잠시 후 다시 조회하세요.')
         with overview_lock:
-            if time.monotonic() >= overview_cache.get('expires', 0):
+            if (org.id=='kywa' and hasattr(repo,'snapshot')) or time.monotonic() >= overview_cache.get('expires', 0):
                 records = repo.records()
                 years = {year} | {int(r['created_at'][:4]) for r in records
                                  if str(r.get('created_at', ''))[:4].isdigit()}
@@ -461,10 +485,13 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         body_hash = digest(data.model_dump())
         with repo.lock:
             storage_ready()
-            previous = [r for r in repo.records() if r.get('operation_id') == data.request_id]
+            previous = repo.receipt(data.request_id) if hasattr(repo,'receipt') else [r for r in repo.records() if r.get('operation_id') == data.request_id]
             if previous:
                 if any(r.get('submit_hash') != body_hash or r.get('submit_owner') != digest(session(request)) for r in previous):
                     raise HTTPException(409, '같은 제출번호로 다른 내용을 저장할 수 없습니다.')
+                if any(r.get('_sheet_deleted') for r in previous):
+                    from .sheet_sync import SyncError
+                    raise SyncError('row_deleted','제출 후 관리자가 삭제한 평가입니다. 새 평가가 필요하면 다시 분석해 주세요.')
                 return {'ids': [r['id'] for r in previous], 'replayed': True}
             draft = drafts.get(draft_owner(request), data.draft_id)
             if draft['type'] != 'initial':
@@ -490,12 +517,23 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def listing(request: Request, facility: str = '', department: str = '', status: str = '', start: str = '', end: str = ''):
         records = filtered(request, facility, department, status, start, end)
         records.sort(key=lambda r: r['created_at'], reverse=True)
-        return {'items': [public_record(r) for r in records]}
+        return {'items': [public_record(r) for r in records], 'issues':getattr(request.state,'sheet_issues',[])}
+
+    @app.post('/api/assessments/{record_id}/policy')
+    def confirm_policy(request: Request, record_id: str, data: PolicyConfirmRequest):
+        mutation(request)
+        account=user(request,admin=True)
+        if org.id!='kywa' or not hasattr(repo,'confirm_policy'): raise HTTPException(404)
+        with repo.lock:
+            storage_ready()
+            repo.confirm_policy(record_id,data.revision,data.request_id,account['email'])
+            overview_cache['expires']=0
+        return {'ok':True}
 
     @app.get('/api/assessments/{record_id}/history')
     def history(request: Request, record_id: str):
         get_record(request, record_id)
-        return {'items': [{k:v for k,v in e.items() if k != 'body_hash'} for e in repo.events(record_id)]}
+        return {'items': [{k:v for k,v in e.items() if k not in {'body_hash','sheet_before','sheet_after'}} for e in repo.events(record_id)]}
 
     @app.get('/api/assessments/{record_id}/photos/{file_id}')
     def stored_photo(request: Request, record_id: str, file_id: str):
@@ -593,7 +631,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         user(request, admin=True)
         if data.format == 'hwpx':
             raise HTTPException(422, '한글 보고서는 보고서 생성 작업으로 요청해 주세요.')
-        records = filtered(request, **data.model_dump(exclude={'format'}))
+        records = filtered(request, strict=True, **data.model_dump(exclude={'format'}))
         if not records:
             raise HTTPException(422, '선택한 조건에 데이터가 없습니다.')
         if len(records) > cfg.report_max_rows:
@@ -602,6 +640,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             raise HTTPException(429, '다른 사진 또는 보고서를 처리 중입니다. 잠시 후 다시 시도하세요.')
         try:
             output = reports.excel(records, drive, org) if data.format == 'xlsx' else reports.pdf(records, drive, org)
+            if org.id=='kywa':
+                from .report_jobs import signature
+                if signature(records)!=signature(filtered(request,strict=True,**data.model_dump(exclude={'format'}))):
+                    raise HTTPException(409,'보고서 생성 중 평가가 변경되었습니다. 다시 생성해 주세요.')
             mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if data.format == 'xlsx' else 'application/pdf'
             filename = f'{org.id}_위험성평가_{now()[:10]}.{data.format}'
             return Response(output, media_type=mime, headers={'Content-Disposition': f"attachment; filename*=UTF-8''{quote(filename)}"})
@@ -614,7 +656,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         user(request, admin=True)
         if org.id != 'kywa': raise HTTPException(404)
         filters=data.model_dump(exclude={'format'})
-        records=filtered(request,**filters)
+        records=filtered(request,strict=True,**filters)
         if not records or len(records)>cfg.report_max_rows:
             raise HTTPException(422,f'선택한 조건에서 1~{cfg.report_max_rows}건을 조회한 뒤 생성하세요.')
         records.sort(key=lambda r:(r['created_at'],r['id']))
@@ -631,6 +673,11 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         user(request,admin=True)
         job=report_jobs.get(session(request),job_id)
         if job['state']!='complete': raise HTTPException(409,'보고서 생성이 아직 완료되지 않았습니다.')
+        from .report_jobs import signature
+        if signature(filtered(request,strict=True,**job['filters']))!=job['signature']:
+            report_jobs.invalidate(job_id)
+            from .sheet_sync import SyncError
+            raise SyncError('report_stale','보고서 생성 후 평가가 수정되거나 삭제되었습니다. 최신 목록으로 다시 생성해 주세요.')
         filename=f"kywa_위험성평가_{now()[:10]}.{job['format']}"
         return Response(job['output'],media_type=MIMES[job['format']],
             headers={'Content-Disposition':f"attachment; filename*=UTF-8''{quote(filename)}"})

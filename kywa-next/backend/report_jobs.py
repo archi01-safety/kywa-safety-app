@@ -12,6 +12,11 @@ MIMES={'pdf':'application/pdf','hwpx':'application/hwp+zip',
        'xlsx':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}
 
 
+def signature(records):
+    from .compact_storage import clean
+    return digest(sorted((clean(r) for r in records),key=lambda r:r['id']))
+
+
 class ReportJobs:
     def __init__(self,ai,drive,org,memory_lock):
         self.ai,self.drive,self.org,self.memory_lock=ai,drive,org,memory_lock
@@ -23,7 +28,7 @@ class ReportJobs:
             cutoff=time.monotonic()-1800
             self.jobs={k:v for k,v in self.jobs.items() if v['at']>cutoff and v.get('state')!='expired'}
             self.cache={k:v for k,v in self.cache.items() if v['at']>cutoff}
-            key=digest([owner,VERSION,filters,records])
+            key=digest([owner,VERSION,filters,signature(records)])
             for job_id,job in self.jobs.items():
                 if job['owner']==owner and job['key']==key and job['format']==format and job['state']!='failed':
                     return job_id
@@ -33,7 +38,8 @@ class ReportJobs:
             while len(self.jobs)>=6 and completed:
                 self.jobs.pop(completed.pop(0))
             job_id=str(uuid.uuid4())
-            self.jobs[job_id]=dict(owner=owner,key=key,format=format,state='queued',stage='보고서 생성 대기 중',at=time.monotonic())
+            self.jobs[job_id]=dict(owner=owner,key=key,format=format,state='queued',stage='보고서 생성 대기 중',at=time.monotonic(),
+                filters=dict(filters),signature=signature(records))
             self.executor.submit(self._run,job_id,records)
             return job_id
 
@@ -43,6 +49,13 @@ class ReportJobs:
             if not job or job['owner']!=owner or time.monotonic()-job['at']>1800:
                 raise ServiceError('보고서 작업이 만료되었거나 서버가 재시작되었습니다. 다시 생성해 주세요.')
             return dict(job)
+
+    def invalidate(self,job_id):
+        with self.lock:
+            job=self.jobs[job_id]
+            self.cache.pop(job['key'],None)
+            job.pop('output',None)
+            job.update(state='expired',stage='평가가 변경되었습니다. 다시 생성하세요.')
 
     def _run(self,job_id,records):
         job=self.jobs[job_id]

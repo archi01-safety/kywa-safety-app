@@ -51,6 +51,9 @@ class DemoRepository:
 
     def records(self):
         with self.lock:
+            if getattr(self,'_row_sync_enabled',False):
+                from .sheet_sync import Store
+                return Store(self).sync()[0]
             return copy.deepcopy(self._read()['records'])
 
     def events(self, record_id=None):
@@ -132,8 +135,46 @@ class SheetsRepository:
             rows = self._rows()
             from .compact_storage import compact, decode, recover
             if self.settings.organization.id == 'kywa' and compact(rows[0]):
+                from .compact_storage import metadata
+                from .sheet_sync import enabled, Store
+                if enabled(metadata(self)):
+                    self._row_sync_enabled=True
+                    return Store(self).sync()[0]
                 return decode(self, rows, recover(self, rows))
             return self._decoded(rows)
+
+    def sync_store(self):
+        if self.settings.organization.id != 'kywa': return None
+        from .compact_storage import metadata, VISIBLE
+        from .sheet_sync import enabled, Store
+        if getattr(self,'_row_sync_enabled',False): return Store(self)
+        if self._rows()[0] == VISIBLE and enabled(metadata(self)):
+            self._row_sync_enabled=True
+            return Store(self)
+        return None
+
+    def snapshot(self):
+        with self.lock:
+            store=self.sync_store()
+            return store.sync() if store else (self.records(), [])
+
+    def receipt(self, operation):
+        with self.lock:
+            store=self.sync_store()
+            if store: return store.recover_append(operation)
+            return [r for r in self.records() if r.get('operation_id')==operation]
+
+    def confirm_policy(self, key, revision, operation, actor):
+        with self.lock:
+            store=self.sync_store()
+            if not store: raise RepositoryError('시트 직접 수정 기능이 준비되지 않았습니다.')
+            return store.confirm(key, revision, operation, actor)
+
+    def deleted_record(self, key):
+        if not getattr(self,'_row_sync_enabled',False): return None
+        from .compact_storage import metadata
+        value=metadata(self).get(('record',key),(None,{}))[1]
+        return value.get('record') if value.get('deleted') else None
 
     def events(self, record_id=None):
         rows = self._values(self.settings.history_sheet_name)
@@ -146,6 +187,11 @@ class SheetsRepository:
         with self.lock:
             from .compact_storage import compact, apply as compact_apply
             if self.settings.organization.id == 'kywa' and compact(self._rows()[0]):
+                store=self.sync_store()
+                if store:
+                    if all('_sheet_row' not in r for r in records): return store.append(records)
+                    if any('_sheet_row' not in r for r in records): raise RepositoryError('신규 저장과 기존 수정을 분리해 주세요.')
+                    return store.update(records, events)
                 return compact_apply(self, records, events)
             svc = google_client(self.settings, 'sheets', 'v4').spreadsheets()
             meta = svc.get(spreadsheetId=self.settings.spreadsheet_id, fields='sheets.properties').execute()

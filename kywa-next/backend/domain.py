@@ -111,6 +111,11 @@ class ReportRequest(StrictModel):
     end: str = ''
 
 
+class PolicyConfirmRequest(StrictModel):
+    request_id: str = Field(pattern=r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+    revision: StrictInt = Field(ge=1)
+
+
 def sheet_row(record, include_name=False):
     b, a = record['before'], record.get('after') or {}
     photo = lambda fid: f'https://drive.google.com/file/d/{fid}/view' if fid else '사진 없음'
