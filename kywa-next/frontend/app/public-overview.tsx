@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BarChart3, CheckCircle2, Building2 } from "lucide-react";
-type Count = { name: string; count: number };
+type Count = { name: string; count: number; color?: string };
 type Summary = { year: number; years: number[]; total: number; completed: number; facility_count: number; categories: Count[]; facilities: Count[] };
 type Api = (path: string, body?: object | FormData) => Promise<Response>;
 
@@ -27,5 +27,5 @@ export function PublicOverview({ api, revision }: { api: Api; revision: number }
 
 function CountChart({ title, items, total }: { title: string; items: Count[]; total: number }) {
   const max = Math.max(1, ...items.map(i => i.count));
-  return <section className="panel count-chart"><h3>{title}</h3>{total ? <ul>{items.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{item.count.toLocaleString()}건 <small>({Math.round(item.count / total * 100)}%)</small></strong></div><div className="count-track" aria-hidden="true"><i style={{ width: `${item.count / max * 100}%` }} /></div></li>)}</ul> : <p className="muted">선택한 연도의 평가가 없습니다.</p>}</section>;
+  return <section className="panel count-chart"><h3>{title}</h3>{total ? <ul>{items.map(item => <li key={item.name}><div><span>{item.name}</span><strong>{item.count.toLocaleString()}건 <small>({Math.round(item.count / total * 100)}%)</small></strong></div><div className="count-track" aria-hidden="true"><i style={{ width: `${item.count / max * 100}%`, backgroundColor: item.color }} /></div></li>)}</ul> : <p className="muted">선택한 연도의 평가가 없습니다.</p>}</section>;
 }
