@@ -30,9 +30,11 @@ def fingerprint(row):
     return digest(canonical(row))
 
 
-def format_requests(svc, sid, name, start, end, width=19):
-    meta = svc.get(spreadsheetId=sid, fields='sheets(properties,tables,basicFilter,bandedRanges)').execute()
-    sheet = next(s for s in meta['sheets'] if s['properties']['title']==name)
+def format_requests(svc, sid, name, start, end, width=19, sheet_info=None):
+    if sheet_info is None:
+        meta = svc.get(spreadsheetId=sid, fields='sheets(properties,tables,basicFilter,bandedRanges)').execute()
+        sheet_info = next(s for s in meta['sheets'] if s['properties']['title']==name)
+    sheet = sheet_info
     sheet_id=sheet['properties']['sheetId']
     requests=[]
     if end > start:

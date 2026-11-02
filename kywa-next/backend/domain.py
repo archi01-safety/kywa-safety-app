@@ -118,10 +118,15 @@ class PolicyConfirmRequest(StrictModel):
 
 def sheet_row(record, include_name=False):
     b, a = record['before'], record.get('after') or {}
-    photo = lambda fid: f'https://drive.google.com/file/d/{fid}/view' if fid else '사진 없음'
+    def photo(target):
+        fid = target.get('photo_id')
+        if not fid: return '사진 없음'
+        official = target.get('photo_view_url', '')
+        prefix = f'https://drive.google.com/file/d/{fid}/view'
+        return official if official == prefix or official.startswith(prefix+'?') else prefix
     values = [record['created_at'], record['facility'], record['department'], b['location'], b['category'],
-            b['scenario'], b['p'], b['s'], b['score'], b['grade'], b['solution'], b['law'], photo(record.get('photo_id')),
-            a.get('p', ''), a.get('s', ''), a.get('score', ''), a.get('grade', ''), photo(a.get('photo_id')),
+            b['scenario'], b['p'], b['s'], b['score'], b['grade'], b['solution'], b['law'], photo(record),
+            a.get('p', ''), a.get('s', ''), a.get('score', ''), a.get('grade', ''), photo(a),
             record['id'], record['policy'], record['status'], record['revision'],
             json.dumps(record, ensure_ascii=False, separators=(',', ':'))]
     if record.get('legacy_values'):

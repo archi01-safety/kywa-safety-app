@@ -1,13 +1,16 @@
 """Single-writer repositories. Google updates and audit rows share one atomic batch.
 
-Use ONE uvicorn worker/Render instance. Append-only Streamlit submissions may run concurrently. Direct row moves, deletes
-or manual edits during writes are unsupported; a spreadsheet is not a transactional multi-writer DB.
+Use ONE uvicorn worker/Render instance. Append-only Streamlit submissions may run concurrently.
+Migrated KYWA sheets support row deletion and direct edits through native row identities.
+Other institutions retain legacy storage. Simultaneous edits to one cell are not transactional.
 """
 import copy
 import io
 import json
 import os
 import threading
+import hashlib
+from contextlib import contextmanager
 from pathlib import Path
 
 from .domain import HEADERS, HISTORY_HEADERS, now, risk, sheet_row, POLICY
@@ -79,14 +82,30 @@ def google_credentials(settings):
     return credentials.with_subject(settings.google_delegate_email) if settings.google_delegate_email else credentials
 
 
+_clients = threading.local()
+
+
 def google_client(settings, service, version):
     from googleapiclient.discovery import build
     from google_auth_httplib2 import AuthorizedHttp
     import httplib2
-    # Honor an explicitly configured, trusted CA bundle (e.g. managed Windows TLS inspection).
-    # Certificate verification remains enabled.
-    return build(service, version, http=AuthorizedHttp(google_credentials(settings),
-        http=httplib2.Http(timeout=25, ca_certs=os.environ.get('SSL_CERT_FILE') or None)), cache_discovery=False)
+    from .storage_metrics import request_builder
+    ca = os.environ.get('SSL_CERT_FILE') or None
+    reuse = settings.organization_id == 'kywa'
+    # Never share httplib2 transports between threads or credential configurations.
+    key = (service, version, hashlib.sha256(settings.google_service_account_json.encode()).hexdigest(),
+           settings.google_delegate_email, ca)
+    cache = getattr(_clients, 'services', {})
+    if reuse and key in cache:
+        return cache[key]
+    client = build(service, version, http=AuthorizedHttp(google_credentials(settings),
+        http=httplib2.Http(timeout=25, ca_certs=ca)), cache_discovery=False,
+        **({'requestBuilder': request_builder} if reuse else {}))
+    if reuse:
+        if len(cache) >= 8: cache.clear()
+        cache[key] = client
+        _clients.services = cache
+    return client
 
 
 def quoted(name):
@@ -103,6 +122,20 @@ class SheetsRepository:
     def __init__(self, settings):
         self.settings = settings
         self.lock = threading.RLock()
+        self._operation_store = None
+        self._in_operation = False
+
+    @contextmanager
+    def operation(self):
+        # One writer; reuse only within this lock-held request, never cache row values
+        # across requests. Each snapshot still reads current cells and native row IDs.
+        with self.lock:
+            self._in_operation = True
+            try:
+                yield
+            finally:
+                self._operation_store = None
+                self._in_operation = False
 
     def _values(self, name, raw=False):
         return google_client(self.settings, 'sheets', 'v4').spreadsheets().values().get(
@@ -147,10 +180,15 @@ class SheetsRepository:
         if self.settings.organization.id != 'kywa': return None
         from .compact_storage import metadata, VISIBLE
         from .sheet_sync import enabled, Store
-        if getattr(self,'_row_sync_enabled',False): return Store(self)
+        def create():
+            if self._in_operation:
+                if self._operation_store is None: self._operation_store = Store(self)
+                return self._operation_store
+            return Store(self)
+        if getattr(self,'_row_sync_enabled',False): return create()
         if self._rows()[0] == VISIBLE and enabled(metadata(self)):
             self._row_sync_enabled=True
-            return Store(self)
+            return create()
         return None
 
     def snapshot(self):
@@ -186,7 +224,7 @@ class SheetsRepository:
     def apply(self, records, events):
         with self.lock:
             from .compact_storage import compact, apply as compact_apply
-            if self.settings.organization.id == 'kywa' and compact(self._rows()[0]):
+            if self.settings.organization.id == 'kywa' and (getattr(self,'_row_sync_enabled',False) or compact(self._rows()[0])):
                 store=self.sync_store()
                 if store:
                     if all('_sheet_row' not in r for r in records): return store.append(records)
@@ -239,6 +277,36 @@ class DriveStore:
     def __init__(self, settings):
         self.settings = settings
         self.demo_dir = Path(settings.demo_data_path).parent / 'photos'
+
+    def put_photo(self, data, key, facility, created_at, after=False):
+        """KYWA: display names are independent of durable institution/request identity."""
+        from .filenames import photo_filename, korea_time
+        empty = {'id': '', 'view_url': '', 'created_at': created_at}
+        if not data: return empty
+        if self.settings.demo:
+            return {**empty, 'id': self.put(data, key)}
+        from googleapiclient.http import MediaIoBaseUpload
+        api = google_client(self.settings, 'drive', 'v3').files()
+        folder, org = self.settings.drive_folder_id, self.settings.organization_id
+        q = f"'{folder}' in parents and trashed=false and appProperties has {{ key='kywaOperation' and value='{key}' }} and appProperties has {{ key='safetyOrganization' and value='{org}' }}"
+        fields = 'id,name,webViewLink,appProperties'
+        found = api.list(q=q, fields=f'files({fields})', supportsAllDrives=True, includeItemsFromAllDrives=True).execute().get('files', [])
+        if found:
+            result = found[0]
+        else:
+            result = api.create(body={'name':photo_filename(facility,created_at,after),'parents':[folder],
+                'appProperties':{'kywaOperation':key,'safetyOrganization':org,'safetySubmittedAt':created_at}},
+                media_body=MediaIoBaseUpload(io.BytesIO(data),mimetype='image/jpeg',resumable=False),
+                fields=fields,supportsAllDrives=True).execute()
+        stored_at = result.get('appProperties',{}).get('safetySubmittedAt',created_at)
+        stored_at = korea_time(stored_at).isoformat(timespec='seconds')
+        link = result.get('webViewLink')
+        if not link:
+            result.update(api.get(fileId=result['id'],fields='webViewLink',supportsAllDrives=True).execute())
+            link = result.get('webViewLink')
+        if not link:
+            raise RepositoryError('사진 링크를 확인하지 못했습니다. 같은 요청으로 다시 전송하세요.')
+        return {'id':result['id'],'view_url':link,'created_at':stored_at}
 
     def put(self, data: bytes, key: str):
         if not data:

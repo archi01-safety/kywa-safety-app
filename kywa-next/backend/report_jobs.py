@@ -3,7 +3,8 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from .domain import digest
+from .domain import digest, now
+from .filenames import report_filename
 from .report_model import VERSION, compose
 from . import reports, report_layout, report_semantic
 from .services import ServiceError
@@ -80,7 +81,9 @@ class ReportJobs:
                         self.cache[job['key']]=cached
                     stage('편집 가능한 한글 문서 생성 중' if job['format']=='hwpx' else 'PDF 문서 생성 중')
                     output=report_semantic.hwpx(cached['model'],cached['photos']) if job['format']=='hwpx' else report_layout.pdf(pages)
-                with self.lock: job.update(state='complete',stage='보고서가 준비되었습니다',output=output)
+                created_at = now()
+                with self.lock: job.update(state='complete',stage='보고서가 준비되었습니다',output=output,
+                    created_at=created_at,filename=report_filename(job['filters'].get('facility',''),job['format'],created_at))
         except Exception as exc:
             # Provider details and submitted content never become error messages/logs.
             message=str(exc) if isinstance(exc,ServiceError) else '보고서를 만들지 못했습니다. 다시 생성해 주세요.'

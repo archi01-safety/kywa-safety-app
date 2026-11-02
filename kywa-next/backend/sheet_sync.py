@@ -16,6 +16,7 @@ from .repository import RepositoryError, cells, google_client, quoted
 from .sheet_format import canonical, DATE_FORMAT, format_requests
 from .sheet_schema import Layout
 from .submitter_name import display_name
+from .storage_metrics import phase
 
 KEY = 'kywa.assessment.id'
 CONFIG = ('config', 'row_identity')
@@ -58,13 +59,18 @@ class GoogleRows:
         info = self.api.get(spreadsheetId=self.sid, fields='sheets.properties').execute()
         self.ids = {s['properties']['title']: s['properties']['sheetId'] for s in info['sheets']}
         self.sheet_id = self.ids[repo.settings.sheet_name]
+        self._entries = None
+        self._sheet_info = None
 
     def entries(self):
-        return metadata(self.repo)
+        if self._entries is None:
+            self._entries = metadata(self.repo)
+        return copy.deepcopy(self._entries)
 
     def snapshot(self):
         data = self.api.get(spreadsheetId=self.sid, ranges=[quoted(self.repo.settings.sheet_name)+'!A:S'],
-            includeGridData=True, fields='sheets(data(startRow,rowMetadata(developerMetadata),rowData(values(effectiveValue,note,userEnteredFormat))))').execute()
+            includeGridData=True, fields='sheets(properties,tables,basicFilter,bandedRanges,data(startRow,rowMetadata(developerMetadata),rowData(values(effectiveValue,note,userEnteredFormat))))').execute()
+        self._sheet_info = data['sheets'][0]
         rows, notes, formats = [], {}, {}
         found=[]
         for block in data['sheets'][0].get('data', []):
@@ -110,7 +116,20 @@ class GoogleRows:
             requests.append({'appendCells':{'sheetId':self.ids[self.repo.settings.history_sheet_name], 'fields':'userEnteredValue',
                 'rows':[cells([e['id'], e['record_id'], e['at'], e.get('actor',''), e['kind'], e.get('text',''),
                     json.dumps(e, ensure_ascii=False)]) for e in events]}})
-        return self.batch(requests)
+        try:
+            result = self.batch(requests)
+        except Exception:
+            self._entries = None
+            raise
+        if appended:
+            # appendCells does not return hidden-row positions; read once to discover
+            # the actual positions. Never infer them from a stale row count.
+            self._entries = None
+        else:
+            self._entries = entries
+            for kind, key, value in changes:
+                self._entries[(kind,key)] = (entries[(kind,key)][0], copy.deepcopy(value))
+        return result
 
     def bind(self, key, index):
         return {'createDeveloperMetadata':{'developerMetadata':{'metadataKey':KEY, 'metadataValue':key, 'visibility':'DOCUMENT',
@@ -128,11 +147,12 @@ class GoogleRows:
         if not indexes: return
         # Formatting is already in appendCells, including the all-rows-deleted case.
         # Only expand native table/filter ranges; never copy a possibly deleted row's format.
-        requests = format_requests(self.api, self.sid, self.repo.settings.sheet_name, len(rows), len(rows))
+        requests = format_requests(self.api, self.sid, self.repo.settings.sheet_name, len(rows), len(rows), sheet_info=self._sheet_info)
         for index in indexes:
             requests.append({'updateCells':{'start':{'sheetId':self.sheet_id, 'rowIndex':index, 'columnIndex':0},
                 'rows':[{'values':[{}]}], 'fields':'note'}})
-        self.batch(requests)
+        with phase('format'):
+            self.batch(requests)
 
 
 class Store:
@@ -170,6 +190,7 @@ class Store:
                 result.append({**clean(value['record']),'_sheet_deleted':bool(value.get('deleted'))})
             return result
         journal = copy.deepcopy(item[1])
+        was_appending = journal['state']=='appending'
         rows, identities, notes, _ = self.g.snapshot()
         if journal['state']=='appending':
             additions=[]
@@ -183,7 +204,8 @@ class Store:
                     additions.append(self.g.bind(key,matches[0]))
                 elif len(matches)>1:
                     raise SyncError('append_ambiguous','제출 위치가 중복되었습니다. 새 요청으로 전송하지 말고 관리자에게 확인해 주세요.')
-            self.g.batch(additions)
+            with phase('identity'):
+                self.g.batch(additions)
             rows,identities,notes,_=self.g.snapshot()
             changes=[]; indexes=[]
             for record in journal['records']:
@@ -205,7 +227,8 @@ class Store:
             self.g.finish_append(rows,indexes)
             entries=self.g.entries()
         result=[]
-        rows,identities,notes,_=self.g.snapshot()
+        if was_appending:
+            rows,identities,notes,_=self.g.snapshot()
         remaining=[v['row'] for key,v in identities.items() if notes.get(v['row'])==NOTE+operation+':'+key]
         if remaining: self.g.finish_append(rows,remaining)
         for record in journal['records']:
@@ -237,12 +260,16 @@ class Store:
         for record in records:
             row=cells(visible(record))
             for index,cell in enumerate(row['values']): cell['userEnteredFormat']=copy.deepcopy(template[index])
+            for index in (12,17):
+                # Do not inherit an earlier photo's explicitly formatted hyperlink.
+                row['values'][index]['userEnteredFormat'].get('textFormat',{}).pop('link',None)
             row['values'][0]['note']=NOTE+operation+':'+record['id']
             appended.append(row)
         journal={'version':2,'state':'appending','records':[clean(r) for r in records], 'at':now()}
         # One atomic Google batch: append visible rows AND durable receipt.
-        self.g.save([('request',operation,journal)],extra=[{'appendCells':{'sheetId':self.g.sheet_id,
-            'rows':appended,'fields':'userEnteredValue,userEnteredFormat,note'}}])
+        with phase('append'):
+            self.g.save([('request',operation,journal)],extra=[{'appendCells':{'sheetId':self.g.sheet_id,
+                'rows':appended,'fields':'userEnteredValue,userEnteredFormat,note'}}])
         result=self.recover_append(operation)
         if any(r.get('_sheet_deleted') for r in result): raise SyncError('row_deleted','제출 후 관리자가 삭제한 평가입니다.')
 
@@ -265,6 +292,8 @@ class Store:
             record[key]=str(row[col]).strip()
             if not record[key]: issues.append(f'{VISIBLE[col]}을 입력하세요.')
         record['submitter_name']=display_name(row[18]); record['photo_id']=drive_id(row[12])
+        if 'photo_view_url' in record:
+            record['photo_view_url'] = str(row[12]) if record['photo_id'] else ''
         before=copy.deepcopy(record.get('before') or {})
         for col,key in ((3,'location'),(4,'category'),(5,'scenario'),(10,'solution'),(11,'law')):
             before[key]=str(row[col]).strip()
@@ -299,6 +328,8 @@ class Store:
                 'policy':record.get('policy','LEGACY-UNKNOWN'), 'policy_snapshot':record.get('policy_snapshot')})
             score(after,13,changed_after,after)
             after['photo_id']=drive_id(row[17]); record['after']=after
+            if 'photo_view_url' in after:
+                after['photo_view_url'] = str(row[17]) if after['photo_id'] else ''
             if changed_after: record['status']='조치 중'
         else:
             # Clearing numerical cells is not completion and must not discard action history.

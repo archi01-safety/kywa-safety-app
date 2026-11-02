@@ -6,7 +6,7 @@ import secrets
 import threading
 import time
 import uuid
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, nullcontext
 from datetime import date
 from urllib.parse import quote
 
@@ -29,6 +29,8 @@ from .organization import record_policy, PolicyError
 from .submitter_name import display_name
 from .branding import palette
 from .sheet_schema import SheetSchemaError
+from .storage_metrics import submission_metrics, phase
+from .filenames import report_filename
 
 log = logging.getLogger('kywa')
 
@@ -204,6 +206,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         # Preserve the recorded grade, even when today's institution policy differs.
         r['current_risk'] = {key:b[key] for key in ('p','s','score','grade')}
         for target in [r, r.get('after') or {}]:
+            target.pop('photo_view_url', None)
             fid = target.get('photo_id')
             target['photo_url'] = f"/api/assessments/{r['id']}/photos/{fid}" if fid else ''
         r['reassessment_policy'] = None
@@ -483,9 +486,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         mutation(request)
         submitter_name = org.name_value(data.submitter_name)
         body_hash = digest(data.model_dump())
-        with repo.lock:
+        with submission_metrics(org.id=='kywa'), repo.lock, (repo.operation() if hasattr(repo,'operation') and org.id=='kywa' else nullcontext()):
             storage_ready()
-            previous = repo.receipt(data.request_id) if hasattr(repo,'receipt') else [r for r in repo.records() if r.get('operation_id') == data.request_id]
+            with phase('receipt'):
+                previous = repo.receipt(data.request_id) if hasattr(repo,'receipt') else [r for r in repo.records() if r.get('operation_id') == data.request_id]
             if previous:
                 if any(r.get('submit_hash') != body_hash or r.get('submit_owner') != digest(session(request)) for r in previous):
                     raise HTTPException(409, '같은 제출번호로 다른 내용을 저장할 수 없습니다.')
@@ -499,16 +503,20 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             indexes = [x.index for x in data.items]
             if len(set(indexes)) != len(indexes) or max(indexes) >= len(draft['items']):
                 raise HTTPException(422, '제출 항목을 확인하세요.')
-            photo_id = drive.put(draft['photo'], data.request_id)
+            created_at = now()
+            with phase('photo'):
+                photo = drive.put_photo(draft['photo'],data.request_id,draft['facility'],created_at) if org.id=='kywa' else {'id':drive.put(draft['photo'],data.request_id),'created_at':created_at}
             records = []
             for item in data.items:
                 before = dict(draft['items'][item.index])
                 before.update(item.model_dump(exclude={'index'}))
                 records.append(dict(id=str(uuid.uuid5(uuid.UUID(data.request_id), str(item.index))),
-                    created_at=now(), facility=draft['facility'], department=draft['department'], before=before,
-                    photo_id=photo_id, after=None, organization_id=org.id, submitter_name=submitter_name,
+                    created_at=photo['created_at'], facility=draft['facility'], department=draft['department'], before=before,
+                    photo_id=photo['id'], after=None, organization_id=org.id, submitter_name=submitter_name,
                     policy_snapshot=draft['policy_snapshot'], prompt_version=org.prompt_version, policy=POLICY, status='접수', revision=1,
                     operation_id=data.request_id, submit_hash=body_hash, submit_owner=digest(session(request))))
+            if org.id=='kywa':
+                for record in records: record['photo_view_url']=photo['view_url']
             repo.apply(records, [])
             overview_cache['expires'] = 0
             return {'ids': [r['id'] for r in records], 'replayed': False}
@@ -572,7 +580,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def action(request: Request, record_id: str, data: ActionRequest):
         mutation(request)
         body_hash = digest(data.model_dump())
-        with repo.lock:
+        with submission_metrics(org.id=='kywa'), repo.lock, (repo.operation() if hasattr(repo,'operation') and org.id=='kywa' else nullcontext()):
             storage_ready()
             record, account = get_record(request, record_id)
             saved = next((e for e in repo.events(record_id) if e['id'] == data.request_id), None)
@@ -587,9 +595,13 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 raise HTTPException(409, '평가가 변경되었습니다. 목록을 새로고침하고 다시 분석하세요.')
             policy = record_policy(record, org)
             calculated = policy.risk(data.p, data.s)
+            created_at = now()
+            with phase('photo'):
+                photo = drive.put_photo(draft['photo'],data.request_id,record['facility'],created_at,after=True) if org.id=='kywa' else {'id':drive.put(draft['photo'],data.request_id),'created_at':created_at}
             after = dict(**calculated, text=draft['text'],
-                         photo_id=drive.put(draft['photo'], data.request_id), actor=account['email'], created_at=now(),
+                         photo_id=photo['id'], actor=account['email'], created_at=photo['created_at'],
                          policy=policy.version, policy_snapshot=policy.model_dump(), prompt_version=org.prompt_version, rationale=draft['result']['rationale'], ai_result=draft['result'])
+            if org.id=='kywa': after['photo_view_url']=photo['view_url']
             record.update(after=after, status='완료' if data.complete else '조치 중', revision=record['revision']+1)
             event = dict(id=data.request_id, record_id=record_id, at=now(), actor=account['email'],
                          kind='완료' if data.complete else '조치 저장', text=draft['text'], after=after, body_hash=body_hash)
@@ -645,7 +657,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 if signature(records)!=signature(filtered(request,strict=True,**data.model_dump(exclude={'format'}))):
                     raise HTTPException(409,'보고서 생성 중 평가가 변경되었습니다. 다시 생성해 주세요.')
             mime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' if data.format == 'xlsx' else 'application/pdf'
-            filename = f'{org.id}_위험성평가_{now()[:10]}.{data.format}'
+            filename = report_filename(data.facility,data.format,now()) if org.id=='kywa' else f'{org.id}_위험성평가_{now()[:10]}.{data.format}'
             return Response(output, media_type=mime, headers={'Content-Disposition': f"attachment; filename*=UTF-8''{quote(filename)}"})
         finally:
             memory_lock.release()
@@ -678,7 +690,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             report_jobs.invalidate(job_id)
             from .sheet_sync import SyncError
             raise SyncError('report_stale','보고서 생성 후 평가가 수정되거나 삭제되었습니다. 최신 목록으로 다시 생성해 주세요.')
-        filename=f"kywa_위험성평가_{now()[:10]}.{job['format']}"
+        filename=job['filename']
         return Response(job['output'],media_type=MIMES[job['format']],
             headers={'Content-Disposition':f"attachment; filename*=UTF-8''{quote(filename)}"})
 
