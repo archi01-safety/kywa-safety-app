@@ -5,6 +5,7 @@ test('design scope, responsive screens and color-only partner geometry', async (
   test.skip(institution === 'example', 'Eight production institution themes only');
   await page.goto('/');
   await expect(page.locator('.eyebrow').first()).toContainText('SMART SAFETY');
+  await expect(page.locator('.overview-charts')).toBeVisible();
   const premium = institution === 'kywa';
   await expect(page.locator('html')).toHaveAttribute('data-design', premium ? 'premium' : 'standard');
   await expect(page.locator('.premium-ribbons')).toHaveCount(premium ? 1 : 0);
