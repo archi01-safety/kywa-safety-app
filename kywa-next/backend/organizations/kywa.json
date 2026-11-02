@@ -261,12 +261,14 @@
     "website": "https://www.kywa.or.kr/",
     "department": "경영지원본부 안전경영부",
     "email": "archi01@kywa.or.kr",
-    "phone": "02-6959-7138"
+    "phone": "02-6959-7138",
+    "technical_support": false
   },
   "storage": {
     "spreadsheet_id": "1kL18jQn5t0UX8ECpVEm3RHLQAWu7lum8_Wb-EtxkU5Q",
     "drive_folder_id": "13RYVnDB7rrqLQYzB5Wa9WdWr0CHjm_MW",
     "sheet_name": "설문지 응답 시트1",
     "legacy_name_column": false
-  }
+  },
+  "experience_version": 2
 }
