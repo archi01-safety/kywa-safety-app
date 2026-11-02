@@ -53,6 +53,8 @@ E2E 실행 전 Playwright Chromium을 설치한다(`npx playwright install chrom
 
 GitHub Actions 통과 후 **KYWA 서비스만** 수동 배포한다. 다른 7개 서비스 및 Blueprint 전체 동기화를 실행하지 않는다. 운영 시트 이관은 KYWA-UPGRADE.ko.md 절차에 따라 사본 검사와 최신 백업 후 시행한다. HEAD만 보고 이미 운영 반영됐다고 판단하지 않는다.
 
+KYWA 행 삭제·셀 수정 기능은 SHEET-EDITING.ko.md를 따른다. `python -m backend.migrate_row_identity`는 읽기 전용 계획 확인이며 `--apply`가 있을 때만 전체 백업 후 행 식별정보를 준비한다. 평가 탭 19열은 그대로 유지한다. 이미 준비된 운영 파일에는 이관을 반복할 필요가 없다. Google 행 메타데이터·숨김 관리 정보·평가표·조치이력은 동일 시점의 묶음으로 복구한다.
+
 ## 이동 직전 별도 보관할 항목
 
 - 소스 커밋, 최신 HANDOFF/CHANGELOG, 소스 ZIP과 SHA-256.
