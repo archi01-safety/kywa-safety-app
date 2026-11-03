@@ -1,5 +1,5 @@
 {
-  "checked_at": "2026-11-03T04:25:19.288473+00:00",
+  "checked_at": "2026-11-03T04:39:54.663404+00:00",
   "verification": "Render dashboard deployment status Live and exact tested commit; post-deployment application tests omitted at user request",
   "services": [
     {
@@ -25,12 +25,13 @@
     {
       "org": "fowi",
       "id": "srv-dbhh880473hc73a09jlg",
-      "deployment": "dep-dbkm09mi0phs73alpueg",
+      "deployment": "dep-dbkmald9fdbs73boc17g",
       "status": "Live",
       "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://fowi-safety.onrender.com",
       "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jlg/deploys/dep-dbkm09mi0phs73alpueg"
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jlg/deploys/dep-dbkmald9fdbs73boc17g",
+      "note": "Session configuration recovery; application commit unchanged"
     },
     {
       "org": "khidi",
