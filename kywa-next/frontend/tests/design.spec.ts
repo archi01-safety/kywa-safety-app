@@ -8,7 +8,7 @@ test('design scope, responsive screens and color-only partner geometry', async (
   await expect(page.locator('.overview-charts')).toBeVisible();
   const premium = institution === 'kywa';
   await expect(page.locator('html')).toHaveAttribute('data-design', premium ? 'premium' : 'standard');
-  await expect(page.locator('.premium-ribbons')).toHaveCount(premium ? 1 : 0);
+  await expect(page.locator('.premium-ribbons')).toHaveCount(0);
   if (!premium) {
     await expect(page.locator('.institution-header')).toHaveCSS('background-color','rgb(255, 255, 255)');
     // Changing brand tokens must never change standard institution dimensions or text.
@@ -33,7 +33,8 @@ test('design scope, responsive screens and color-only partner geometry', async (
     await page.screenshot({path:info.outputPath(`${institution}-${theme}-viewport.png`)});
   }
   await page.getByRole('button',{name:'밝은 테마',exact:true}).click();
-  await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
+  if(institution !== 'ayf') await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
+  else { await expect(page.getByLabel('제출자 성명',{exact:true})).toHaveCount(0); await expect(page.getByLabel('담당 부서',{exact:true})).toHaveCount(0); }
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('시연용 테라스 난간 흔들림');
   await page.locator('.analyze-button').click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);

@@ -16,7 +16,8 @@ test('기관색 로딩, 버튼 상태, 의미 색상, 모바일 및 테마 전�
   await expect.poll(brand).toBe(colors[institution]);
   const analyze = page.getByRole('button', {name:`${names[institution]} AI 위험요인 분석 시작`,exact:true});
   await expect(analyze).toBeDisabled();
-  await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
+  if(institution !== 'ayf') await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
+  else { await expect(page.getByLabel('제출자 성명',{exact:true})).toHaveCount(0); await expect(page.getByLabel('담당 부서',{exact:true})).toHaveCount(0); }
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('시험용 난간 손상');
   await expect(analyze).toBeEnabled();
   if (institution !== 'kywa') await expect(page.locator('.brand img')).toHaveCount(0);
@@ -56,7 +57,8 @@ test('AYF 저장소 준비 안내와 제출 차단', async ({page}) => {
   await page.goto('/');
   await expect(page.getByText('저장소 준비 중',{exact:true})).toBeVisible();
   await expect(page.getByText('저장소 연결 준비 중',{exact:true})).toBeVisible();
-  await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
+  if(institution !== 'ayf') await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
+  else { await expect(page.getByLabel('제출자 성명',{exact:true})).toHaveCount(0); await expect(page.getByLabel('담당 부서',{exact:true})).toHaveCount(0); }
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('가상 시험: 난간 파손');
   await page.getByRole('button',{name:`${names[institution]} AI 위험요인 분석 시작`,exact:true}).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
@@ -83,8 +85,10 @@ test('지원기관 공동 표시, 개발자 팝업, 전송 및 홈 초기화', a
   await opener.click(); await page.mouse.click(5,5); await expect(dialog).toHaveCount(0);
   await opener.click(); await page.getByRole('button',{name:'개발자정보 닫기'}).click(); await expect(dialog).toHaveCount(0);
   const name=page.getByLabel('제출자 성명',{exact:true});
-  await name.fill('홍길동');
-  await expect(page.getByText('홍㉠㉢으로 제출됩니다.',{exact:true})).toBeVisible();
+  if(institution !== 'ayf') {
+    await name.fill('홍길동');
+    await expect(page.getByText('홍㉠㉢으로 제출됩니다.',{exact:true})).toBeVisible();
+  } else await expect(name).toHaveCount(0);
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('시험용 난간 흔들림');
   await page.getByRole('button',{name:`${names[institution]} AI 위험요인 분석 시작`,exact:true}).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
@@ -97,6 +101,7 @@ test('지원기관 공동 표시, 개발자 팝업, 전송 및 홈 초기화', a
   await expect(page.locator('.progress-dialog [role="status"]')).toContainText('1건을 제출했습니다');
   await expect(page.locator('.progress-dialog')).toBeHidden();
   await page.locator('a.brand').click();
-  await expect(name).toHaveValue('');
+  if(institution !== 'ayf') await expect(name).toHaveValue('');
+  else await expect(name).toHaveCount(0);
   await expect(page.locator('.evaluation-row')).toHaveCount(0);
 });
