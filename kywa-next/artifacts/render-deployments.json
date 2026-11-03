@@ -1,78 +1,86 @@
 {
-  "checked_at": "2026-11-02T09:46:56.488Z",
+  "checked_at": "2026-11-03T04:25:19.288473+00:00",
   "verification": "Render dashboard deployment status Live and exact tested commit; post-deployment application tests omitted at user request",
   "services": [
     {
       "org": "kywa",
       "id": "srv-datkiq6gekts73b716eg",
-      "deployment": "dep-dbk5l87f3r2c738ovb20",
+      "deployment": "dep-dbkm23s9v7es73eo7t3g",
       "status": "Live",
-      "sha": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://kywa-safety.onrender.com",
-      "plan": "Free"
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-datkiq6gekts73b716eg/deploys/dep-dbkm23s9v7es73eo7t3g"
     },
     {
       "org": "ayf",
       "id": "srv-dbhh880473hc73a09jn0",
-      "deployment": "dep-dbk5m0on74is738onrfg",
+      "deployment": "dep-dbkm013bc2fs739o0fa0",
       "status": "Live",
-      "sha": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://ayf-safety.onrender.com",
-      "plan": "Free"
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jn0/deploys/dep-dbkm013bc2fs739o0fa0"
     },
     {
       "org": "fowi",
       "id": "srv-dbhh880473hc73a09jlg",
-      "deployment": "dep-dbk5m98u01pc7394fvs0",
+      "deployment": "dep-dbkm09mi0phs73alpueg",
       "status": "Live",
-      "sha": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://fowi-safety.onrender.com",
-      "plan": "Free"
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jlg/deploys/dep-dbkm09mi0phs73alpueg"
     },
     {
       "org": "khidi",
       "id": "srv-dbhh880473hc73a09jqg",
-      "deployment": "dep-dbk5md0ae00c73ftg4tg",
+      "deployment": "dep-dbkm17h9dmos739iq8u0",
       "status": "Live",
-      "sha": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://khidi-safety.onrender.com",
-      "plan": "Free"
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jqg/deploys/dep-dbkm17h9dmos739iq8u0"
     },
     {
       "org": "knps",
       "id": "srv-dbhh880473hc73a09jng",
-      "deployment": "dep-dbk5mh8ae00c73ftgev0",
+      "deployment": "dep-dbkm0k2jnfac739aua2g",
       "status": "Live",
-      "sha": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://knps-safety.onrender.com",
-      "plan": "Free"
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jng/deploys/dep-dbkm0k2jnfac739aua2g"
     },
     {
       "org": "knf",
       "id": "srv-dbhh880473hc73a09jj0",
-      "deployment": "dep-dbk5mm8u01pc7394h0f0",
+      "deployment": "dep-dbkm0pegekts73ehsqog",
       "status": "Live",
-      "sha": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://knf-safety.onrender.com",
-      "plan": "Free"
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jj0/deploys/dep-dbkm0pegekts73ehsqog"
     },
     {
       "org": "kohi",
       "id": "srv-dbhh880473hc73a09jp0",
-      "deployment": "dep-dbk5mp8473hc73fmol50",
+      "deployment": "dep-dbkm0vqjnfac739avah0",
       "status": "Live",
-      "sha": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://kohi-safety.onrender.com",
-      "plan": "Free"
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jp0/deploys/dep-dbkm0vqjnfac739avah0"
     },
     {
       "org": "cayf",
       "id": "srv-dbhh880473hc73a09jpg",
-      "deployment": "dep-dbk5ms8473hc73fmosa0",
+      "deployment": "dep-dbkm1dbbc2fs739o3rvg",
       "status": "Live",
-      "sha": "eee38a37f4bcd072f02d5c9d5ce5be19810c7704",
+      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
       "url": "https://cayf-safety.onrender.com",
-      "plan": "Free"
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jpg/deploys/dep-dbkm1dbbc2fs739o3rvg"
     }
   ],
   "previous_release": [
