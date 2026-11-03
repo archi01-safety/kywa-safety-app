@@ -5,31 +5,13 @@
     --ink: #f0f3f8; --muted: #b6c0d0; --line: #465367; --line-strong: #8b98ac;
     --accent-soft: color-mix(in srgb,var(--theme-primary) 13%,var(--surface));
   }
-  .premium-app { background: radial-gradient(ellipse at 100% 8%,#2a8fd80b,transparent 36%),var(--bg); }
-  .premium-app .institution-header {
-    background: #141d2b linear-gradient(110deg,#202335,#141d2b 58%,#152437);
-    color: #f0f3f8; border-bottom-color: #465367; color-scheme: dark;
-  }
-  .premium-app .institution-header::after {
-    content: ""; position: absolute; bottom: -1px; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg,#f0145a99,transparent 48%,#2a8fd899); pointer-events: none;
-  }
-  /* The supplied official logo has a white canvas. Preserve its pixels and aspect ratio. */
-  .premium-app .institution-header .brand img {
-    width: 228px; height: 49px; padding: 7px 10px; background: #fff; border-radius: 6px;
-    object-fit: contain; object-position: center;
-  }
-  .premium-app .institution-header .brand>span {
-    color: #d2daE7; font-size: 12px; letter-spacing: 1.6px; line-height: 1.6;
-  }
-  .premium-app .institution-header .environment { background: #182535; border-color: #8b98ac; color: #e1e8f2; }
-  .premium-app .institution-header .theme-toggle { background: #252f3e; border-color: #8b98ac; color: #e1e8f2; }
-  .premium-app .institution-header .theme-toggle:hover { background: #364257; }
-  .premium-app .institution-header .icon-button { color: #e1e8f2; }
-  .premium-app .institution-header .session-clock { color: #d2dae7; }
-  .premium-app .institution-header .session-clock.ending { color: #f7d56d; }
-  .premium-app .institution-header .session-clock.expired { color: #ff9da5; }
-  .premium-app .institution-header :focus-visible { outline-color: #ff7aa6; }
+  .premium-app { background: var(--bg); }
+  .premium-app .institution-header .session-clock { color: #465261; }
+  .premium-app .institution-header .session-clock.ending { color: #805800; }
+  .premium-app .institution-header .session-clock.expired { color: #b42332; }
+  .premium-app .institution-header .session-clock button { color: #465261; }
+  .premium-app .reassess-button:not(:disabled) { background: var(--brand-button); color: var(--brand-on-button); border-color: var(--accent); }
+  .premium-app .reassess-button:hover:not(:disabled) { background: var(--brand-hover); }
   .premium-app .sidebar { background: linear-gradient(160deg,var(--bg),var(--surface)); }
   .premium-app .sidebar nav button { border-radius: 9px; min-height: 52px; }
   .premium-app .sidebar nav button.active {
@@ -43,14 +25,9 @@
   .premium-app .sidebar-guide>span { font-size: 12px; }
   .premium-app .breadcrumb-bar { color: var(--muted); }
   .premium-app .page-heading { position: relative; isolation: isolate; overflow: hidden; padding: 8px 0 16px; margin-bottom: 18px; }
-  .premium-app .page-heading>div:not(.premium-ribbons) { position: relative; z-index: 1; }
   .premium-app .page-heading h1 { font-size: clamp(26px,2.1vw,34px); letter-spacing: -.045em; font-weight: 720; }
   .premium-app .eyebrow { color: var(--muted); letter-spacing: 2.4px; }
   .premium-app .page-heading p { max-width: 760px; }
-  .premium-ribbons { position: absolute; inset: 0 0 0 55%; overflow: hidden; opacity: .65; pointer-events: none; z-index: 0; }
-  .premium-ribbons i { position: absolute; display: block; width: 400px; height: 175px; border-radius: 50%; transform: rotate(-20deg); }
-  .premium-ribbons i:first-child { right: -60px; bottom: -150px; border-top: 1px solid #f0145a; background: linear-gradient(160deg,#f0145a55,transparent 65%); }
-  .premium-ribbons i:last-child { right: -230px; top: -145px; border-bottom: 1px solid #2a8fd8; background: linear-gradient(25deg,transparent,#2a8fd850); }
   .premium-app .panel,.premium-app .stat,.premium-app .steps,.premium-app .submit-bar {
     background: linear-gradient(125deg,color-mix(in srgb,var(--surface) 93%,#64748b),var(--surface));
     border-color: var(--line); box-shadow: 0 12px 28px -24px #000a,inset 0 1px #ffffff08;
@@ -75,12 +52,11 @@
   .premium-app .upload-zone:hover:not(:disabled) { background: var(--surface-muted); border-color: var(--accent); }
   .premium-app .upload-icon { border: 1px solid color-mix(in srgb,var(--accent) 55%,transparent); border-radius: 14px; }
   .premium-app .upload-pill { color: var(--accent); border-color: var(--accent); background: var(--surface); }
-  .premium-app .primary:not(:disabled) {
+  .premium-app .primary:not(.analyze-button):not(:disabled) {
     background-image: linear-gradient(180deg,#ffffff0b,transparent);
     box-shadow: 0 5px 20px -12px var(--theme-primary); border-color: var(--accent);
   }
-  .premium-app .primary:active:not(:disabled) { background-image: none; }
-  .premium-app .input-panel .analyze-button { width: min(100%,440px); justify-self: center; min-height: 49px; font-size: 15px; border-radius: 9px; }
+  .premium-app .primary:active:not(.analyze-button):not(:disabled) { background-image: none; }
   .premium-app .next-action { outline-color: var(--accent); box-shadow: 0 0 19px -10px var(--theme-primary); }
   .premium-app .record-item.selected { border-color: var(--accent); background: var(--accent-soft); }
   .premium-app .progress-dialog,.premium-app .developer-dialog {
@@ -89,29 +65,19 @@
   .premium-app .progress-dialog::backdrop,.premium-app .developer-dialog::backdrop { background: #080e19bb; backdrop-filter: blur(4px); }
   .premium-app .download-options button:hover:not(:disabled) { border-color: var(--secondary-accent); }
   .premium-app .footer { border-top-color: var(--line); }
-  :root[data-design="premium"][data-theme="light"] .premium-ribbons { opacity: .3; }
   :root[data-design="premium"][data-theme="light"] .premium-app .sidebar { background: var(--surface); }
 }
-@media screen and (max-width:1100px) {
-  .premium-app .institution-header .brand>span { display: none; }
-  .premium-app .institution-header .brand img { width: 195px; }
-}
 @media screen and (max-width:720px) {
-  .premium-app .institution-header { min-height: 76px; height: auto; padding: 12px 14px; align-items: center; flex-wrap: wrap; }
-  .premium-app .institution-header .brand img { width: 164px; height: 40px; padding: 5px 7px; }
-  .premium-app .institution-header .topbar-right { margin-left: auto; gap: 6px; }
   .premium-app .sidebar { background: var(--bg); }
   .premium-app .sidebar nav button { border-radius: 0; }
   .premium-app .sidebar nav button.active { box-shadow: inset 0 -3px var(--accent); }
   .premium-app .page-heading { padding: 2px 0 10px; }
   .premium-app .page-heading h1 { font-size: 26px; }
   .premium-app .page-heading p { font-size: 13px; line-height: 1.9; }
-  .premium-ribbons { inset: 0 0 0 40%; opacity: .3; }
   .premium-app .steps { padding: 13px 10px; }
   .premium-app .steps>div>span { width: 26px; height: 26px; font-size: 11px; }
   .premium-app .steps>div { font-size: 11px; }
   .premium-app .input-panel { padding: 22px 18px; }
-  .premium-app .input-panel .analyze-button { width: 100%; }
   .premium-app .upload-zone { min-height: 220px; }
 }
 @media (prefers-reduced-motion:reduce) {
