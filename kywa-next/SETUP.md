@@ -4,6 +4,8 @@
 
 AX 등록은 [AX-DEPLOYMENT.ko.md](AX-DEPLOYMENT.ko.md)를 별도로 따른다. 실행 진입점은 `python app.py`, 지정된 `PORT`와 `APP_BASE_PATH`, 소스 밖 `APP_DATA_DIR`를 사용한다. 기존 Render/root 화면은 APP_BASE_PATH를 비워 빌드한다. AX용 ZIP의 경로를 다른 슬러그로 바꾸면 화면도 재빌드해야 한다.
 
+AYF는 현재 17열·시설만 수집하는 설정이다. 운영 이관을 자동 반복하지 말고 AYF-FACILITY-MIGRATION.ko.md와 최신 HANDOFF.md를 먼저 확인한다. 지원기관 PIN/해시는 별도 비공개 환경변수로 전달하며 소스 패키지에 포함하지 않는다.
+
 ## 소스와 개발 환경
 
 Git, Python 3.12, Node.js 22를 준비한다. Windows에서 한글 출력 검증은 한글 2020, Excel 인쇄 검증은 Microsoft Excel을 별도로 사용한다. 한글 2014 호환은 별도 검증 대상이다.

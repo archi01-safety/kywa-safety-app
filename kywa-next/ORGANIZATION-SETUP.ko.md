@@ -1,5 +1,7 @@
 # 2026-11-03 AYF 설정 변경 안내
 
+2026-11-03 운영 이관과 8개 기관 검증 커밋 939dbe4 배포 완료.
+
 AYF는 `department_enabled=false`, `departments=[]`, `submitter_name.mode=disabled`, `show_in_reports=false`를 사용한다. 시설 목록은 ayf.json의 11개 값이 기준이다. 시트는 17열이며 기존 19열에서 자동 삭제하지 않는다. 명시적 백업 이관 절차는 AYF-FACILITY-MIGRATION.ko.md 참조. 다른 7개 기관의 부서/성명 설정과 열 구성은 유지한다.
 
 지원기관 7개 PIN은 Render 각 서비스의 개별 ADMIN_PIN_HASH로 관리한다. KYWA까지 연결된 공유 그룹의 값을 바꾸지 않는다. 해시는 scripts/set_admin_pin.py로 생성하며 전체 값이 저장되어야 한다. PIN/해시를 공개 파일에 추가하지 않는다.

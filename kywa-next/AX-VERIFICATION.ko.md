@@ -47,6 +47,6 @@
 
 ## 2026-11-03 KYWA 보정·AYF 시설 중심 버전
 
-후보 `939dbe4cdca9967766b6440610cd269100ee4f5b`의 [CI 41568061328](https://github.com/archi01-safety/kywa-safety-app/actions/runs/41568061328) verify/ax 모두 통과. Linux 백엔드 268개, 프런트 단위 15개, 기관별 화면과 root/AX Docker·비root·읽기 전용·재시작 검사를 통과했다. 로컬 AX 정적 export도 `/apps/kywa-safety`로 재빌드했다. 새 ZIP은 `artifacts/kywa-safety-ax.zip`, 해시·크기·파일 개수는 `artifacts/ax-package.json`을 따른다. PIN 원문/해시와 비공개 백업은 포함하지 않는다.
+검증 커밋 `939dbe4cdca9967766b6440610cd269100ee4f5b`의 [CI 41568061328](https://github.com/archi01-safety/kywa-safety-app/actions/runs/41568061328) verify/ax 모두 통과. Linux 백엔드 268개, 프런트 단위 15개, 기관별 화면과 root/AX Docker·비root·읽기 전용·재시작 검사를 통과했다. 로컬 AX 정적 export도 `/apps/kywa-safety`로 재빌드했다. 새 ZIP은 `artifacts/kywa-safety-ax.zip`, 해시·크기·파일 개수는 `artifacts/ax-package.json`을 따른다. PIN 원문/해시와 비공개 백업은 포함하지 않는다.
 
 KYWA 흰 헤더/분석 버튼 복원 및 AYF 부서·성명 제거를 포함한다. Render 배포의 최종 결과는 HANDOFF.md에 별도로 기록한다. 실제 AX 등록은 수행하지 않았다.

@@ -1,11 +1,17 @@
 # 변경 이력
 
-## 2026-11-03 — 디자인 보정 및 AYF 운영 전환 진행 중
+## 2026-11-03 완료 — KYWA 디자인 보정·AYF 17열·8개 기관 배포
 
-- 로컬 KYWA 흰 헤더·전체 너비 분석 버튼·우측 장식 제거·붉은 재평가 버튼 수정. Next/TypeScript 빌드 통과.
-- AYF 부서·성명 미수집과 관리자/Excel/PDF/HWPX 제외, 11개 시설, 17열 물리 매핑 및 재실행 가능한 백업 이관 도구 구현. 비공개 Google 사본에서 중복 재시도·직접 수정·삭제 후 제출 검사 통과.
-- CI·운영 이관·지원기관 PIN override·배포 최종 상태는 HANDOFF.md 참조.
+현재 운영 런타임은 `939dbe4cdca9967766b6440610cd269100ee4f5b`다. KYWA·AYF·FoWI·KNPS·KNF·KOHI·KHIDI·CAYF 모두 Render의 **Deploy succeeded / Live**와 해당 커밋을 확인했다. 서비스별 배포 ID는 `artifacts/render-deployments.json`에 기록했다. 이후 문서·패키지 커밋은 운영 런타임을 바꾸지 않는다.
 
+- KYWA: 흰 헤더와 어두운 텍스트/버튼, 전체 너비 분석 버튼 복원, 우측 곡선·그라데이션 제거, 활성 AI 재평가 버튼 붉은색. 로고 원본과 기관색 유지.
+- 지원기관: 기존 전체 너비 분석 버튼·기관별 색상 유지. 7개 서비스의 개별 `ADMIN_PIN_HASH`는 사용자가 지정한 값으로 저장하고 비공개 원본과 일치 확인했다. 공유 환경 그룹과 KYWA PIN은 변경하지 않았다. 비밀값은 공개하지 않는다.
+- AYF: 시설 11개 선택, 부서·성명 수집/필터/관리자/Excel·PDF·HWPX 표시 제거. 운영 평가표는 A:Q **17열**이다. 내부 canonical 19칸 매핑·행 식별·중복 방지·조치이력 유지. 다른 7개 기관 시트 구조는 변경하지 않았다.
+- AYF 사본에서 이관 재실행·중복 재시도·직접 수정·삭제 후 제출 검사를 통과했다. 운영 파일 전체 비공개 백업/그리드 스냅샷 후 쓰기 점검 중 19→17열 이관·값/행 식별 대조 완료(활성 평가 0건). 비공개 증빙은 `local-data/ayf-17/production-result.json`, `production-backup.json`, `production-snapshot/`에 있다. 새 호환 프로세스 배포 성공으로 임시 쓰기 점검은 해제됐다.
+- [CI 41568061328](https://github.com/archi01-safety/kywa-safety-app/actions/runs/41568061328): 백엔드 268개·프런트 단위 15개·Next 빌드·8개 기관 반응형/테마/브라우저·root/AX Docker·비root·읽기 전용·재시작 검사 통과. 이번 CI 화면 캡처의 별도 수동 육안 검토는 하지 않았다.
+- 초기 지원기관 배포의 잘린 PIN 해시는 사용자가 전체 값으로 수정했다. KYWA/KHIDI의 정체된 배포는 취소하고 같은 검증 커밋 재배포로 해결했다. 최종 8개 모두 Live다.
+- 사용자 지시에 따라 **배포 후 앱 제출·분석·보고서 등 별도 운영 시험은 생략**했다. Render 배포 완료 확인과 실제 업무 시험을 구분한다.
+- 인수인계서·복구 절차·소스 ZIP·AX ZIP을 갱신했다. AX ZIP 경로는 `artifacts/kywa-safety-ax.zip`, 접두 경로는 `/apps/kywa-safety`, 실행은 `python app.py`다. 실제 AX 등록은 수행하지 않았다.
 
 ## 2026-11-02 — KYWA 프리미엄 UI와 지원기관 색상 — 8개 기관 배포 완료
 
