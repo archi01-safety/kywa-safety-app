@@ -12,10 +12,11 @@ from backend.pin_auth import make_pin_hash
 def test_ayf_configuration():
     org = load_organization('ayf')
     assert org.name == '안양시청소년재단'
-    assert len(org.facilities) == 12 and len(org.departments) == 12
-    assert org.departments.count('활동사업팀') == 1
+    assert len(org.facilities) == 11 and org.departments == []
+    assert not org.department_enabled
+    assert org.facilities[0] == '재단' and '평촌청소년문화의집' in org.facilities
     assert org.policy.risk(5, 3)['grade'] == '높음'
-    assert org.submitter_name.mode == 'required'
+    assert org.submitter_name.mode == 'disabled' and not org.submitter_name.show_in_reports
     assert org.storage.spreadsheet_id == '15wZwBo5_m4BP1_BMQ0qVZo7elNBVy9WZAhdTe64_KnQ'
     assert org.enhanced and org.branding.technical_support
     assert org.storage.drive_folder_id == load_organization('kywa').storage.drive_folder_id
@@ -37,7 +38,7 @@ def test_setup_allows_real_analysis_path_but_blocks_storage(tmp_path):
         boot = c.get('/api/bootstrap').json()
         assert boot['mode'] == 'setup'
         c.headers.update({'Origin':cfg.app_base_url, 'X-CSRF-Token':boot['csrf']})
-        response = c.post('/api/analyses', data=dict(facility='안전감사실',department='안전감사실',description='시험 위험'))
+        response = c.post('/api/analyses', data=dict(facility='재단',description='시험 위험'))
         assert response.status_code == 200 and len(calls) == 1
         assert response.json()['items'][0]['grade'] == '높음'
         for path in ('/api/assessments','/api/assessments/test/actions','/api/assessments/test/state','/api/reports','/api/auth/demo'):

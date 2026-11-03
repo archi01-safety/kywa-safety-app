@@ -44,6 +44,10 @@ def test_partner_export_names_grades_and_editable_structure(identity):
     if '약간 높음' not in model['facts']['grade_order']: assert '약간 높음' not in xml
     book=load_workbook(io.BytesIO(excel(records,photos,org)))
     sheet=book['위험성평가']
+    if identity == 'ayf':
+        headers = [c.value for c in sheet[1]]
+        assert '담당 부서' not in headers and '제출자 성명' not in headers
+        assert all('department' not in d for d in model['details'])
     assert sheet.page_setup.orientation=='landscape' and sheet.page_setup.paperSize==int(sheet.PAPERSIZE_A3)
 
 
@@ -57,7 +61,7 @@ def test_partner_columns_prompt_policy_and_reports(identity):
     r=current_record(org);raw=adapter.physical(visible(r))
     assert adapter.canonical(raw)==visible(r)
     assert raw[3 if identity=='khidi' else 18]==r['submitter_name']
-    text=institution_prompt(org,org.facilities[0],org.departments[0],'시험용 경미한 바닥 파손')
+    text=institution_prompt(org,org.facilities[0],(org.departments[0] if org.departments else ''),'시험용 경미한 바닥 파손')
     assert org.name in text and '한국청소년활동진흥원의 안전관리 전문가' not in text
     assert '안전수칙 및 작업표준은 있음을 전제로' in text
     assert '최대 '+str({'fowi':4,'khidi':5}.get(identity,6))+'점' in text

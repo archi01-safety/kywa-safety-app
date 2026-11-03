@@ -30,7 +30,7 @@ def settings(identity='khidi'):
 
 
 def old_row(org):
-    values=['2026. 5. 12 오후 3:24:15',org.facilities[0],org.departments[0],
+    values=['2026. 5. 12 오후 3:24:15',org.facilities[0],(org.departments[0] if org.departments else ''),
             '복도','보행 안전','미끄러움',5,3,15,'보통','바닥 정리','현장 확인','사진 없음']
     if org.storage.legacy_name_column: values.insert(3,'홍길동')
     return values
@@ -38,7 +38,7 @@ def old_row(org):
 
 def current_record(org):
     return dict(id=str(uuid.uuid4()),organization_id=org.id,created_at='2026-10-29T12:00:00+09:00',
-        facility=org.facilities[0],department=org.departments[0],submitter_name='홍㉠㉢',
+        facility=org.facilities[0],department=(org.departments[0] if org.departments else ''),submitter_name=('홍㉠㉢' if org.submitter_name.mode != 'disabled' else ''),
         before=dict(location='본관',category='보행 안전',scenario='단차',solution='보수',law='확인',**org.policy.risk(5,3)),
         after=None,photo_id='',policy=org.policy.version,policy_snapshot=org.policy.model_dump(),status='접수',revision=1)
 
@@ -248,7 +248,7 @@ def test_api_legacy_and_new_app_submit_retry_action_exports(monkeypatch,tmp_path
     layout=Layout(expanded_header([[LABELS[k] for k in base_keys(org)],row],org),org)
     mem,repo=wire(monkeypatch,cfg,[layout.header,row])
     c,app,_=connect(cfg,repo=repo)
-    draft=c.post('/api/analyses',data={'facility':org.facilities[0],'department':org.departments[0],'description':'시험 위험'}).json()
+    draft=c.post('/api/analyses',data={'facility':org.facilities[0],'department':(org.departments[0] if org.departments else ''),'description':'시험 위험'}).json()
     body=dict(request_id=str(uuid.uuid4()),draft_id=draft['draft_id'],submitter_name='김㉤',
         items=[dict(index=0,location='시험',scenario='위험',solution='조치')])
     mem.before_batch=lambda:mem.data[cfg.sheet_name].append(row.copy())
