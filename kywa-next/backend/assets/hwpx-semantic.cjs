@@ -18146,7 +18146,7 @@ async function generate(input) {
     const d = m.details[i], b = d.before, a = d.after, s = d.summary;
     if (i % 2 === 0) body += p("\uBD99\uC784  \uC704\uD5D8\uC131\uD3C9\uAC00 \uC138\uBD80 \uACB0\uACFC", { break: true, pt: 14, bold: true, after: 8, keep: true });
     body += p(`${String(i + 1).padStart(2, "0")}  ${b.location}`, { pt: 11, bold: true, before: i % 2 ? 12 : 0, after: 3, keep: true });
-    body += p(`${d.facility} \xB7 ${d.department} \xB7 ${b.category} \xB7 ${d.status}`, { pt: 9.5, after: 3, keep: true });
+    body += p([d.facility, d.department, b.category, d.status].filter(Boolean).join(" \xB7 "), { pt: 9.5, after: 3, keep: true });
     body += textTable([["\uCD5C\uCD08", `\uBE48\uB3C4 ${b.p}`, `\uAC15\uB3C4 ${b.s}`, `${b.score}\uC810`, b.grade], a ? ["\uAC1C\uC120 \uD6C4", `\uBE48\uB3C4 ${a.p}`, `\uAC15\uB3C4 ${a.s}`, `${a.score}\uC810`, a.grade] : ["\uAC1C\uC120 \uD6C4", "\uBBF8\uAE30\uB85D", "", "", ""]], 18, 9.5);
     for (const [label, key] of [["\uC704\uD5D8\uC0C1\uD669", "scenario"], ["\uAC10\uC18C\uB300\uCC45", "solution"], ["\uC2E4\uC81C \uC870\uCE58", "action"], ["\uAD00\uB828\uADFC\uAC70", "law"]]) body += p(`${label}  ${s[key] || "\uAE30\uB85D \uC5C6\uC74C"}`, { pt: 9.5, before: 2, line: 125 });
     const keys = input.photoKeys[i];
