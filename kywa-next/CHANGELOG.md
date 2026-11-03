@@ -1,5 +1,11 @@
 # 변경 이력
 
+## 2026-11-03 FoWI 세션 설정 복구
+
+사용자가 잘못 수정한 FoWI 개별 `SESSION_SECRET`을 전용 난수로 교체·저장했다. 로컬 비공개 값과 저장값의 일치를 값 노출 없이 확인하고 기존 검증 커밋 `939dbe4cdca9967766b6440610cd269100ee4f5b`로 FoWI만 재배포했다. Render 배포 `dep-dbkmald9fdbs73boc17g`의 Deploy succeeded / Live를 확인했다. 기존 로그인은 다시 필요하며 관리자 PIN·Google 기록·다른 기관 설정·런타임 코드는 변경하지 않았다. 사용자 요청에 따라 배포 후 별도 앱 시험은 생략했다.
+
+이번 변경은 Render 환경설정과 운영 기록만의 변경이다. 기존 AX/소스 ZIP에는 비밀값이 없으며 코드가 동일하므로 재생성하지 않았다. 복구 키는 로컬 비공개 auth 폴더에만 보관하고 공개 저장소에 포함하지 않는다.
+
 ## 2026-11-03 완료 — KYWA 디자인 보정·AYF 17열·8개 기관 배포
 
 현재 운영 런타임은 `939dbe4cdca9967766b6440610cd269100ee4f5b`다. KYWA·AYF·FoWI·KNPS·KNF·KOHI·KHIDI·CAYF 모두 Render의 **Deploy succeeded / Live**와 해당 커밋을 확인했다. 서비스별 배포 ID는 `artifacts/render-deployments.json`에 기록했다. 이후 문서·패키지 커밋은 운영 런타임을 바꾸지 않는다.
