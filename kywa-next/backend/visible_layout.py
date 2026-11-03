@@ -14,18 +14,22 @@ MANAGEMENT_KEYS = ['id', 'policy', 'status', 'revision', 'data']
 class VisibleLayout:
     def __init__(self, header, org):
         layout = Layout(header, org)
-        if len(header) != 19 or set(layout.columns) != set(VISIBLE_KEYS):
-            raise SheetSchemaError('기관 평가표의 19개 열을 확인하세요.')
+        expected = set(VISIBLE_KEYS)
+        if not org.department_enabled and org.submitter_name.mode == "disabled" and len(header) == 17:
+            expected -= {"department", "submitter_name"}
+        if len(header) != len(expected) or set(layout.columns) != expected:
+            raise SheetSchemaError('기관 평가표의 열 구성과 기관 설정을 확인하세요.')
         self.header = list(header)
-        self.positions = [layout.columns[k] for k in VISIBLE_KEYS]
+        self.positions = [layout.columns.get(k) for k in VISIBLE_KEYS]
 
     def canonical(self, row, empty=''):
-        return [row[i] if i < len(row) else empty for i in self.positions]
+        return [row[i] if i is not None and i < len(row) else empty for i in self.positions]
 
     def physical(self, row, empty=''):
-        result = [empty] * 19
+        result = [empty] * len(self.header)
         for i, position in enumerate(self.positions):
-            result[position] = row[i] if i < len(row) else empty
+            if position is not None:
+                result[position] = row[i] if i < len(row) else empty
         return result
 
 

@@ -47,6 +47,8 @@ class Layout:
                     raise SheetSchemaError('같은 의미의 헤더가 중복되었습니다. 열 매핑을 확인하세요.')
                 self.columns[key] = index
         self.base = base_keys(org)
+        if not org.department_enabled and "department" not in self.columns:
+            self.base.remove("department")
         if any(self.columns.get(key) != i for i,key in enumerate(self.base)):
             raise SheetSchemaError('기관별 기존 열 순서와 헤더가 다릅니다. 원본 열을 이동하지 말고 매핑을 확인하세요.')
 

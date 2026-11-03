@@ -220,6 +220,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             r['reassessment_policy'] = record_policy(r, org).model_dump()
         except ValueError:
             pass
+        if not org.department_enabled:
+            r.pop('department', None)
         if org.submitter_name.mode == 'disabled':
             r.pop('submitter_name', None)
         else:
@@ -452,10 +454,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         return draft['photo']
 
     @app.post('/api/analyses')
-    def analyze(request: Request, facility: str = Form(...), department: str = Form(...),
+    def analyze(request: Request, facility: str = Form(...), department: str = Form(''),
                 description: str = Form(''), photo_id: str = Form('')):
         mutation(request)
-        if facility not in FACILITIES or department not in DEPARTMENTS:
+        if facility not in FACILITIES or (department not in DEPARTMENTS if org.department_enabled else bool(department)):
             raise HTTPException(422, '시설과 부서를 확인하세요.')
         if len(description) > 6000 or (not description.strip() and not photo_id):
             raise HTTPException(422, '사진 또는 6,000자 이하의 상황 설명을 입력하세요.')

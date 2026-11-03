@@ -84,6 +84,7 @@ class GoogleRows:
                 formats[index] = [c.get('userEnteredFormat', {}) for c in cs]
         if not rows:
             raise SyncError('sheet_schema', '기관 평가표의 19개 열을 확인하세요.')
+        while rows[0] and rows[0][-1] == '': rows[0].pop()
         self.layout = VisibleLayout(rows[0], self.repo.settings.organization)
         rows = [VISIBLE] + [self.layout.canonical(r) for r in rows[1:]]
         formats = {i:self.layout.canonical(f, {}) for i,f in formats.items()}
@@ -147,7 +148,8 @@ class GoogleRows:
             'location':{'dimensionRange':{'sheetId':self.sheet_id, 'dimension':'ROWS', 'startIndex':index, 'endIndex':index+1}}}}}
 
     def patch(self, metadata_id, edits):
-        edits = {self.layout.positions[k]:v for k,v in edits.items()}
+        edits = {self.layout.positions[k]:v for k,v in edits.items() if self.layout.positions[k] is not None}
+        if not edits: return
         values = [None] * (max(edits)+1)
         for col, value in edits.items(): values[col] = value
         response = self.api.values().batchUpdateByDataFilter(spreadsheetId=self.sid, body={'valueInputOption':'RAW', 'data':[
@@ -159,7 +161,7 @@ class GoogleRows:
         if not indexes: return
         # Formatting is already in appendCells, including the all-rows-deleted case.
         # Only expand native table/filter ranges; never copy a possibly deleted row's format.
-        requests = format_requests(self.api, self.sid, self.repo.settings.sheet_name, len(rows), len(rows), sheet_info=self._sheet_info)
+        requests = format_requests(self.api, self.sid, self.repo.settings.sheet_name, len(rows), len(rows), width=len(self.layout.header), sheet_info=self._sheet_info)
         for index in indexes:
             requests.append({'updateCells':{'start':{'sheetId':self.sheet_id, 'rowIndex':index, 'columnIndex':0},
                 'rows':[{'values':[{}]}], 'fields':'note'}})
@@ -307,7 +309,7 @@ class Store:
             record['created_at']='';issues.append('A열 타임스탬프를 날짜로 입력하세요.')
         for col,key in ((1,'facility'),(2,'department')):
             record[key]=str(row[col]).strip()
-            if not record[key]: issues.append(f'{VISIBLE[col]}을 입력하세요.')
+            if not record[key] and (key != 'department' or self.org.department_enabled): issues.append(f'{VISIBLE[col]}을 입력하세요.')
         record['submitter_name']=display_name(row[18]); record['photo_id']=drive_id(row[12])
         if 'photo_view_url' in record:
             record['photo_view_url'] = str(row[12]) if record['photo_id'] else ''

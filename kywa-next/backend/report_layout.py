@@ -135,7 +135,7 @@ def build(model,records,store):
             rule(p,36,56,523,ACCENT,1.3)
         top=72+(index%2)*361; b=detail['before']; a=detail['after']; s=detail['summary']
         y=text(p,f"{index+1:02d}  {b['location']}",42,top,511,12,16,bold=True,max_lines=2)
-        y=text(p,f"{detail['facility']} · {detail['department']} · {b['category']} · {detail['status']}",42,y+3,511,9.5,13,color=MUTED,max_lines=2)
+        y=text(p," · ".join(filter(None,[detail["facility"],detail.get("department",""),b["category"],detail["status"]])),42,y+3,511,9.5,13,color=MUTED,max_lines=2)
         before=f"최초  빈도 {b['p']} × 강도 {b['s']} = {b['score']}점 · {b['grade']}"
         after=f"개선 후  빈도 {a['p']} × 강도 {a['s']} = {a['score']}점 · {a['grade']}" if a else '개선 후  미기록'
         y=table(p,[[before],[after]],42,y+4,511,19,9.5)+6

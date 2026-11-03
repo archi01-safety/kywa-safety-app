@@ -103,7 +103,8 @@ class Organization(Model):
     name: str = Field(min_length=1, max_length=100)
     short_name: str = Field(min_length=1, max_length=40)
     facilities: list[str] = Field(min_length=1)
-    departments: list[str] = Field(min_length=1)
+    department_enabled: bool = True
+    departments: list[str] = Field(default_factory=list)
     categories: list[str] = Field(min_length=1)
     category_guidance: str = ''
     prompt_version: str = Field(min_length=1, max_length=100)
@@ -120,6 +121,8 @@ class Organization(Model):
 
     @model_validator(mode='after')
     def validate_lists(self):
+        if self.department_enabled and not self.departments:
+            raise ValueError("부서를 사용하는 기관은 부서 목록이 필요합니다.")
         for values in (self.facilities, self.departments, self.categories):
             if any(not x.strip() or x != x.strip() or len(x) > 100 for x in values) or len(set(values)) != len(values):
                 raise ValueError('기관 목록에는 중복 또는 빈 값을 사용할 수 없습니다.')

@@ -80,6 +80,8 @@ def compose(records, ai, progress=lambda _:None, org=None):
     org = org or getattr(ai,"org",None) or load_organization("kywa")
     facts = aggregate(records, org)
     source = source_data(records)
+    if not org.department_enabled:
+        for item in source: item.pop("department", None)
     if ai.settings.demo:
         # Explicit demo output, never substitute synthetic prose for a failed live call.
         narrative = Narrative(overview='체험용 기록으로 작성한 보고서이며 실제 현장 평가 결과를 나타내지 않음.',
