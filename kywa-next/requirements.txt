@@ -1,0 +1,2 @@
+# AX Python app installers may discover this file at the ZIP root.
+-r backend/requirements.lock

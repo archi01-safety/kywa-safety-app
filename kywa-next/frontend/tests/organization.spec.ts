@@ -1,0 +1,34 @@
+import { test, expect } from '@playwright/test';
+
+test('기관 설정: 성명 필수, 3×3 매트릭스, 저장과 재평가', async ({page}, info) => {
+  test.skip(process.env.ORGANIZATION_ID !== 'example', 'Run with ORGANIZATION_ID=example');
+  await page.goto('/');
+  await expect(page.getByRole('combobox', {name:'시설', exact:true})).toHaveValue('시험시설');
+  await expect(page.getByRole('combobox', {name:'담당 부서', exact:true})).toHaveValue('시험부서');
+  await page.getByLabel('어떤 위험이 있나요?', {exact:false}).fill('시험 난간');
+  await expect(page.getByRole('button', {name:'AI 위험성 분석하기', exact:true})).toBeDisabled();
+  const name = '홍㉠㉢';
+  await page.getByLabel('제출자 성명', {exact:true}).fill('홍길동');
+  await page.getByRole('button', {name:'AI 위험성 분석하기', exact:true}).click();
+  const row = page.locator('.evaluation-row');
+  await expect(row.locator('[data-label="점수"]')).toHaveText('6');
+  await expect(row.locator('[data-label="등급"]')).toHaveText('높음');
+  const submit = page.getByRole('button', {name:'선택한 평가 제출', exact:true});
+  await expect(submit).toBeEnabled();
+  const location = `시험-${info.project.name}-${Date.now()}`;
+  await row.getByLabel('장소', {exact:true}).fill(location);
+  await submit.click();
+  await expect(page.locator('.message[role="status"]')).toContainText('1건을 제출했습니다');
+  await page.getByRole('button', {name:'개선조치 · 재평가', exact:true}).click();
+  await page.getByRole('button', {name:'관리자로 체험하기', exact:true}).click();
+  await page.getByRole('button').filter({has:page.getByRole('heading', {name:location, exact:true})}).click();
+  await expect(page.locator('.detail-submitter')).toHaveText(`제출자 성명: ${name}`);
+  await page.getByLabel('실제 조치내용', {exact:true}).fill('시험 보수');
+  await page.getByRole('button', {name:'AI 재평가하기', exact:true}).click();
+  await expect(page.getByRole('combobox', {name:'강도', exact:true}).locator('option')).toHaveCount(3);
+  await page.getByRole('combobox', {name:'빈도', exact:true}).selectOption('1');
+  await expect(page.locator('.reassessment .score strong')).toHaveText('3');
+  await page.getByRole('button', {name:'확인 후 완료', exact:true}).click();
+  await expect(page.getByText('개선조치가 완료되었습니다.', {exact:true})).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBeTruthy();
+});

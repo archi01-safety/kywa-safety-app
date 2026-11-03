@@ -1,0 +1,162 @@
+[
+  {
+    "institution": "kywa",
+    "design": "premium",
+    "primary": {
+      "original": "#F0145A",
+      "button": "#D70B4D",
+      "buttonText": "#FFFFFF",
+      "hover": "#B90942",
+      "darkText": "#FF7AA6",
+      "lightText": "#B90942"
+    },
+    "secondary": {
+      "original": "#2A8FD8",
+      "button": "#2A8FD8",
+      "buttonText": "#101418",
+      "hover": "#3F9ADC",
+      "darkText": "#4CA1DE",
+      "lightText": "#2272AD"
+    }
+  },
+  {
+    "institution": "fowi",
+    "design": "standard",
+    "primary": {
+      "original": "#129F4A",
+      "button": "#129F4A",
+      "buttonText": "#101418",
+      "hover": "#2AA95C",
+      "darkText": "#38AE67",
+      "lightText": "#0E7F3B"
+    },
+    "secondary": {
+      "original": "#59C2E0",
+      "button": "#59C2E0",
+      "buttonText": "#101418",
+      "hover": "#50AFCA",
+      "darkText": "#59C2E0",
+      "lightText": "#367689"
+    }
+  },
+  {
+    "institution": "knps",
+    "design": "standard",
+    "primary": {
+      "original": "#3B9F49",
+      "button": "#3B9F49",
+      "buttonText": "#101418",
+      "hover": "#358F42",
+      "darkText": "#58AD64",
+      "lightText": "#2E7C39"
+    },
+    "secondary": {
+      "original": "#257ABA",
+      "button": "#257ABA",
+      "buttonText": "#FFFFFF",
+      "hover": "#216EA7",
+      "darkText": "#609ECD",
+      "lightText": "#2271AD"
+    }
+  },
+  {
+    "institution": "khidi",
+    "design": "standard",
+    "primary": {
+      "original": "#F2682A",
+      "button": "#F2682A",
+      "buttonText": "#101418",
+      "hover": "#DA5E26",
+      "darkText": "#F3773F",
+      "lightText": "#B64E20"
+    },
+    "secondary": {
+      "original": "#78777C",
+      "button": "#77767B",
+      "buttonText": "#FFFFFF",
+      "hover": "#6B6A6F",
+      "darkText": "#98989B",
+      "lightText": "#6E6D72"
+    }
+  },
+  {
+    "institution": "knf",
+    "design": "standard",
+    "primary": {
+      "original": "#014099",
+      "button": "#014099",
+      "buttonText": "#FFFFFF",
+      "hover": "#013A8A",
+      "darkText": "#789AC9",
+      "lightText": "#014099"
+    },
+    "secondary": {
+      "original": "#E60012",
+      "button": "#E60012",
+      "buttonText": "#FFFFFF",
+      "hover": "#CF0010",
+      "darkText": "#F1707A",
+      "lightText": "#DA0011"
+    }
+  },
+  {
+    "institution": "kohi",
+    "design": "standard",
+    "primary": {
+      "original": "#E24E2C",
+      "button": "#E24E2C",
+      "buttonText": "#101418",
+      "hover": "#E56041",
+      "darkText": "#E9775D",
+      "lightText": "#C24326"
+    },
+    "secondary": {
+      "original": "#F6A12B",
+      "button": "#F6A12B",
+      "buttonText": "#101418",
+      "hover": "#DD9127",
+      "darkText": "#F6A12B",
+      "lightText": "#96621A"
+    }
+  },
+  {
+    "institution": "cayf",
+    "design": "standard",
+    "primary": {
+      "original": "#53805A",
+      "button": "#53805A",
+      "buttonText": "#FFFFFF",
+      "hover": "#4B7351",
+      "darkText": "#80A185",
+      "lightText": "#4D7754"
+    },
+    "secondary": {
+      "original": "#E3B65C",
+      "button": "#E3B65C",
+      "buttonText": "#101418",
+      "hover": "#CCA453",
+      "darkText": "#E3B65C",
+      "lightText": "#846A35"
+    }
+  },
+  {
+    "institution": "ayf",
+    "design": "standard",
+    "primary": {
+      "original": "#FCD600",
+      "button": "#FCD600",
+      "buttonText": "#101418",
+      "hover": "#E3C100",
+      "darkText": "#FCD600",
+      "lightText": "#816D00"
+    },
+    "secondary": {
+      "original": "#C81E86",
+      "button": "#C81E86",
+      "buttonText": "#FFFFFF",
+      "hover": "#B41B79",
+      "darkText": "#DD76B5",
+      "lightText": "#C81E86"
+    }
+  }
+]

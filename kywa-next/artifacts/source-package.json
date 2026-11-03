@@ -1,0 +1,8 @@
+{
+  "file": "kywa-safety-source.zip",
+  "files": 162,
+  "bytes": 955614,
+  "sha256": "0da8b8b154996c216cbb25ab0a3f8b95dbc8d707b79b5d539c8515b02d02d454",
+  "application_commit": "939dbe4cdca9967766b6440610cd269100ee4f5b",
+  "secrets_scan": "passed"
+}

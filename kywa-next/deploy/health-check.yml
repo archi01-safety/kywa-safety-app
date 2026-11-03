@@ -1,0 +1,11 @@
+name: KYWA Render manual health check
+on:
+  workflow_dispatch:
+permissions: {}
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait for web service
+        run: curl --fail --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 90 https://kywa-safety.onrender.com/healthz
