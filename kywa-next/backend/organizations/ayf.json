@@ -3,33 +3,19 @@
   "name": "안양시청소년재단",
   "short_name": "AYF",
   "facilities": [
-    "안전감사실",
-    "사무처",
+    "재단",
     "만안청소년수련관",
     "동안청소년수련관",
     "청소년상담복지센터",
     "만안청소년문화의집",
     "석수청소년문화의집",
     "호계청소년문화의집",
-    "평청청소년문화의집",
+    "평촌청소년문화의집",
     "박달청소년문화의집",
     "관양청소년문화의집",
     "일시청소년쉼터"
   ],
-  "departments": [
-    "안전감사실",
-    "정책기획실",
-    "경영지원실",
-    "운영지원팀",
-    "교육사업팀",
-    "활동사업팀",
-    "방과후 아카데미",
-    "어린이 식품안전체험관",
-    "상담운영팀",
-    "통합지원팀",
-    "청소년문화의집",
-    "일시청소년쉼터"
-  ],
+  "departments": [],
   "categories": [
     "보행 안전",
     "시설 안전",
@@ -48,10 +34,10 @@
   "prompt_version": "AYF-2026-11-02-v2",
   "prompt_guidance": "기관별 빈도·강도 정의와 평가표를 적용한다. 점수·등급은 서버가 확정한다.",
   "submitter_name": {
-    "mode": "required",
+    "mode": "disabled",
     "label": "제출자 성명",
     "notice": "소속과 초성 변환 성명은 제출자 확인을 위해 관리자 화면과 보고서에 표시됩니다.",
-    "show_in_reports": true
+    "show_in_reports": false
   },
   "policy": {
     "version": "AYF-2026-v1",
@@ -271,5 +257,6 @@
     "facility_names": "preserved as supplied",
     "branding_status": "neutral until organization color is supplied"
   },
-  "experience_version": 2
+  "experience_version": 2,
+  "department_enabled": false
 }
