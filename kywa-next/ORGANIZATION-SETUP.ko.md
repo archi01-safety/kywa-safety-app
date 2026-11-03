@@ -1,3 +1,11 @@
+# 2026-11-03 AYF 설정 변경 안내
+
+AYF는 `department_enabled=false`, `departments=[]`, `submitter_name.mode=disabled`, `show_in_reports=false`를 사용한다. 시설 목록은 ayf.json의 11개 값이 기준이다. 시트는 17열이며 기존 19열에서 자동 삭제하지 않는다. 명시적 백업 이관 절차는 AYF-FACILITY-MIGRATION.ko.md 참조. 다른 7개 기관의 부서/성명 설정과 열 구성은 유지한다.
+
+지원기관 7개 PIN은 Render 각 서비스의 개별 ADMIN_PIN_HASH로 관리한다. KYWA까지 연결된 공유 그룹의 값을 바꾸지 않는다. 해시는 scripts/set_admin_pin.py로 생성하며 전체 값이 저장되어야 한다. PIN/해시를 공개 파일에 추가하지 않는다.
+
+---
+
 # 기관별 독립 운영·Google 연동 설정
 
 공통 소스와 별도의 Render 무료 Docker 웹서비스를 사용합니다. 각 서비스는 `ORGANIZATION_ID`로 기관을 고릅니다. 첫 접속 대기를 수용하며 절전 방지 주기 호출을 추가하지 않습니다. 기관 설정을 찾지 못하면 시작을 중단하고 KYWA로 대체하지 않습니다.

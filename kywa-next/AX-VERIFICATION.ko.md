@@ -43,3 +43,10 @@
 ## 최종 디자인 포함 재검증
 
 디자인 최종 커밋 `eee38a37f4bcd072f02d5c9d5ce5be19810c7704`의 CI 41420384220에서 백엔드 264개, 프런트 단위 15개, 8개 기관 PC/태블릿/모바일·다크/라이트 및 root/AX Docker를 통과했다. AX 비root·읽기 전용·외부 볼륨·정상 종료·재시작 검사도 다시 통과했다. AX 등록 ZIP에는 이 디자인과 최신 인수인계서를 포함한다. 실제 AX 등록과 외부 연동 미검증 범위는 위 표와 같다.
+
+
+## 2026-11-03 KYWA 보정·AYF 시설 중심 버전
+
+후보 `939dbe4cdca9967766b6440610cd269100ee4f5b`의 [CI 41568061328](https://github.com/archi01-safety/kywa-safety-app/actions/runs/41568061328) verify/ax 모두 통과. Linux 백엔드 268개, 프런트 단위 15개, 기관별 화면과 root/AX Docker·비root·읽기 전용·재시작 검사를 통과했다. 로컬 AX 정적 export도 `/apps/kywa-safety`로 재빌드했다. 새 ZIP은 `artifacts/kywa-safety-ax.zip`, 해시·크기·파일 개수는 `artifacts/ax-package.json`을 따른다. PIN 원문/해시와 비공개 백업은 포함하지 않는다.
+
+KYWA 흰 헤더/분석 버튼 복원 및 AYF 부서·성명 제거를 포함한다. Render 배포의 최종 결과는 HANDOFF.md에 별도로 기록한다. 실제 AX 등록은 수행하지 않았다.
