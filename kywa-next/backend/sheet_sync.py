@@ -12,7 +12,8 @@ from .compact_storage import TAB, VISIBLE, clean, metadata, metadata_entries, pa
 from .domain import HISTORY_HEADERS, digest, now
 from .migrate import timestamp, integer, drive_id
 from .organization import Policy
-from .repository import RepositoryError, cells, google_client, quoted
+from . import repository
+from .repository import RepositoryError, cells, quoted
 from .sheet_format import canonical, DATE_FORMAT, format_requests
 from .sheet_schema import Layout
 from .visible_layout import VisibleLayout, is_visible
@@ -58,7 +59,7 @@ class GoogleRows:
 
     def __init__(self, repo, read_grid=None):
         self.repo, self.sid = repo, repo.settings.spreadsheet_id
-        self.api = google_client(repo.settings, 'sheets', 'v4').spreadsheets()
+        self.api = repository.google_client(repo.settings, 'sheets', 'v4').spreadsheets()
         info = read_grid or self.api.get(spreadsheetId=self.sid, fields='sheets.properties').execute()
         self.ids = {s['properties']['title']: s['properties']['sheetId'] for s in info['sheets']}
         self.sheet_id = self.ids[repo.settings.sheet_name]
@@ -71,7 +72,7 @@ class GoogleRows:
         """Fetch values, row identities and all journal chunks in one Sheets call."""
         from googleapiclient.errors import HttpError
         settings = repo.settings
-        api = google_client(settings, 'sheets', 'v4').spreadsheets()
+        api = repository.google_client(settings, 'sheets', 'v4').spreadsheets()
         try:
             grid = api.get(spreadsheetId=settings.spreadsheet_id,
                 ranges=[quoted(settings.sheet_name), quoted(TAB), quoted(settings.history_sheet_name)+'!A1'],
