@@ -64,6 +64,7 @@ def main():
                 r=find()
                 sh.batchUpdate(spreadsheetId=book,body={'requests':[{'deleteDimension':{'range':{'sheetId':gid,'dimension':'ROWS','startIndex':r-1,'endIndex':r}}}]}).execute()
             visible('delete')
+            proc.stdin.close()
             if proc.wait(timeout=15)!=0 or summary()!=original:raise RuntimeError('Fixture not restored')
         finally:
             if proc.poll() is None:proc.kill();proc.wait(timeout=10)
