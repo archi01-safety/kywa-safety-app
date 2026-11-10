@@ -5,7 +5,7 @@
   "outputDirectory": "frontend/out",
   "git": {
     "deploymentEnabled": {
-      "*": false,
+      "**": false,
       "pilot/kywa-vercel": true
     }
   },

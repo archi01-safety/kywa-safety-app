@@ -1,5 +1,7 @@
 # 새 PC에서 작업 이어가기
 
+Vercel 성능 시험은 `pilot/kywa-vercel`의 [별도 안내](VERCEL-PILOT.ko.md)를 따른다. Vercel 환경변수는 시험 프로젝트 Production에서 Secret으로 설정한다. 시험 전용 시트·폴더를 운영 환경설정으로 대체하지 않는다.
+
 먼저 HANDOFF.md와 AGENTS.md를 읽고 현재 브랜치·배포 상태를 확인한다. 운영 데이터 변경 없이 체험 환경부터 실행한다.
 
 AX 등록은 [AX-DEPLOYMENT.ko.md](AX-DEPLOYMENT.ko.md)를 별도로 따른다. 실행 진입점은 `python app.py`, 지정된 `PORT`와 `APP_BASE_PATH`, 소스 밖 `APP_DATA_DIR`를 사용한다. 기존 Render/root 화면은 APP_BASE_PATH를 비워 빌드한다. AX용 ZIP의 경로를 다른 슬러그로 바꾸면 화면도 재빌드해야 한다.
