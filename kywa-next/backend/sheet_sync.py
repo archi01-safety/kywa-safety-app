@@ -8,14 +8,14 @@ import copy
 import json
 import uuid
 
-from .compact_storage import TAB, VISIBLE, clean, metadata, packed, padded, visible
+from .compact_storage import TAB, VISIBLE, clean, metadata, metadata_entries, packed, padded, visible
 from .domain import HISTORY_HEADERS, digest, now
 from .migrate import timestamp, integer, drive_id
 from .organization import Policy
 from .repository import RepositoryError, cells, google_client, quoted
 from .sheet_format import canonical, DATE_FORMAT, format_requests
 from .sheet_schema import Layout
-from .visible_layout import VisibleLayout
+from .visible_layout import VisibleLayout, is_visible
 from .submitter_name import display_name
 from .storage_metrics import phase
 
@@ -54,14 +54,58 @@ def blank(row):
 
 
 class GoogleRows:
-    def __init__(self, repo):
+    _first_grid = None
+
+    def __init__(self, repo, read_grid=None):
         self.repo, self.sid = repo, repo.settings.spreadsheet_id
         self.api = google_client(repo.settings, 'sheets', 'v4').spreadsheets()
-        info = self.api.get(spreadsheetId=self.sid, fields='sheets.properties').execute()
+        info = read_grid or self.api.get(spreadsheetId=self.sid, fields='sheets.properties').execute()
         self.ids = {s['properties']['title']: s['properties']['sheetId'] for s in info['sheets']}
         self.sheet_id = self.ids[repo.settings.sheet_name]
         self._entries = None
         self._sheet_info = None
+        self._first_grid = None
+
+    @classmethod
+    def for_listing(cls, repo):
+        """Fetch values, row identities and all journal chunks in one Sheets call."""
+        from googleapiclient.errors import HttpError
+        settings = repo.settings
+        api = google_client(settings, 'sheets', 'v4').spreadsheets()
+        try:
+            grid = api.get(spreadsheetId=settings.spreadsheet_id,
+                ranges=[quoted(settings.sheet_name), quoted(TAB), quoted(settings.history_sheet_name)+'!A1'],
+                fields='sheets(properties(title,sheetId),data(startRow,rowMetadata(developerMetadata),rowData(values(effectiveValue,note))))'
+            ).execute()
+        except HttpError as exc:
+            # Pre-migration sheets may have no management tab. Keep their original reader.
+            if exc.resp.status == 400 and 'Unable to parse range' in str(exc):
+                return None
+            raise
+        sheets = {s['properties']['title']: s for s in grid['sheets']}
+        assessment_grid = sheets[settings.sheet_name]
+        header = next(cls.value_rows(assessment_grid), [])
+        if not is_visible(header, settings.organization):
+            return None
+        entries = metadata_entries(list(cls.value_rows(sheets[TAB])))
+        if not enabled(entries):
+            return None
+        gateway = cls(repo, read_grid=grid)
+        gateway._entries = entries
+        # Pending recovery must fetch its own full grid and formatting.
+        if not any(kind in ('request', 'edit') and item.get('state') in ('appending','pending')
+                   for (kind, _), (_, item) in entries.items()):
+            gateway._first_grid = assessment_grid
+        return gateway
+
+    @staticmethod
+    def value_rows(sheet):
+        for block in sheet.get('data', []):
+            for row in block.get('rowData', []):
+                values = [next(iter(c.get('effectiveValue', {}).values()), '') for c in row.get('values', [])]
+                while values and values[-1] == '':
+                    values.pop()
+                yield values
 
     def entries(self):
         if self._entries is None:
@@ -69,19 +113,23 @@ class GoogleRows:
         return copy.deepcopy(self._entries)
 
     def snapshot(self):
-        data = self.api.get(spreadsheetId=self.sid, ranges=[quoted(self.repo.settings.sheet_name)+'!A:S'],
-            includeGridData=True, fields='sheets(properties,tables,basicFilter,bandedRanges,data(startRow,rowMetadata(developerMetadata),rowData(values(effectiveValue,note,userEnteredFormat))))').execute()
-        self._sheet_info = data['sheets'][0]
+        sheet, self._first_grid = self._first_grid, None
+        light = sheet is not None
+        if not light:
+            data = self.api.get(spreadsheetId=self.sid, ranges=[quoted(self.repo.settings.sheet_name)+'!A:S'],
+                includeGridData=True, fields='sheets(properties,tables,basicFilter,bandedRanges,data(startRow,rowMetadata(developerMetadata),rowData(values(effectiveValue,note,userEnteredFormat))))').execute()
+            sheet = self._sheet_info = data['sheets'][0]
         rows, notes, formats = [], {}, {}
         found=[]
-        for block in data['sheets'][0].get('data', []):
+        for block in sheet.get('data', []):
             for dimension in block.get('rowMetadata',[]): found.extend(dimension.get('developerMetadata',[]))
             for index, item in enumerate(block.get('rowData', []), block.get('startRow', 0)):
                 while len(rows) <= index: rows.append([])
                 cs = item.get('values', [])[:19]
                 rows[index] = [next(iter(c.get('effectiveValue', {}).values()), '') for c in cs]
                 if cs and cs[0].get('note', '').startswith(NOTE): notes[index] = cs[0]['note']
-                formats[index] = [c.get('userEnteredFormat', {}) for c in cs]
+                if not light:
+                    formats[index] = [c.get('userEnteredFormat', {}) for c in cs]
         if not rows:
             raise SyncError('sheet_schema', '기관 평가표의 19개 열을 확인하세요.')
         while rows[0] and rows[0][-1] == '': rows[0].pop()

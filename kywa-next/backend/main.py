@@ -70,7 +70,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     drive = drive or DriveStore(cfg)
     ai = ai or AIService(cfg)
     drafts, limits = Drafts(), RateLimiter()
-    overview_cache, overview_lock = {}, threading.Lock()
+    overview_cache = {}
     draft_epochs = {}
     epoch_lock = threading.Lock()
     pin_auth = PinAuth(cfg.admin_pin_hash) if cfg.auth_mode == 'pin' else None
@@ -232,6 +232,11 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 target['urgent'] = next((g.urgent for g in org.policy.grades if g.name == target.get('grade')), False)
         return r
 
+    def listing_snapshot():
+        if hasattr(repo, 'listing_snapshot'):
+            return repo.listing_snapshot()
+        return repo.snapshot() if hasattr(repo, 'snapshot') else (repo.records(), [])
+
     def filtered(request, facility='', department='', status='', start='', end='', strict=False):
         account = user(request)
         try:
@@ -245,7 +250,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             return (can_view(account, r) and (not facility or r['facility'] == facility)
                     and (not department or r['department'] == department) and (not status or r['status'] == status)
                     and (not start or day >= start) and (not end or day <= end))
-        records,issues=repo.snapshot() if hasattr(repo,'snapshot') else (repo.records(),[])
+        if strict:
+            records, issues = repo.snapshot() if hasattr(repo, 'snapshot') else (repo.records(), [])
+        else:
+            records, issues = listing_snapshot()
         selected_issues=[i for i in issues if can_view(account,i)
             and (not facility or not i.get('facility') or i['facility']==facility)
             and (not department or not i.get('department') or i['department']==department)
@@ -303,15 +311,15 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                                  'secondary_colors': palette(org.branding.secondary)}}, 'report_max_rows': cfg.report_max_rows}
 
     @app.get('/api/overview')
-    def overview(request: Request, year: int | None = None):
+    def overview(request: Request, year: int | None = None, fresh: bool = False):
         year = int(now()[:4]) if year is None else year
         if not 2000 <= year <= 2100:
             raise HTTPException(422, '조회 연도를 확인하세요.')
         if not limits.allow('overview:' + session(request), 30, 60):
             raise HTTPException(429, '잠시 후 다시 조회하세요.')
-        with overview_lock:
-            if (org.enhanced and hasattr(repo,'snapshot')) or time.monotonic() >= overview_cache.get('expires', 0):
-                records = repo.records()
+        with repo.lock:
+            if fresh or time.monotonic() >= overview_cache.get('expires', 0):
+                records, _ = listing_snapshot()
                 years = {year} | {int(r['created_at'][:4]) for r in records
                                  if str(r.get('created_at', ''))[:4].isdigit()}
                 overview_cache['data'] = {y: summarize(records, y, org) for y in years}
