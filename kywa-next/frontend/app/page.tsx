@@ -1,5 +1,6 @@
 "use client";
 
+import { uploadPhoto } from "./pilot-photo";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowDownToLine, ArrowRight, ArrowUpRight, Check, CheckCircle2, ChevronRight, ClipboardCheck, FileBarChart2, FileText, ImagePlus, LayoutDashboard, LoaderCircle, LockKeyhole, LogIn, LogOut, Mail, Phone, Plus, RotateCcw, Search, ShieldCheck, Sparkles, TriangleAlert, X } from "lucide-react";
 
@@ -66,8 +67,8 @@ export default function Home() {
   const epoch = useRef(0);
   const persistentWrite = useRef(false);
   const retry = useRef<(() => void) | undefined>(undefined);
-  const [records, setRecords] = useState<Assessment[]>([]);
-  const [sheetIssues, setSheetIssues] = useState<SheetIssue[]>([]);
+  const [loadedRecords, setRecords] = useState<Assessment[]>([]);
+  const [loadedIssues, setSheetIssues] = useState<SheetIssue[]>([]);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [selectedId, setSelectedId] = useState("");
   const [facility, setFacility] = useState("중앙");
@@ -79,6 +80,12 @@ export default function Home() {
   const [homeVersion, setHomeVersion] = useState(0);
   const requests = useRef(new Map<string, string>());
   const csrf = useRef("");
+  const listCache = useRef(new Map<string, {items: Assessment[]; issues: SheetIssue[]; at: number; revision: number}>());
+  const scope = JSON.stringify([boot?.csrf, boot?.user?.email, boot?.user?.role, boot?.user?.facilities]);
+  const listKey = JSON.stringify([scope, filters]);
+  const [loadedKey, setLoadedKey] = useState("");
+  const records = boot?.user ? (loadedKey === listKey ? loadedRecords : listCache.current.get(listKey)?.items ?? []) : [];
+  const sheetIssues = boot?.user ? (loadedKey === listKey ? loadedIssues : listCache.current.get(listKey)?.issues ?? []) : [];
   const running = useRef(false);
 
   const api = useCallback(async (path: string, body?: object | FormData) => {
@@ -143,11 +150,22 @@ export default function Home() {
   useEffect(() => { if (!enhanced) return; const channel = new BroadcastChannel(authChannel); channel.onmessage = () => { void bootstrap(); }; return () => channel.close(); }, [enhanced, bootstrap]);
   useEffect(() => {
     let cancelled = false;
-    if (!boot?.user) { if (!kywa.current) setRecords([]); return; }
-    api(`/assessments?${new URLSearchParams(filters)}`).then(r => r.json()).then(data => { if (!cancelled) { setRecords(data.items); setSheetIssues(data.issues || []); } }).catch(e => { if (!cancelled) { if (!kywa.current) setRecords([]); setError(e.message); } });
+    if (!boot?.user) {
+      listCache.current.clear(); setRecords([]); setSheetIssues([]); setLoadedKey(""); return;
+    }
+    if (tab === "inspect") return;
+    const previous = listCache.current.get(listKey);
+    if (previous && previous.revision === revision && Date.now() - previous.at < 30_000) return;
+    api(`/assessments?${new URLSearchParams(filters)}`).then(r => r.json()).then(data => {
+      if (cancelled) return;
+      const entry = {items: data.items, issues: data.issues || [], at: Date.now(), revision};
+      if (listCache.current.size >= 16) listCache.current.delete(listCache.current.keys().next().value!);
+      listCache.current.set(listKey, entry);
+      setLoadedKey(listKey); setRecords(entry.items); setSheetIssues(entry.issues);
+    }).catch(e => { if (!cancelled) setError(e.message); });
     return () => { cancelled = true; };
-  }, [api, boot?.user?.email, filters, revision]);
-  const navigate = (next: string) => { setTab(next); setSelectedId(""); setError(""); setFilters(emptyFilters); if (enhanced) setRevision(v => v+1); history.replaceState(null, "", appPath(`/#${next}`)); };
+  }, [api, listKey, boot?.user?.email, filters, revision, tab]);
+  const navigate = (next: string) => { setTab(next); setSelectedId(""); setError(""); history.replaceState(null, "", appPath(`/#${next}`)); };
   const confirmPolicy = (item: SheetIssue) => run("현재 KYWA 기준을 적용하고 있습니다", async () => {
     const body={revision:item.revision}; await api(`/assessments/${item.id}/policy`, {...body, request_id:requestId(`policy:${item.id}`,body)});
     setRevision(v=>v+1); setNotice("현재 KYWA 기준으로 점수와 등급을 반영했습니다.");
@@ -157,7 +175,7 @@ export default function Home() {
   const upload = async (file: File, update: (p: Photo) => void) => {
     await run("사진을 안전하게 처리하고 있습니다", async () => {
       update(null); if (file.size > (enhanced ? 20 : 10) * 1024 * 1024) throw new Error(`사진은 ${enhanced ? 20 : 10}MB 이하로 업로드해 주세요.`);
-      const f = new FormData(); f.set("photo", file); const result = await (await api("/photos/prepare", f)).json(); update({ ...result, confirmed: false, processed: false }); setNotice("사진을 준비했습니다. 분석을 시작해 주세요.");
+      const f = new FormData(); f.set("photo", await uploadPhoto(file)); const result = await (await api("/photos/prepare", f)).json(); update({ ...result, confirmed: false, processed: false }); setNotice("사진을 준비했습니다. 분석을 시작해 주세요.");
     });
   };
   const analyze = () => run("AI가 현장 위험요인을 분석하고 있습니다", async () => {
