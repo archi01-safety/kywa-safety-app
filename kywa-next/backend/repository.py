@@ -209,6 +209,17 @@ class SheetsRepository:
             store=self.sync_store()
             return store.sync() if store else (self.records(), [])
 
+    def listing_snapshot(self):
+        """Use the same reconciliation rules with a request-local Google response."""
+        from .sheet_sync import GoogleRows, Store
+        with self.lock:
+            if self.settings.organization.enhanced:
+                gateway = GoogleRows.for_listing(self)
+                if gateway is not None:
+                    self._row_sync_enabled = True
+                    return Store(self, gateway).sync()
+            return self.snapshot()
+
     def receipt(self, operation):
         with self.lock:
             store=self.sync_store()

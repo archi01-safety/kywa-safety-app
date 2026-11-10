@@ -57,7 +57,10 @@ def visible(record, width=19):
 
 
 def metadata(repo):
-    rows = repo._values(TAB)
+    return metadata_entries(repo._values(TAB))
+
+
+def metadata_entries(rows):
     if not rows or rows[0] != HEAD:
         raise SheetSchemaError('숨김 관리 탭을 준비하거나 백업을 복구해 주세요.')
     result = {}
