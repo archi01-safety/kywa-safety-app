@@ -1,2 +1,7 @@
-# AX Python app installers may discover this file at the ZIP root.
--r backend/requirements.lock
+# KYWA read-only Vercel Functions. Docker uses backend/requirements.lock.
+pydantic==2.13.5
+pydantic-settings==2.15.0
+requests==2.34.2
+google-auth==2.59.0
+cryptography==50.0.1
+tzdata==2026.4

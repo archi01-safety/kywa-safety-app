@@ -1,0 +1,39 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "cd frontend && npm ci && npm run build",
+  "outputDirectory": "frontend/out",
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "pilot/kywa-vercel": true
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/overview",
+      "methods": [
+        "GET"
+      ],
+      "dest": "/api/overview"
+    },
+    {
+      "src": "/api/assessments",
+      "methods": [
+        "GET"
+      ],
+      "dest": "/api/listing"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "https://kywa-safety-pilot-api.onrender.com/api/$1",
+      "headers": {
+        "Cache-Control": "private, no-store",
+        "x-vercel-enable-rewrite-caching": "0"
+      }
+    },
+    {
+      "handle": "filesystem"
+    }
+  ]
+}
