@@ -8,7 +8,7 @@ import { SessionClock, type AuthSession } from "./session-clock";
 import { SheetIssues, type SheetIssue } from "./sheet-issues";
 import { ProgressDialog } from "./progress-dialog";
 import { AssessmentResults } from "./assessment-results";
-import { PublicOverview } from "./public-overview";
+import { PublicOverview, type OverviewSnapshot } from "./public-overview";
 import { Guides } from "./guides";
 import { brand as defaultBrand, variables } from "./brand";
 import { calculated, Criteria, type Policy, type Organization } from "./policy";
@@ -66,8 +66,8 @@ export default function Home() {
   const epoch = useRef(0);
   const persistentWrite = useRef(false);
   const retry = useRef<(() => void) | undefined>(undefined);
-  const [records, setRecords] = useState<Assessment[]>([]);
-  const [sheetIssues, setSheetIssues] = useState<SheetIssue[]>([]);
+  const [loadedRecords, setRecords] = useState<Assessment[]>([]);
+  const [loadedIssues, setSheetIssues] = useState<SheetIssue[]>([]);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [selectedId, setSelectedId] = useState("");
   const [facility, setFacility] = useState("중앙");
@@ -79,6 +79,19 @@ export default function Home() {
   const [homeVersion, setHomeVersion] = useState(0);
   const requests = useRef(new Map<string, string>());
   const csrf = useRef("");
+  const overviewCache = useRef(new Map<number, OverviewSnapshot>());
+  const listCache = useRef(new Map<string, {items: Assessment[]; issues: SheetIssue[]; at: number; revision: number}>());
+  const scope = JSON.stringify([boot?.csrf, boot?.user?.email, boot?.user?.role, boot?.user?.facilities]);
+  const listKey = JSON.stringify([scope, filters]);
+  useEffect(() => {
+    listCache.current.clear();
+    setLoadedKey("");
+    setRecords([]);
+    setSheetIssues([]);
+  }, [scope]);
+  const [loadedKey, setLoadedKey] = useState("");
+  const records = boot?.user ? (loadedKey === listKey ? loadedRecords : listCache.current.get(listKey)?.items ?? []) : [];
+  const sheetIssues = boot?.user ? (loadedKey === listKey ? loadedIssues : listCache.current.get(listKey)?.issues ?? []) : [];
   const running = useRef(false);
 
   const api = useCallback(async (path: string, body?: object | FormData) => {
@@ -111,6 +124,7 @@ export default function Home() {
     setBusy(""); closeProgress(); setSubmitterName(""); setNameComposing(false);
     setDescription(""); setPhoto(null); setDraft(null); setSelectedId(""); setFilters(emptyFilters);
     setHomeVersion(v => v + 1);
+    listCache.current.clear(); overviewCache.current.clear(); setLoadedKey(""); setRecords([]); setSheetIssues([]);
     requests.current.clear(); actionDrafts.current.clear(); setFacility(boot?.facilities[0] || "중앙"); setDepartment(boot?.departments[0] || "");
     setTab("inspect"); setRevision(v => v + 1); history.replaceState(null, "", appPath("/#inspect"));
     window.scrollTo({top: 0, behavior: "instant"});
@@ -143,11 +157,22 @@ export default function Home() {
   useEffect(() => { if (!enhanced) return; const channel = new BroadcastChannel(authChannel); channel.onmessage = () => { void bootstrap(); }; return () => channel.close(); }, [enhanced, bootstrap]);
   useEffect(() => {
     let cancelled = false;
-    if (!boot?.user) { if (!kywa.current) setRecords([]); return; }
-    api(`/assessments?${new URLSearchParams(filters)}`).then(r => r.json()).then(data => { if (!cancelled) { setRecords(data.items); setSheetIssues(data.issues || []); } }).catch(e => { if (!cancelled) { if (!kywa.current) setRecords([]); setError(e.message); } });
+    if (!boot?.user) {
+      listCache.current.clear(); setRecords([]); setSheetIssues([]); setLoadedKey(""); return;
+    }
+    if (tab === "inspect") return;
+    const previous = listCache.current.get(listKey);
+    if (previous && previous.revision === revision && Date.now() - previous.at < 30_000) return;
+    api(`/assessments?${new URLSearchParams(filters)}`).then(r => r.json()).then(data => {
+      if (cancelled) return;
+      const entry = {items: data.items, issues: data.issues || [], at: Date.now(), revision};
+      if (listCache.current.size >= 16) listCache.current.delete(listCache.current.keys().next().value!);
+      listCache.current.set(listKey, entry);
+      setLoadedKey(listKey); setRecords(entry.items); setSheetIssues(entry.issues);
+    }).catch(e => { if (!cancelled) setError(e.message); });
     return () => { cancelled = true; };
-  }, [api, boot?.user?.email, filters, revision]);
-  const navigate = (next: string) => { setTab(next); setSelectedId(""); setError(""); setFilters(emptyFilters); if (enhanced) setRevision(v => v+1); history.replaceState(null, "", appPath(`/#${next}`)); };
+  }, [api, listKey, boot?.user?.email, filters, revision, tab]);
+  const navigate = (next: string) => { setTab(next); setSelectedId(""); setError(""); setFilters(emptyFilters); history.replaceState(null, "", appPath(`/#${next}`)); };
   const confirmPolicy = (item: SheetIssue) => run("현재 KYWA 기준을 적용하고 있습니다", async () => {
     const body={revision:item.revision}; await api(`/assessments/${item.id}/policy`, {...body, request_id:requestId(`policy:${item.id}`,body)});
     setRevision(v=>v+1); setNotice("현재 KYWA 기준으로 점수와 등급을 반영했습니다.");
@@ -235,7 +260,7 @@ export default function Home() {
             </div>
             {draft && <section className="results-section"><div className="section-top"><div><div className="eyebrow">REVIEW & SUBMIT</div><h2>AI 분석 결과 <span>{draft.items.length}건</span></h2><p className="muted">제출할 항목을 선택하고 내용을 수정할 수 있습니다. 관련근거는 원문을 확인하세요.</p></div><Badge value="검토 필요" /></div><fieldset disabled={!!busy}><Criteria policy={boot.organization.policy} /><AssessmentResults policy={boot.organization.policy} items={draft.items} onChange={items => setDraft({ ...draft, items })} /><div className={`submit-bar ${enhanced ? "next-action" : ""}`}><div><strong>{draft.items.filter(i => i.selected).length}개 항목 선택</strong><span>{enhanced ? "데이터 전송 시 안전센터 DB에 저장되며, 담당자의 검토가 진행됩니다." : "검토를 마치면 담당자에게 전달됩니다."}</span></div><button className="button primary" disabled={!!busy || boot.mode === "setup" || enhanced && !!photo && !photo.confirmed || nameBlocked || !draft.items.some(i => i.selected) || draft.items.some(i => i.selected && (!i.location.trim() || !i.scenario.trim() || !i.solution.trim()))} onClick={submit}>{enhanced ? `${brand.shortName} AI 안전센터로 데이터 전송` : "선택한 평가 제출"}<ArrowRight size={17} /></button></div></fieldset></section>}
             <Guides key={`guides-${homeVersion}`} api={api} keywords={draft?.guide_keywords || []} analysisId={draft?.draft_id || ""} />
-            <PublicOverview key={`overview-${homeVersion}`} api={api} revision={revision} />
+            <PublicOverview key={`overview-${homeVersion}`} api={api} revision={revision} snapshots={overviewCache.current} />
           </> : !boot.user ? <LoginPanel boot={boot} busy={!!busy} onPin={loginPin} onDemo={login} /> : tab === "reports" && boot.user.role !== "admin" ? <section className="panel"><Empty>결과보고서는 관리자 계정으로 이용할 수 있습니다.</Empty></section> : <>
             <div className="stats-grid"><Stat title="전체 위험성평가" value={records.length} unit="건" icon={<LayoutDashboard size={20} />} note="조회 조건에 해당하는 평가" /><Stat title="개선이 필요한 항목" value={pendingCount} unit="건" icon={<ClipboardCheck size={20} />} note="접수 및 조치 진행 중" /><Stat title="우선 확인할 위험" value={urgentCount} unit="건" icon={<TriangleAlert size={20} />} note="미완료 · 적용 기준상 우선 확인 등급" accent /><Stat title="개선조치 완료율" value={records.length ? Math.round(completeCount / records.length * 100) : 0} unit="%" icon={<CheckCircle2 size={20} />} note={`총 ${completeCount}건의 개선을 완료했어요`} /></div>
             <section className="panel filter-panel"><div className="filter-heading"><Search size={17} /><strong>조회 조건</strong><button className="text-button" onClick={() => { setFilters(emptyFilters); setSelectedId(""); }}><RotateCcw size={13} />초기화</button></div><div className="filters"><label>시설<select value={filters.facility} onChange={e => setFilters({ ...filters, facility: e.target.value })}><option value="">전체 시설</option>{boot.facilities.filter(f => boot.user!.role === "admin" || boot.user!.facilities.includes(f)).map(f => <option key={f}>{f}</option>)}</select></label>{org?.department_enabled !== false && <label>부서<select value={filters.department} onChange={e => setFilters({ ...filters, department: e.target.value })}><option value="">전체 부서</option>{boot.departments.map(d => <option key={d}>{d}</option>)}</select></label>}<label>처리상태<select value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })}><option value="">전체 상태</option>{["접수", "조치 중", "완료"].map(s => <option key={s}>{s}</option>)}</select></label><label>시작일<input aria-label="조회 시작일" type="date" value={filters.start} onChange={e => setFilters({ ...filters, start: e.target.value })} /></label><label>종료일<input aria-label="조회 종료일" type="date" value={filters.end} onChange={e => setFilters({ ...filters, end: e.target.value })} /></label></div></section>
