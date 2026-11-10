@@ -3,6 +3,7 @@ import argparse
 import os
 import sys
 import time
+import subprocess
 from uuid import uuid4
 from pathlib import Path
 import requests
@@ -15,7 +16,8 @@ from backend.domain import now
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('origin',choices=['https://kywa-safety-pilot-api.onrender.com','https://kywa-safety-pilot.vercel.app'])
-    origin=parser.parse_args().origin
+    parser.add_argument('--ui',action='store_true',help='Measure a real browser refreshing after a synthetic direct edit')
+    args=parser.parse_args(); origin=args.origin
     c=Settings(_env_file=None); book=c.spreadsheet_id
     assert book and book!=c.organization.storage.spreadsheet_id
     drive=google_client(c,'drive','v3')
@@ -44,6 +46,28 @@ def main():
         sh.values().update(spreadsheetId=book,range=f'{tab}!{col}{r}',valueInputOption='RAW',body={'values':[[value]]}).execute()
     original=summary()
     legacy=[now(),c.organization.facilities[0],c.organization.departments[0],mark,c.organization.categories[0],'합성 시트 수정 시험',1,1,1,'매우 낮음','단차 정비','시험 자료','사진 없음']
+    if args.ui:
+        script=Path(__file__).resolve().parents[1]/'frontend/scripts/bench-visible-edit.mjs'
+        proc=subprocess.Popen([os.environ.get('PILOT_NODE','node'),str(script),origin,mark],
+                              stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True,encoding='utf-8')
+        def visible(phase):
+            proc.stdin.write(phase+'\n');proc.stdin.flush()
+            result=proc.stdout.readline().strip()
+            if not result:raise RuntimeError('Browser refresh did not finish: '+phase)
+            print(origin,result,flush=True)
+        try:
+            if proc.stdout.readline().strip()!='READY':raise RuntimeError('Browser not ready')
+            sh.values().append(spreadsheetId=book,range=tab+'!A:S',valueInputOption='RAW',insertDataOption='INSERT_ROWS',body={'values':[legacy]}).execute()
+            try:
+                visible('add');set_cell('F','수정된 합성 위험상황');visible('edit')
+            finally:
+                r=find()
+                sh.batchUpdate(spreadsheetId=book,body={'requests':[{'deleteDimension':{'range':{'sheetId':gid,'dimension':'ROWS','startIndex':r-1,'endIndex':r}}}]}).execute()
+            visible('delete')
+            if proc.wait(timeout=15)!=0 or summary()!=original:raise RuntimeError('Fixture not restored')
+        finally:
+            if proc.poll() is None:proc.kill();proc.wait(timeout=10)
+        return
     sh.values().append(spreadsheetId=book,range=tab+'!A:S',valueInputOption='RAW',insertDataOption='INSERT_ROWS',body={'values':[legacy]}).execute()
     start=time.perf_counter()
     try:
