@@ -1,5 +1,9 @@
 # KYWA 개발·운영 인수인계
 
+## 2026-11-10 — KYWA 전용 Vercel 시험 브랜치
+
+이 브랜치는 운영/AX 배포용이 아니다. 시험 대상과 실측 결과, 미검증 항목은 [VERCEL-PILOT.ko.md](VERCEL-PILOT.ko.md)를 먼저 읽는다. KYWA 운영 커밋 `939dbe4`에서 분기했다. [Vercel 시험판](https://kywa-safety-pilot.vercel.app)과 [Render 시험 서버](https://kywa-safety-pilot-api.onrender.com)는 비공개 합성 시트·사진 폴더만 사용한다. 시험 키·PIN·서비스 계정 JSON을 저장소에 커밋하지 않는다. 다른 기관과 운영 Render의 버전을 변경하지 않는다.
+
 최종 갱신: 2026-11-02. 이 문서는 새 PC와 새 대화에서 가장 먼저 읽는 현재 상태 문서다. 과거 날짜가 적힌 DEPLOYMENT-NOTES.md 등의 기록과 충돌하면 현재 상태를 실제 서비스에서 확인한다.
 
 ## 최신 상태 — 디자인 검증·8개 Render 배포 완료
