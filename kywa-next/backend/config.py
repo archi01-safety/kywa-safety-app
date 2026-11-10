@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=os.environ.get('APP_ENV_FILE') or ROOT / '.env', extra='ignore')
+    pilot_reads: bool = False
     organization_id: str = 'kywa'
     organization_config_dir: str = ''
     app_env: str = 'demo'

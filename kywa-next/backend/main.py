@@ -70,6 +70,15 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     drive = drive or DriveStore(cfg)
     ai = ai or AIService(cfg)
     drafts, limits = Drafts(), RateLimiter()
+    pilot_reads = cfg.pilot_reads
+    if pilot_reads and (org.id != 'kywa' or cfg.app_env != 'development' or cfg.auth_mode != 'pin'):
+        raise ValueError('시험 조회는 KYWA 개발 저장소에서만 사용할 수 있습니다.')
+    def pilot_snapshot():
+        from .pilot_read import read_records, NeedsSync
+        try:
+            return read_records(cfg), []
+        except NeedsSync:
+            return repo.snapshot()
     overview_cache, overview_lock = {}, threading.Lock()
     draft_epochs = {}
     epoch_lock = threading.Lock()
@@ -112,7 +121,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['Referrer-Policy'] = 'same-origin'
         if route_path.startswith('/api/') or route_path == '/healthz':
-            response.headers['Cache-Control'] = 'no-store'
+            response.headers['Cache-Control'] = 'private, no-store' if pilot_reads else 'no-store'
         return response
 
     @app.exception_handler(RequestValidationError)
@@ -159,7 +168,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     def mutation(request):
         session(request)
-        if request.headers.get('origin', '').rstrip('/') != cfg.app_base_url.rstrip('/'):
+        allowed_origins = {cfg.app_base_url.rstrip('/')}
+        if cfg.pilot_reads:
+            allowed_origins.update({'https://kywa-safety-pilot-api.onrender.com','https://kywa-safety-pilot.vercel.app'})
+        if request.headers.get('origin', '').rstrip('/') not in allowed_origins:
             raise HTTPException(403, '허용되지 않은 요청 출처입니다.')
         if not hmac.compare_digest(request.headers.get('x-csrf-token', ''), request.session['csrf']):
             raise HTTPException(403, '세션을 새로고침한 뒤 다시 시도하세요.')
@@ -202,35 +214,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             raise HTTPException(404, '평가를 찾을 수 없거나 접근 권한이 없습니다.')
         return record, account
 
+    from .record_view import public_record as view_record
     def public_record(record):
-        r = copy.deepcopy(record)
-        for key in list(r):
-            if key.startswith('_sheet_'): r.pop(key)
-        for key in ('submit_hash', 'operation_id', 'submit_owner', 'legacy_values', '_sheet_row', '_sheet_hash', '_sheet_revision'):
-            r.pop(key, None)
-        b = r['before']
-        # Preserve the recorded grade, even when today's institution policy differs.
-        r['current_risk'] = {key:b[key] for key in ('p','s','score','grade')}
-        for target in [r, r.get('after') or {}]:
-            target.pop('photo_view_url', None)
-            fid = target.get('photo_id')
-            target['photo_url'] = cfg.public_path(f"/api/assessments/{r['id']}/photos/{fid}") if fid else ''
-        r['reassessment_policy'] = None
-        try:
-            r['reassessment_policy'] = record_policy(r, org).model_dump()
-        except ValueError:
-            pass
-        if not org.department_enabled:
-            r.pop('department', None)
-        if org.submitter_name.mode == 'disabled':
-            r.pop('submitter_name', None)
-        else:
-            r['submitter_name'] = display_name(r.get('submitter_name'))
-        for target in [r['before'], r.get('after') or {}]:
-            if 'tone' not in target:
-                target['tone'] = next((g.tone for g in org.policy.grades if g.name == target.get('grade')), -1)
-                target['urgent'] = next((g.urgent for g in org.policy.grades if g.name == target.get('grade')), False)
-        return r
+        return view_record(record, org, cfg)
 
     def filtered(request, facility='', department='', status='', start='', end='', strict=False):
         account = user(request)
@@ -245,7 +231,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             return (can_view(account, r) and (not facility or r['facility'] == facility)
                     and (not department or r['department'] == department) and (not status or r['status'] == status)
                     and (not start or day >= start) and (not end or day <= end))
-        records,issues=repo.snapshot() if hasattr(repo,'snapshot') else (repo.records(),[])
+        if pilot_reads and not strict and request.url.path == '/api/assessments':
+            records, issues = pilot_snapshot()
+        else:
+            records,issues=repo.snapshot() if hasattr(repo,'snapshot') else (repo.records(),[])
         selected_issues=[i for i in issues if can_view(account,i)
             and (not facility or not i.get('facility') or i['facility']==facility)
             and (not department or not i.get('department') or i['department']==department)
@@ -310,8 +299,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not limits.allow('overview:' + session(request), 30, 60):
             raise HTTPException(429, '잠시 후 다시 조회하세요.')
         with overview_lock:
-            if (org.enhanced and hasattr(repo,'snapshot')) or time.monotonic() >= overview_cache.get('expires', 0):
-                records = repo.records()
+            if (org.enhanced and hasattr(repo,'snapshot') and not pilot_reads) or (pilot_reads and request.query_params.get('fresh') == '1') or time.monotonic() >= overview_cache.get('expires', 0):
+                records = pilot_snapshot()[0] if pilot_reads else repo.records()
                 years = {year} | {int(r['created_at'][:4]) for r in records
                                  if str(r.get('created_at', ''))[:4].isdigit()}
                 overview_cache['data'] = {y: summarize(records, y, org) for y in years}
