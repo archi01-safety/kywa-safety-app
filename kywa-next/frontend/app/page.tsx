@@ -40,6 +40,12 @@ function Empty({ children }: { children: React.ReactNode }) { return <div classN
 
 export default function Home() {
   const [boot, setBoot] = useState<Bootstrap | null>(null);
+  useEffect(() => {
+    if (!['kywa-safety-pilot.vercel.app','kywa-safety-pilot-api.onrender.com'].includes(location.hostname)
+        || new URLSearchParams(location.search).get('pilot_measure')!=='1') return;
+    const script=document.createElement('script'); script.src='/pilot-device.js'; document.body.append(script);
+    return ()=>{script.remove();document.getElementById('pilot-timing')?.remove();};
+  }, []);
   const org = boot?.organization;
   const enhanced = (org?.experience_version || 0) >= 2 || org?.id === "kywa";
   const kywa = useRef(false); kywa.current = enhanced;
