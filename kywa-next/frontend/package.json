@@ -7,7 +7,7 @@
     "build": "next build",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "test:unit": "node --experimental-strip-types --test tests/submitter-name.unit.mjs tests/download-name.unit.mjs",
+    "test:unit": "node --experimental-strip-types --test tests/submitter-name.unit.mjs tests/download-name.unit.mjs tests/resume-gate.unit.mjs",
     "postbuild": "node scripts/write-build-config.mjs"
   },
   "dependencies": {

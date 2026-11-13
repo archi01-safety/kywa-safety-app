@@ -1,0 +1,369 @@
+{
+  "version": "v1.2.0",
+  "baseline": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+  "scope": [
+    "kywa",
+    "ayf",
+    "fowi",
+    "khidi",
+    "knps",
+    "knf",
+    "kohi",
+    "cayf"
+  ],
+  "backend": {
+    "passed": 337,
+    "failed": 0,
+    "execution": "26 isolated Windows pytest module processes",
+    "note": "Same-process runs encountered intermittent openpyxl temporary-file lock/descriptor errors; product backend unchanged."
+  },
+  "frontend": {
+    "unit_passed": 20,
+    "typescript": true,
+    "root_webpack_build": true,
+    "ax_webpack_build": true
+  },
+  "browser": {
+    "method": "CUA local synthetic fixtures",
+    "risk_records": 36,
+    "widths": [
+      320,
+      390,
+      768,
+      1280,
+      1440,
+      1920
+    ],
+    "independent_scroll": true,
+    "plan_reassessment_completion_save": true,
+    "mobile_source_jump": true,
+    "root_and_ax": true,
+    "dark_and_light": true,
+    "resize_assessment_requests_before": 1,
+    "resize_assessment_requests_after": 1,
+    "partner_headers": [
+      [
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 740,
+          "name": "한국산림복지진흥원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 320
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 844,
+          "name": "한국산림복지진흥원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 390
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1024,
+          "name": "한국산림복지진흥원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 768
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1000,
+          "name": "한국산림복지진흥원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 1440
+        }
+      ],
+      [
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 740,
+          "name": "한국보건산업진흥원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 320
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 844,
+          "name": "한국보건산업진흥원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 390
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1024,
+          "name": "한국보건산업진흥원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 768
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1000,
+          "name": "한국보건산업진흥원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 1440
+        }
+      ],
+      [
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 740,
+          "name": "국립공원공단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 320
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 844,
+          "name": "국립공원공단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 390
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1024,
+          "name": "국립공원공단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 768
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1000,
+          "name": "국립공원공단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 1440
+        }
+      ],
+      [
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 740,
+          "name": "한전원자력연료\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 320
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 844,
+          "name": "한전원자력연료\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 390
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1024,
+          "name": "한전원자력연료\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 768
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1000,
+          "name": "한전원자력연료\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 1440
+        }
+      ],
+      [
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 740,
+          "name": "한국보건복지인재원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 320
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 844,
+          "name": "한국보건복지인재원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 390
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1024,
+          "name": "한국보건복지인재원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 768
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1000,
+          "name": "한국보건복지인재원\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 1440
+        }
+      ],
+      [
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 740,
+          "name": "천안시청소년재단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 320
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 844,
+          "name": "천안시청소년재단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 390
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1024,
+          "name": "천안시청소년재단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 768
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1000,
+          "name": "천안시청소년재단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 1440
+        }
+      ],
+      [
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 740,
+          "name": "안양시청소년재단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 320
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 68,
+          "height": 844,
+          "name": "안양시청소년재단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 390
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1024,
+          "name": "안양시청소년재단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 768
+        },
+        {
+          "brandInside": true,
+          "controlsInside": true,
+          "headerHeight": 76,
+          "height": 1000,
+          "name": "안양시청소년재단\n×\n한국청소년활동진흥원",
+          "overflow": false,
+          "sideBySide": true,
+          "width": 1440
+        }
+      ]
+    ],
+    "draft_selection_preservation": true,
+    "filter_preservation": "Reviewed menu change handler; no filter reset"
+  },
+  "actions": {
+    "repositories_disabled": [
+      "kywa-safety-app",
+      "kywa-ai-risk-assessment"
+    ],
+    "deleted_artifacts": 70,
+    "deleted_bytes": 1476204019,
+    "private_release_archives_retained": 2,
+    "default_branch_workflows_deleted": 17,
+    "source_workflows_deleted": 7,
+    "package_templates_deleted": 2,
+    "new_ci_run": false
+  },
+  "unchanged": [
+    "sheet values/schema",
+    "Google integration",
+    "institution policies/prompts",
+    "authentication/environment",
+    "logo source",
+    "disabled detailed scoring"
+  ],
+  "limitations": [
+    "Local Docker unavailable; use actual Render Docker build/Live evidence separately.",
+    "Actual AX platform registration not performed."
+  ],
+  "deployment": "pending"
+}
