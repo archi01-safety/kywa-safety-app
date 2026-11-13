@@ -77,7 +77,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     from .organization import Policy as AssessmentPolicy
     observations_cache = ObservationCache()
     from .law_links import LawLinks, references
-    law_links = LawLinks(cfg.law_api_oc)
+    law_links = LawLinks(cfg.law_api_oc,referer=cfg.app_base_url)
     overview_cache = {}
     draft_epochs = {}
     epoch_lock = threading.Lock()
@@ -87,7 +87,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         pin_auth=PersistentPinAuth(cfg.admin_pin_hash,SheetsPinSessions(repo,cfg.admin_pin_hash))
     expensive, memory_lock = threading.BoundedSemaphore(2), threading.BoundedSemaphore(1)
     from .report_jobs import ReportJobs, MIMES
-    report_jobs = ReportJobs(ai,drive,org,memory_lock)
+    report_jobs = ReportJobs(ai,drive,org,memory_lock,law_links)
     app = FastAPI(title=f'{org.short_name} Safety API', root_path=cfg.app_base_path, docs_url='/api/docs' if cfg.demo else None, redoc_url=None,
                   openapi_url='/api/openapi.json' if cfg.demo else None)
     app.state.repo, app.state.drafts, app.state.settings = repo, drafts, cfg
@@ -802,7 +802,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not memory_lock.acquire(blocking=False):
             raise HTTPException(429, '다른 사진 또는 보고서를 처리 중입니다. 잠시 후 다시 시도하세요.')
         try:
-            output = reports.excel(records, drive, org) if data.format == 'xlsx' else reports.pdf(records, drive, org)
+            from .law_links import verified_records
+            export_records=verified_records(records,law_links) if org.enhanced else records
+            output = reports.excel(export_records, drive, org) if data.format == 'xlsx' else reports.pdf(export_records, drive, org)
             if org.enhanced:
                 from .report_jobs import signature
                 if signature(records)!=signature(filtered(request,strict=True,**data.model_dump(exclude={'format'}))):

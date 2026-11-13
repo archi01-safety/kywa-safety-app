@@ -20,7 +20,7 @@ test('same photo box accepts a second drop, order, limit and plan without reasse
   expect(await box.locator('img').evaluateAll(images=>images.map(i=>(i as HTMLImageElement).src))).toEqual(before.reverse());
   await box.dispatchEvent('drop',{dataTransfer:dropped});
   await expect(box.locator('.photo-tile')).toHaveCount(2);
-  await expect(page.getByRole('alert')).toContainText('최대 2장');
+  await expect(page.locator('.photo-input .upload-error')).toContainText('최대 2장');
   await page.getByRole('button',{name:'KYWA AI 위험요인 분석 시작',exact:true}).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
   await expect(page.getByRole('dialog')).toBeHidden();

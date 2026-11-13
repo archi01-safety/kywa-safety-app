@@ -19,8 +19,9 @@ def signature(records):
 
 
 class ReportJobs:
-    def __init__(self,ai,drive,org,memory_lock):
+    def __init__(self,ai,drive,org,memory_lock,law_links=None):
         self.ai,self.drive,self.org,self.memory_lock=ai,drive,org,memory_lock
+        self.law_links=law_links
         self.jobs={}; self.cache={}; self.lock=threading.RLock()
         self.executor=ThreadPoolExecutor(max_workers=1,thread_name_prefix='report')
 
@@ -64,6 +65,10 @@ class ReportJobs:
             with self.lock: job.update(state='running',stage=value)
         try:
             with self.memory_lock:
+                if self.law_links:
+                    from .law_links import verified_records
+                    stage('관련 법령의 조문과 시행일을 확인 중')
+                    records=verified_records(records,self.law_links)
                 if job['format']=='xlsx':
                     stage('상세 내역과 사진을 Excel에 배치 중')
                     output=reports.excel(records,self.drive,self.org)

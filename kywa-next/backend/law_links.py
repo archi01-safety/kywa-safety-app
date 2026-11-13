@@ -46,17 +46,20 @@ def citations(text):
 
 
 class LawLinks:
-    def __init__(self, oc='', get=None):
+    def __init__(self, oc='', get=None, referer=''):
         self.oc,self.get=oc,get or httpx.get
+        self.referer=referer
         self.cache=OrderedDict(); self.lock=threading.RLock()
 
     def _xml(self, endpoint, **params):
         response=self.get('https://www.law.go.kr/DRF/'+endpoint,
             params={'OC':self.oc,'target':'law','type':'XML',**params},timeout=8,
-            headers={'User-Agent':'KYWA-Safety/1.1','Referer':'https://www.law.go.kr/'},follow_redirects=False)
+            headers={'User-Agent':'KYWA-Safety/1.1',**({'Referer':self.referer} if self.referer else {})},follow_redirects=False)
         response.raise_for_status()
         if len(response.content)>4*1024*1024 or b'<!DOCTYPE' in response.content.upper(): raise ValueError()
-        return ET.fromstring(response.content)
+        root=ET.fromstring(response.content)
+        if root.tag=='Response':raise ValueError('Official API rejected request parameters')
+        return root
 
     def _verify(self,citation):
         matches=self._xml('lawSearch.do',target='eflaw',query=citation['name'],search=1,display=30,nw=3)
@@ -66,16 +69,23 @@ class LawLinks:
         effective=law.findtext('시행일자','')
         from .domain import now
         if not identifier.isdigit() or not re.fullmatch(r'\d{8}',effective) or effective>now()[:10].replace('-',''): return None
-        body=self._xml('lawService.do',target='eflaw',MST=identifier,efYd=effective)
+        article_params={}
+        if citation['number']:
+            if len(citation['number'])>4 or len(citation['sub'])>2:return None
+            article_params['JO']=citation['number'].zfill(4)+(citation['sub'] or '0').zfill(2)
+        body=self._xml('lawService.do',target='eflaw',MST=identifier,efYd=effective,**article_params)
         if compact(body.findtext('.//법령명_한글',''))!=compact(citation['name']): return None
         if citation['number']:
-            articles=[a for a in body.findall('.//조문단위') if a.findtext('조문번호')==citation['number']
+            articles=[a for a in body.findall('.//조문단위') if a.findtext('조문번호')==citation['number'] and a.findtext('조문여부','조문')=='조문'
                       and a.findtext('조문가지번호','') in ((citation['sub'],) if citation['sub'] else ('','0'))]
             if len(articles)!=1: return None
             article=articles[0]
-            if '삭제' in article.findtext('조문내용',''): return None
+            if re.match(r'^\s*(?:제\d+조(?:의\d+)?\s*)?삭제(?:\s|<|\[|$)',article.findtext('조문내용','')):return None
             if citation['title'] and compact(citation['title'])!=compact(article.findtext('조문제목','')): return None
-        url='https://www.law.go.kr/법령/'+quote(compact(citation['name']),safe='')+'/('+effective+')'
+        url='https://www.law.go.kr/법령/'+quote(compact(citation['name']),safe='')
+        number=re.sub(r'\D','',law.findtext('공포번호',''))
+        published=law.findtext('공포일자','')
+        if number and re.fullmatch(r'\d{8}',published):url+='/('+effective+','+number+','+published+')'
         if citation['number']: url+='/'+quote('제'+citation['number']+'조'+('의'+citation['sub'] if citation['sub'] else ''),safe='')
         return {'label':citation['label'],'url':url,'verified':True,'effective_date':effective,'message':'공식 원문 확인 · 현장 적합성 판정과는 별도'}
 
@@ -85,7 +95,7 @@ class LawLinks:
             key=(self.oc,*citation['key'],citation['title'])
             with self.lock:
                 cached=self.cache.get(key)
-            if cached and time.monotonic()-cached[0]<3600:
+            if cached and time.monotonic()-cached[0]<(3600 if cached[1]['verified'] else 60):
                 result.append(copy.deepcopy(cached[1]));continue
             value=None
             if self.oc:
@@ -105,3 +115,12 @@ def references(record):
     before=record.get('before',record)
     refs=before.get('law_references') or LawLinks().resolve(before.get('law',''))
     return [r for r in refs if safe_url(r.get('url',''))]
+
+
+def verified_records(records,service):
+    """Enrich a report snapshot, never the source rows or its revision signature."""
+    result=copy.deepcopy(records)
+    texts={r['before'].get('law','') for r in result}
+    resolved={text:service.resolve(text) for text in texts}
+    for record in result:record['before']['law_references']=copy.deepcopy(resolved[record['before'].get('law','')])
+    return result
