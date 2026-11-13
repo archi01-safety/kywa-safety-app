@@ -19,6 +19,7 @@ from .repository import RepositoryError, cells, quoted
 from .sheet_format import canonical, DATE_FORMAT, format_requests
 from .sheet_schema import Layout
 from .visible_layout import VisibleLayout, is_visible
+from .column_alignment import row_alignment
 from .submitter_name import display_name
 from .storage_metrics import phase
 
@@ -340,6 +341,7 @@ class Store:
             for index,cell in enumerate(row['values']):
                 template_index = index if index < len(template) else 12
                 cell['userEnteredFormat']=copy.deepcopy(template[template_index])
+                cell['userEnteredFormat']['horizontalAlignment']=row_alignment(index)
             for index in (12,17,19):
                 # Do not inherit an earlier photo's explicitly formatted hyperlink.
                 text = row['values'][index]['userEnteredFormat'].setdefault('textFormat',{})
