@@ -93,6 +93,8 @@ def create_excel(records,store,org):
     summary=wb.create_sheet('집계')
     for row in [('기관',org.name),('전체 건수',len(records)),('완료 건수',sum(r['status']=='완료' for r in records)),('미완료 건수',sum(r['status']!='완료' for r in records)),*Counter(r['before']['grade'] for r in records).items()]: summary.append(row)
     summary.column_dimensions['A'].width=25;summary.column_dimensions['B'].width=60
+    for row in summary:
+        for cell in row:cell.alignment=Alignment(vertical='center',horizontal='center',wrap_text=True)
     laws=wb.create_sheet('관련근거');laws.append(['번호','장소','관련근거','원문 확인','시행일'])
     for index,record in enumerate(records,1):
         for ref in references(record):
@@ -109,6 +111,10 @@ def create_excel(records,store,org):
             for key,title in [('p_levels','빈도'),('s_levels','강도')]:
                 for level in policy[key]: criteria.append([policy['version'],title,level['value'],level['description']])
             for c in policy['cells']: criteria.append([policy['version'],policy['method'],c['p'],c['s'],c['score'],c['grade']])
+        for row in criteria:
+            for cell in row:
+                short=cell.row==1 or cell.column!=4 or isinstance(cell.value,(int,float))
+                cell.alignment=Alignment(vertical='center',wrap_text=True,horizontal='center' if short else 'left')
     for sheet in wb:
         if sheet!=ws: sheet.sheet_view.tabSelected=False
         for row in sheet:

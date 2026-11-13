@@ -109,3 +109,11 @@ def test_export_short_columns_are_centered_but_narratives_and_law_text_remain_le
     laws=wb['관련근거']
     for col in (1,4,5):assert laws.cell(2,col).alignment.horizontal=='center'
     assert laws.cell(2,3).hyperlink and ws.page_setup.orientation=='landscape'
+
+    assert wb['집계']['B2'].alignment.horizontal=='center'
+    criteria=wb['평가기준']
+    for row in criteria.iter_rows(min_row=2):
+        for cell in row:
+            if cell.column!=4 or isinstance(cell.value,(int,float)):
+                assert cell.alignment.horizontal=='center'
+            else:assert cell.alignment.horizontal=='left'
