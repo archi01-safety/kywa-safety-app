@@ -30,7 +30,7 @@ def citations(text):
     results=[]
     for part in re.split(r'[;\n•]+',text):
         clean=re.sub(r'[「」『』]','',part)
-        matches=list(re.finditer(r'([가-힣][가-힣· ]*?(?:시행규칙|시행령|규칙|법률|법))(?=\s|제|$|[,(:])',clean))
+        matches=list(re.finditer(r'([가-힣][가-힣· ]*?(?:시행규칙|시행령|규칙|법률|법))(?!\s*시행(?:규칙|령))(?=\s|제|$|[,(:])',clean))
         for index,match in enumerate(matches):
             name=re.sub(r'^(?:및|또는|관련근거|근거|법령)\s+','',match[1].strip()); name=ALIASES.get(name,name)
             if name.startswith(('KOSHA','코샤')): continue

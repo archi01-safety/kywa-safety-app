@@ -44,6 +44,11 @@ def test_law_fallback_multiple_citations_and_no_untrusted_urls():
     assert all('key' not in x for x in refs)
 
 
+def test_spaced_enforcement_decree_is_not_mistaken_for_the_parent_act():
+    refs=citations('산업안전보건법 시행령 제2조; 산업안전보건법 시행규칙 제3조; 산업안전보건법 제38조')
+    assert [r['name'] for r in refs]==['산업안전보건법 시행령','산업안전보건법 시행규칙','산업안전보건법']
+
+
 def test_law_api_verifies_title_article_and_effective_date_without_key_leak():
     import httpx
     seen=[]
