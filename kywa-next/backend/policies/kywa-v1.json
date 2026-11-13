@@ -1,0 +1,198 @@
+{
+  "version": "KYWA-2026-6LEVEL-v1",
+  "method": "product",
+  "p_levels": [
+    {
+      "value": 1,
+      "description": "발생 가능성 매우 낮음"
+    },
+    {
+      "value": 2,
+      "description": "낮음"
+    },
+    {
+      "value": 3,
+      "description": "부주의하면 발생 가능"
+    },
+    {
+      "value": 4,
+      "description": "높음"
+    },
+    {
+      "value": 5,
+      "description": "매우 높음"
+    }
+  ],
+  "s_levels": [
+    {
+      "value": 1,
+      "description": "경미한 부상"
+    },
+    {
+      "value": 2,
+      "description": "응급처치 이상 비휴업"
+    },
+    {
+      "value": 3,
+      "description": "중대한 부상/휴업"
+    },
+    {
+      "value": 4,
+      "description": "사망 또는 영구장애"
+    }
+  ],
+  "grades": [
+    {
+      "name": "매우 낮음",
+      "tone": 0,
+      "urgent": false
+    },
+    {
+      "name": "낮음",
+      "tone": 1,
+      "urgent": false
+    },
+    {
+      "name": "보통",
+      "tone": 2,
+      "urgent": false
+    },
+    {
+      "name": "약간 높음",
+      "tone": 3,
+      "urgent": true
+    },
+    {
+      "name": "높음",
+      "tone": 4,
+      "urgent": true
+    },
+    {
+      "name": "매우 높음",
+      "tone": 5,
+      "urgent": true
+    }
+  ],
+  "cells": [
+    {
+      "p": 1,
+      "s": 1,
+      "score": 1,
+      "grade": "매우 낮음"
+    },
+    {
+      "p": 1,
+      "s": 2,
+      "score": 2,
+      "grade": "매우 낮음"
+    },
+    {
+      "p": 1,
+      "s": 3,
+      "score": 3,
+      "grade": "매우 낮음"
+    },
+    {
+      "p": 1,
+      "s": 4,
+      "score": 4,
+      "grade": "낮음"
+    },
+    {
+      "p": 2,
+      "s": 1,
+      "score": 2,
+      "grade": "매우 낮음"
+    },
+    {
+      "p": 2,
+      "s": 2,
+      "score": 4,
+      "grade": "낮음"
+    },
+    {
+      "p": 2,
+      "s": 3,
+      "score": 6,
+      "grade": "낮음"
+    },
+    {
+      "p": 2,
+      "s": 4,
+      "score": 8,
+      "grade": "보통"
+    },
+    {
+      "p": 3,
+      "s": 1,
+      "score": 3,
+      "grade": "매우 낮음"
+    },
+    {
+      "p": 3,
+      "s": 2,
+      "score": 6,
+      "grade": "낮음"
+    },
+    {
+      "p": 3,
+      "s": 3,
+      "score": 9,
+      "grade": "약간 높음"
+    },
+    {
+      "p": 3,
+      "s": 4,
+      "score": 12,
+      "grade": "약간 높음"
+    },
+    {
+      "p": 4,
+      "s": 1,
+      "score": 4,
+      "grade": "낮음"
+    },
+    {
+      "p": 4,
+      "s": 2,
+      "score": 8,
+      "grade": "보통"
+    },
+    {
+      "p": 4,
+      "s": 3,
+      "score": 12,
+      "grade": "약간 높음"
+    },
+    {
+      "p": 4,
+      "s": 4,
+      "score": 16,
+      "grade": "매우 높음"
+    },
+    {
+      "p": 5,
+      "s": 1,
+      "score": 5,
+      "grade": "낮음"
+    },
+    {
+      "p": 5,
+      "s": 2,
+      "score": 10,
+      "grade": "약간 높음"
+    },
+    {
+      "p": 5,
+      "s": 3,
+      "score": 15,
+      "grade": "높음"
+    },
+    {
+      "p": 5,
+      "s": 4,
+      "score": 20,
+      "grade": "매우 높음"
+    }
+  ]
+}

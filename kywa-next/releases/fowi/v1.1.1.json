@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "organization": "fowi",
+  "version": "v1.1.1",
+  "tag": "fowi/v1.1.1",
+  "source_commit": "54a789b27e3fa8e5fc66c19867b2a55b3bcb25d9",
+  "state": "superseded_after_live",
+  "site": "https://fowi-safety.onrender.com",
+  "organization_config_sha256": "388fcf31699cbb67a3bc04ac73fa80111725325647260de8190c7cc0ae05647c",
+  "policy_version": "FOWI-2026-v1",
+  "prompt_version": "FOWI-2026-11-02-v2",
+  "prompt_source_sha256": "aa603d7014f454a9aa19da72287fc9b9b7bca76813cf11864c95e6a1490ecf65",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbra8s6c6qcc73dadsh0",
+    "status": "previously Live",
+    "superseded_by": "v1.1.2"
+  },
+  "verification": {
+    "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43370988759",
+    "details": "HANDOFF.md 2026-11-13"
+  }
+}

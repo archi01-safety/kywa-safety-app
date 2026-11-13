@@ -1,0 +1,9 @@
+{
+  "file": "kywa-safety-source.zip",
+  "files": 224,
+  "bytes": 1071399,
+  "sha256": "de8cf2f79cfd04fa876a8ab700458f065f02a0094bd3cea806baf6d6eecb5551",
+  "application_commit": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+  "secrets_scan": "passed",
+  "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457"
+}

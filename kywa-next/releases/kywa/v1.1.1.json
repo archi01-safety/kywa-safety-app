@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "organization": "kywa",
+  "version": "v1.1.1",
+  "tag": "kywa/v1.1.1",
+  "source_commit": "54a789b27e3fa8e5fc66c19867b2a55b3bcb25d9",
+  "state": "superseded_after_live",
+  "site": "https://kywa-safety.onrender.com",
+  "organization_config_sha256": "fd22ea9c09b05f2d9135f1fe9001962c1ad0137a3cc55e5f5bf25b1c37ec4515",
+  "policy_version": "KYWA-2026-6LEVEL-v1",
+  "prompt_version": "KYWA-PROMPT-20261030-v2",
+  "prompt_source_sha256": "d6e867005d484b276b784f8eae721e244bc2f414e09fededc983777d83fa27e7",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbra3qt6e07s73b1l7jg",
+    "status": "previously Live",
+    "superseded_by": "v1.1.2"
+  },
+  "verification": {
+    "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43370988759",
+    "details": "HANDOFF.md 2026-11-13"
+  }
+}

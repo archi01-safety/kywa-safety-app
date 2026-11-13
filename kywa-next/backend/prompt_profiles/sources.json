@@ -1,0 +1,38 @@
+{
+  "fowi": {
+    "repository": "archi01-safety/kywa-ai-risk-assessment",
+    "branch": "fowi-ai",
+    "source_sha256": "b8afc64b8e7fecbc0330a1ebaba03d308874f77529c6ccc0f41e0f8200fe9da0",
+    "minor_risk_max": 4
+  },
+  "knps": {
+    "repository": "archi01-safety/kywa-ai-risk-assessment",
+    "branch": "knps-ai",
+    "source_sha256": "14fd9601b8d4c773f86edd8bbcea9ff60de9a79e8ca9f9212836635467a267af",
+    "minor_risk_max": 6
+  },
+  "knf": {
+    "repository": "archi01-safety/kywa-ai-risk-assessment",
+    "branch": "knfc-ai",
+    "source_sha256": "ed94d30e97f05bcf93d56a902b23e2d8e5b8a011501c54b05f2d8c781f8de9ea",
+    "minor_risk_max": 6
+  },
+  "kohi": {
+    "repository": "archi01-safety/kywa-ai-risk-assessment",
+    "branch": "kohi-ai",
+    "source_sha256": "523a1bd9a3847de8e44ee80f5a76f1a4a44f56114f9bc44b2995678a6d0ab6d2",
+    "minor_risk_max": 6
+  },
+  "khidi": {
+    "repository": "archi01-safety/kywa-ai-risk-assessment",
+    "branch": "khidi-ai",
+    "source_sha256": "83a538b400336f10b58bc3ef9915947b096cd41deb8a6aeaff96c1c20a2cbd8c",
+    "minor_risk_max": 5
+  },
+  "cayf": {
+    "repository": "archi01-safety/kywa-ai-risk-assessment",
+    "branch": "cayf",
+    "source_sha256": "e6ead408860627f8d6178a6ca6a89a4267332d4d72c66fcedeebe8768a2d46c5",
+    "minor_risk_max": 6
+  }
+}

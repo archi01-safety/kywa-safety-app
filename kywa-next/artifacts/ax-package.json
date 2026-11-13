@@ -1,0 +1,10 @@
+{
+  "file": "kywa-safety-ax.zip",
+  "base_path": "/apps/kywa-safety",
+  "files": 252,
+  "bytes": 1448008,
+  "sha256": "70593aeb0f312f2107592ddee1fbe0ce990de220e9b3fc849c8776661a266d08",
+  "application_commit": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+  "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457",
+  "secrets_scan": "passed"
+}

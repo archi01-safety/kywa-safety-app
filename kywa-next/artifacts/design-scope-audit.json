@@ -1,0 +1,26 @@
+{
+  "kywa": "all non-brand settings unchanged",
+  "fowi": "all non-brand settings unchanged",
+  "knps": "all non-brand settings unchanged",
+  "khidi": "all non-brand settings unchanged",
+  "knf": "all non-brand settings unchanged",
+  "kohi": "all non-brand settings unchanged",
+  "cayf": "all non-brand settings unchanged",
+  "ayf": "all non-brand settings unchanged",
+  "standard_css": "byte-identical",
+  "baseline": "4f9d6dc0d926d3316bb51e69d62a77d15452d035",
+  "backend_modified_files": [
+    "backend/branding.py",
+    "backend/main.py",
+    "backend/organization.py",
+    "backend/organizations/ayf.json",
+    "backend/organizations/cayf.json",
+    "backend/organizations/fowi.json",
+    "backend/organizations/khidi.json",
+    "backend/organizations/knf.json",
+    "backend/organizations/knps.json",
+    "backend/organizations/kohi.json",
+    "backend/organizations/kywa.json"
+  ],
+  "data_migrations": "none"
+}
