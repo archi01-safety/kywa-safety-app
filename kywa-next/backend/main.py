@@ -133,6 +133,13 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         response.headers['Referrer-Policy'] = 'same-origin'
         if route_path.startswith('/api/') or route_path == '/healthz':
             response.headers['Cache-Control'] = 'no-store'
+        elif (route_path == '/' or route_path.endswith('.html')
+              or response.headers.get('content-type', '').startswith('text/html')):
+            # Browsers otherwise use Last-Modified heuristic freshness for the app shell.
+            # A new deployment must revalidate HTML before loading its hashed bundles.
+            response.headers['Cache-Control'] = 'no-cache, max-age=0, must-revalidate'
+        elif route_path.startswith('/_next/static/'):
+            response.headers['Cache-Control'] = 'public, max-age=31536000, immutable'
         return response
 
     @app.exception_handler(RequestValidationError)
