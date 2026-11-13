@@ -70,6 +70,31 @@ def test_hidden_format_template_change_preserves_every_other_format_and_input():
         assert result[index]==expected
 
 
+@pytest.mark.parametrize('identity',['kywa','khidi','ayf'])
+def test_table_expansion_cannot_replace_the_new_rows_short_alignment(identity):
+    from backend.sheet_sync import GoogleRows
+    g=GoogleRows.__new__(GoogleRows);g.sheet_id=7;g.sid='copy';g.api=None
+    g.layout=layout(load_organization(identity))
+    g.repo=SimpleNamespace(settings=SimpleNamespace(sheet_name='평가'))
+    g._sheet_info={'properties':{'sheetId':7},'tables':[{'tableId':'table','range':{'sheetId':7,'startRowIndex':0,'endRowIndex':2,'endColumnIndex':len(g.layout.header)}}]}
+    styles=[{'horizontalAlignment':'CENTER','textFormat':{'fontFamily':'Roboto','fontSize':10}} for _ in g.layout.header]
+    def batch(requests):
+        for request in requests:
+            if 'updateTable' in request:
+                # Observed real Sheets behavior when a native table grows.
+                for style in styles:style.pop('horizontalAlignment',None)
+            elif request.get('updateCells',{}).get('fields')=='userEnteredFormat.horizontalAlignment':
+                for index,cell in enumerate(request['updateCells']['rows'][0]['values']):
+                    styles[index]['horizontalAlignment']=cell['userEnteredFormat']['horizontalAlignment']
+    g.batch=batch
+    g.finish_append([[],[],[]],[2])
+    assert styles[0]['horizontalAlignment']=='CENTER'
+    for canonical,physical in enumerate(g.layout.positions):
+        if physical is not None:
+            assert styles[physical]['horizontalAlignment']==('CENTER' if canonical in SHORT_CANONICAL else 'LEFT')
+            assert styles[physical]['textFormat']=={'fontFamily':'Roboto','fontSize':10}
+
+
 @pytest.mark.parametrize('identity',ORGS)
 def test_export_short_columns_are_centered_but_narratives_and_law_text_remain_left(identity):
     org=load_organization(identity);record=current_record(org)

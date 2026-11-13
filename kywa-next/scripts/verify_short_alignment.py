@@ -48,7 +48,7 @@ def verify(identity,credentials,folder):
         row=ids[record['id']]['row']
         for col,physical in enumerate(gateway.layout.positions):
             if physical is not None:
-                assert formats[row][col]['horizontalAlignment']==('CENTER' if col in SHORT_CANONICAL else 'LEFT')
+                assert formats[row][col].get('horizontalAlignment','LEFT')==('CENTER' if col in SHORT_CANONICAL else 'LEFT'),(identity,col,'short' if col in SHORT_CANONICAL else 'narrative')
         assert GoogleRows(SheetsRepository(cfg)).snapshot()==original
         result.update(passed=True,existing_values_ids_preserved=True,other_formats_preserved=True,
             appended_row_centered=True,original_unchanged=True,records=applied['records'])

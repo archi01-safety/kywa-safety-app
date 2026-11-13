@@ -226,6 +226,11 @@ class GoogleRows:
         # Only expand native table/filter ranges; never copy a possibly deleted row's format.
         requests = format_requests(self.api, self.sid, self.repo.settings.sheet_name, len(rows), len(rows), width=len(self.layout.header), sheet_info=self._sheet_info)
         for index in indexes:
+            # Native-table expansion can replace the appended cells' alignment.
+            # Apply only alignment after that update; keep fonts, dates and links.
+            aligned=[{'userEnteredFormat':{'horizontalAlignment':row_alignment(i)}} for i in range(len(self.layout.positions))]
+            requests.append({'updateCells':{'start':{'sheetId':self.sheet_id,'rowIndex':index,'columnIndex':0},
+                'rows':[{'values':self.layout.physical(aligned,{})}], 'fields':'userEnteredFormat.horizontalAlignment'}})
             requests.append({'updateCells':{'start':{'sheetId':self.sheet_id, 'rowIndex':index, 'columnIndex':0},
                 'rows':[{'values':[{}]}], 'fields':'note'}})
         with phase('format'):
