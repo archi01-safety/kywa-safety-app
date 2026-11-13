@@ -365,5 +365,53 @@
     "Local Docker unavailable; use actual Render Docker build/Live evidence separately.",
     "Actual AX platform registration not performed."
   ],
-  "deployment": "pending"
+  "deployment": {
+    "status": "all eight Live",
+    "checked_at": "2026-11-13T09:23:07.598Z",
+    "render_docker_builds": 8,
+    "services": [
+      {
+        "org": "kywa",
+        "id": "dep-dbrdbpmc6qcc73dj857g"
+      },
+      {
+        "org": "ayf",
+        "id": "dep-dbrdc35bedkc73d9kch0"
+      },
+      {
+        "org": "fowi",
+        "id": "dep-dbrdc5d9fdbs73e2b5a0"
+      },
+      {
+        "org": "khidi",
+        "id": "dep-dbrdc95ckfvc73dv0dg0"
+      },
+      {
+        "org": "knps",
+        "id": "dep-dbrdcbt9fdbs73e2bp3g"
+      },
+      {
+        "org": "knf",
+        "id": "dep-dbrdcm3tqb8s73e82trg"
+      },
+      {
+        "org": "kohi",
+        "id": "dep-dbrdco59fdbs73e2crtg"
+      },
+      {
+        "org": "cayf",
+        "id": "dep-dbrdcrtbedkc73d9mpbg"
+      }
+    ],
+    "postdeployment_business_tests": false
+  },
+  "application_commit": "aa30598da1d019b01742fa8ea378ef6d42feb8fd",
+  "pr": "https://github.com/archi01-safety/kywa-safety-app/pull/8",
+  "actions_final_check": {
+    "both_repositories_enabled": false,
+    "artifact_counts": [
+      0,
+      0
+    ]
+  }
 }

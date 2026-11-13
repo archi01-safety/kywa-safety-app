@@ -1,10 +1,10 @@
 {
   "file": "kywa-safety-ax.zip",
   "base_path": "/apps/kywa-safety",
-  "files": 252,
-  "bytes": 1448008,
-  "sha256": "70593aeb0f312f2107592ddee1fbe0ce990de220e9b3fc849c8776661a266d08",
-  "application_commit": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
-  "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457",
+  "files": 262,
+  "bytes": 1463525,
+  "sha256": "f04a6c83436edbf52258c8352c9d88b7f0eab1c47a892c46f7b9f1b91720e42c",
+  "application_commit": "aa30598da1d019b01742fa8ea378ef6d42feb8fd",
+  "verification": "artifacts/v1.2-verification.json",
   "secrets_scan": "passed"
 }

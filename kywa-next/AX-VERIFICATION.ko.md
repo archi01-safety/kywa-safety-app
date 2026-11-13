@@ -1,8 +1,8 @@
 # AX 호환 변경·검증 기록
 
-## 2026-11-13 v1.2.0 후보 갱신
+## 2026-11-13 v1.2.0 소스·AX 패키지 갱신
 
-최신 작업 화면·헤더는 ACTION-WORKSPACE.ko.md를 따른다. 로컬 백엔드337개(26모듈 독립 실행), 프런트단위20개, root/AX TypeScript·webpack 빌드와 실제 브라우저를 검사한다. Actions는 사용자 요청으로 중지했고 아래 CI 링크는 과거 로그다. 로컬 Docker 미설치이므로 새 Docker 검증은 실제 Render 빌드/배포 결과로 구분한다. 실제 AX 등록은 수행하지 않았다.
+최신 작업 화면·헤더는 ACTION-WORKSPACE.ko.md를 따른다. 로컬 백엔드337개(26모듈 독립 실행), 프런트단위20개, root/AX TypeScript·webpack 빌드와 실제 브라우저를 통과했다. Actions는 사용자 요청으로 중지했고 아래 CI 링크는 과거 로그다. 로컬 Docker 미설치이므로 새 Docker 검증은 실제 Render8개 빌드/Live 성공으로 구분한다. 소스는 aa30598이며 AX 정적 경로는 /apps/kywa-safety다. 실제 AX 등록은 수행하지 않았다.
 
 ## 2026-11-13 v1.1.2 갱신
 

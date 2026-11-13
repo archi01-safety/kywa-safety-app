@@ -15,9 +15,14 @@
     "sha256": "f81d2cab4e4a2466da0648cdc159cc9b08e1210399078aa1851840aa8830036c"
   },
   {
+    "path": "ACTION-WORKSPACE.ko.md",
+    "bytes": 5184,
+    "sha256": "2b310c1becba2a490242f564ffc2fc45d180ffb3fdf568d77e5eab63c09f3e1d"
+  },
+  {
     "path": "AGENTS.md",
-    "bytes": 2120,
-    "sha256": "25048d4dcc5b04fbc98e1482a62401e3510e9d63e6fd9fe4431814e690ed6e6d"
+    "bytes": 2735,
+    "sha256": "e7d03b3fe5d54a7109b3ce2ad4473fe7f7bac890f652e475d480a91bf7314068"
   },
   {
     "path": "AX-BUILD.json",
@@ -31,8 +36,8 @@
   },
   {
     "path": "AX-VERIFICATION.ko.md",
-    "bytes": 7315,
-    "sha256": "ab870ea262ac79c7d069b2d09eea3913eee580ba1ee91ad26beddd1006cda7be"
+    "bytes": 7890,
+    "sha256": "5af3c8eb2dbcf221a51e59be5cb2861bf3e9af4b6d195e2b443e11623efcf564"
   },
   {
     "path": "AYF-FACILITY-MIGRATION.ko.md",
@@ -41,8 +46,8 @@
   },
   {
     "path": "CHANGELOG.md",
-    "bytes": 17585,
-    "sha256": "60800c2e9c87f143107bbb22b12cc3d9740b4b045d2c50d6c991391fa18467be"
+    "bytes": 18772,
+    "sha256": "467a4ed95b1c3681bdcef15bc98f131ba1424e1c348d384b3b13804f0cc4bfc4"
   },
   {
     "path": "DEPLOYMENT-NOTES.md",
@@ -61,8 +66,8 @@
   },
   {
     "path": "HANDOFF.md",
-    "bytes": 39292,
-    "sha256": "56ca110e952c91e302ba610b3f55b66dcbce6b5531d1e0aabe7a902d63d74215"
+    "bytes": 42275,
+    "sha256": "42ac7a50a2e21d1852e17ccf7a1db4050a9b4e2e2a16caa5b90e73aeff7b1046"
   },
   {
     "path": "KYWA-UPGRADE.ko.md",
@@ -111,8 +116,8 @@
   },
   {
     "path": "SETUP.md",
-    "bytes": 6501,
-    "sha256": "c2ce549d67bff5a73cfc6ee516f3987fa9145e91b0c5c733c21cc07cacc22ecb"
+    "bytes": 7019,
+    "sha256": "18d4d94279195a76cd2bb0bb23998661f76462d864b82d0b0d858fd4281a4785"
   },
   {
     "path": "SHEET-EDITING.ko.md",
@@ -620,16 +625,6 @@
     "sha256": "d5355f390ac6c073f577f03923974bc73aba9592b2d6b9ae31a28b41baf609a4"
   },
   {
-    "path": "deploy/ci.yml",
-    "bytes": 3471,
-    "sha256": "d4c1a4e2ab9309238f579aa79c823b8102a126f587a1df27dd9ac1562c007ffb"
-  },
-  {
-    "path": "deploy/health-check.yml",
-    "bytes": 340,
-    "sha256": "4dcc8a1f1d5c3b9114a21365bf0d8adac1dcd2d5e2dec9f47f720c5e222ebc64"
-  },
-  {
     "path": "deploy/organizations.render.yml",
     "bytes": 10397,
     "sha256": "dfd48fb671660ece6335263e7bd3727ec97517af680161a80ec7668fee341b81"
@@ -681,8 +676,8 @@
   },
   {
     "path": "frontend/app/layout.tsx",
-    "bytes": 843,
-    "sha256": "01462a438efd03d9a37f48d641a52188c339f830c77aee37f6a6e015ab1d6e77"
+    "bytes": 870,
+    "sha256": "8be26149aa397ea38570ed1c283445785092bc20158f7d3269b308d92a9af06e"
   },
   {
     "path": "frontend/app/loading-photo.tsx",
@@ -691,8 +686,8 @@
   },
   {
     "path": "frontend/app/page.tsx",
-    "bytes": 57095,
-    "sha256": "3fcff96161fcfafd43699a80fc6c0f44dba2928f53a977c8a2900a35684ee6f2"
+    "bytes": 59918,
+    "sha256": "ea79de2a799bc618c39e5309b04f5a98eadaf71c25232304e17845b0feb7eafc"
   },
   {
     "path": "frontend/app/photo-picker.tsx",
@@ -711,8 +706,8 @@
   },
   {
     "path": "frontend/app/progress-dialog.tsx",
-    "bytes": 2367,
-    "sha256": "28e61b8a0f03952f9a2434ece023ee55aba0387512dee46f29030d841b052248"
+    "bytes": 2387,
+    "sha256": "033c59392eaed0939e83a2fe8e95c6f3bf842e6232dd46a0f7f679bc36a4e0c5"
   },
   {
     "path": "frontend/app/public-overview.tsx",
@@ -723,6 +718,11 @@
     "path": "frontend/app/request-api.ts",
     "bytes": 3756,
     "sha256": "b7e2023d497d9bbc222d39967ada1f09412d9de1da6befb69f3ef32389e4bb46"
+  },
+  {
+    "path": "frontend/app/resume-gate.ts",
+    "bytes": 623,
+    "sha256": "c9aea3017353d3f2eda1bae73baf52d17e06bca951a4dad3edbcfa83d007c029"
   },
   {
     "path": "frontend/app/session-clock.tsx",
@@ -760,6 +760,11 @@
     "sha256": "6e57a5cacd3592c0b6648f8954c974bccbb360468fa883755863970132f6583b"
   },
   {
+    "path": "frontend/app/workspace.css",
+    "bytes": 6311,
+    "sha256": "c4c390c6bee609dc9fcf490a4abd3fe69b5d9e38b3c777b011d8880ba1a78e50"
+  },
+  {
     "path": "frontend/next-env.d.ts",
     "bytes": 295,
     "sha256": "1b59d4c6b83807db275d43f3cf2cc8e9323f465fab764eea091cc5becd5bad37"
@@ -772,37 +777,27 @@
   {
     "path": "frontend/out/404.html",
     "bytes": 7257,
-    "sha256": "2fa1b18f8cb382b43315c60462a0203d959e38a794130b1863dac6af393409ee"
+    "sha256": "3266cfef2e6f8ad807e76ea7d11e4e0e3a2e9f9c24c85176d1fc6cee9ecff41d"
   },
   {
     "path": "frontend/out/404/index.html",
     "bytes": 7257,
-    "sha256": "2fa1b18f8cb382b43315c60462a0203d959e38a794130b1863dac6af393409ee"
+    "sha256": "3266cfef2e6f8ad807e76ea7d11e4e0e3a2e9f9c24c85176d1fc6cee9ecff41d"
   },
   {
     "path": "frontend/out/__next.__PAGE__.txt",
     "bytes": 3648,
-    "sha256": "bbeeb84da8303de32f6ff4209d205c9be63fe14e2d0dcf5c590a053962ca71a9"
+    "sha256": "050d88910e0874fb7aa700bc8eaef95ce1541581c6c51cc209702b427bbdfd82"
   },
   {
     "path": "frontend/out/__next._full.txt",
     "bytes": 3919,
-    "sha256": "96f3b30b5aa4eff7eee67dff4c6f9adcf2fce6b65917e20a5367ca69dc771873"
+    "sha256": "9a33aed57e86e38fff46ef7785aa89e2d1ea602708325067eb019470547730f4"
   },
   {
     "path": "frontend/out/__next._tree.txt",
     "bytes": 266,
-    "sha256": "baf9629ead80b514886e711de7c28add6faaa34ea75e98710d6183a13f8a3846"
-  },
-  {
-    "path": "frontend/out/_next/static/5cRWRNDyL2mHnjH1WIumq/_buildManifest.js",
-    "bytes": 440,
-    "sha256": "735100de5b4d0775a309ea72b2859f679aa4da5efee09ef54bddcf7e928aaa1c"
-  },
-  {
-    "path": "frontend/out/_next/static/5cRWRNDyL2mHnjH1WIumq/_ssgManifest.js",
-    "bytes": 80,
-    "sha256": "678f6ce2cb80b1fe72fc67e7412be6e2ab6ada083111b64f7c40d35e3cba5e00"
+    "sha256": "d42944a07f649334846e5201f20e3b26757d293d70c2dc1da1db53f72e1f2e27"
   },
   {
     "path": "frontend/out/_next/static/chunks/374.745ea2db457824e2.js",
@@ -835,14 +830,14 @@
     "sha256": "5246a2be1c459c51647b2063624ca6ea60f10e9900227cbbeb13cf484c1b4c53"
   },
   {
-    "path": "frontend/out/_next/static/chunks/app/layout-7f3ba53dfd51035f.js",
-    "bytes": 306,
-    "sha256": "c8d5e3f4e7d7ca68f1472db6b196eeb248744881fe07521b99ee71e200da2efe"
+    "path": "frontend/out/_next/static/chunks/app/layout-33347f2580f4dccc.js",
+    "bytes": 361,
+    "sha256": "45bd6e3de07241909f95e71a0409a22d099a9bf4ce0c27e5ea78a6dbb7fbd6b5"
   },
   {
-    "path": "frontend/out/_next/static/chunks/app/page-fa022aef82d39191.js",
-    "bytes": 77963,
-    "sha256": "035e6fedcaf27d1ab9d0dc8790db8b9bc2d631ae8fcebc4ca6761c46295e79a8"
+    "path": "frontend/out/_next/static/chunks/app/page-9b80ecb270e465de.js",
+    "bytes": 80432,
+    "sha256": "13cda3a387fb4371d73ae7c2e1200d0fc5879683a457d0b02afa8055c73657c7"
   },
   {
     "path": "frontend/out/_next/static/chunks/fa7adff7-31154f6fe9ce68ff.js",
@@ -895,39 +890,49 @@
     "sha256": "0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683"
   },
   {
-    "path": "frontend/out/_next/static/chunks/webpack-6557360d16fd50d5.js",
-    "bytes": 3348,
-    "sha256": "ecfe1a3de42d704b5fc0ecc300efaa094f735d4a4ea11b90608796ce2636b829"
+    "path": "frontend/out/_next/static/chunks/webpack-c81d50038693ba05.js",
+    "bytes": 3345,
+    "sha256": "be9b3879d3dba68612ae12fa1031d52879664b1df65c647ef4ea2816bcece1f3"
   },
   {
-    "path": "frontend/out/_next/static/css/0e8c4e5ebe4204b9.css",
-    "bytes": 77754,
-    "sha256": "5663812882c6781a8c70282f522d5ef748cb55aacfd1edadbcbf83f901527ae1"
+    "path": "frontend/out/_next/static/css/e6456ca594d6aaaf.css",
+    "bytes": 83315,
+    "sha256": "22cd6f7a032d4b9236a7e36bcdc8456334bf17a16b7e6b9e711597749226da81"
+  },
+  {
+    "path": "frontend/out/_next/static/vvYxFpKYPcHtpWKDB2tkf/_buildManifest.js",
+    "bytes": 440,
+    "sha256": "735100de5b4d0775a309ea72b2859f679aa4da5efee09ef54bddcf7e928aaa1c"
+  },
+  {
+    "path": "frontend/out/_next/static/vvYxFpKYPcHtpWKDB2tkf/_ssgManifest.js",
+    "bytes": 80,
+    "sha256": "678f6ce2cb80b1fe72fc67e7412be6e2ab6ada083111b64f7c40d35e3cba5e00"
   },
   {
     "path": "frontend/out/_not-found/__next._full.txt",
     "bytes": 4073,
-    "sha256": "aac59c499e5160bfdbe1230fdbc491b9858cb2d6a5a8b42beded364a87e89dc5"
+    "sha256": "b0c1271bb84298318b8d1929fd2bfc090281b1615b996470090b4fed59b8a774"
   },
   {
     "path": "frontend/out/_not-found/__next._not-found/__PAGE__.txt",
     "bytes": 3541,
-    "sha256": "642234e35a07c0fa7a4eaf50f661ae432e9b0f93231f6b6d295928e7ba2860cc"
+    "sha256": "1a5d2ac0e53d4b304ec4534e55f8f610143e7add6331f3983472889e828af023"
   },
   {
     "path": "frontend/out/_not-found/__next._tree.txt",
     "bytes": 343,
-    "sha256": "8695e43150467d42df07ebf0733b2cfe0e647ce6a4a7f53612501b46846a01da"
+    "sha256": "5b885445654d40209967c4a3d9b4c7ad77618b4b1ae9570f9be062cf8f4d0e82"
   },
   {
     "path": "frontend/out/_not-found/index.html",
     "bytes": 7257,
-    "sha256": "2fa1b18f8cb382b43315c60462a0203d959e38a794130b1863dac6af393409ee"
+    "sha256": "3266cfef2e6f8ad807e76ea7d11e4e0e3a2e9f9c24c85176d1fc6cee9ecff41d"
   },
   {
     "path": "frontend/out/_not-found/index.txt",
     "bytes": 4073,
-    "sha256": "aac59c499e5160bfdbe1230fdbc491b9858cb2d6a5a8b42beded364a87e89dc5"
+    "sha256": "b0c1271bb84298318b8d1929fd2bfc090281b1615b996470090b4fed59b8a774"
   },
   {
     "path": "frontend/out/build-config.json",
@@ -937,12 +942,12 @@
   {
     "path": "frontend/out/index.html",
     "bytes": 12027,
-    "sha256": "0c95457157d417380fe21bbc99923e98830f267b26084566737fcb3d8a21db20"
+    "sha256": "f6501bfcf65f8976c4a4792510e43d32703fa484c7d6df8892f7be874c0090e6"
   },
   {
     "path": "frontend/out/index.txt",
     "bytes": 3919,
-    "sha256": "96f3b30b5aa4eff7eee67dff4c6f9adcf2fce6b65917e20a5367ca69dc771873"
+    "sha256": "9a33aed57e86e38fff46ef7785aa89e2d1ea602708325067eb019470547730f4"
   },
   {
     "path": "frontend/out/kywa_logo.png",
@@ -956,8 +961,8 @@
   },
   {
     "path": "frontend/package.json",
-    "bytes": 727,
-    "sha256": "20d17935e7f25a45542d16572f13766394a06662830a3c8b5f60a5b32cc71095"
+    "bytes": 754,
+    "sha256": "3c625f8385d34f30bfc1c3d2c962e2e811879e3b68a74121edd3409b9e815052"
   },
   {
     "path": "frontend/playwright.config.ts",
@@ -1025,6 +1030,11 @@
     "sha256": "6e6a713180562bbcc87baed6404c644bc35580185a74a0bc3adfd7ad91008b57"
   },
   {
+    "path": "frontend/tests/resume-gate.unit.mjs",
+    "bytes": 1359,
+    "sha256": "929fce654d29f5c336ab422f3b5b3c5435a1bf85611df1abb39fd9609624076f"
+  },
+  {
     "path": "frontend/tests/session-followup.spec.ts",
     "bytes": 3649,
     "sha256": "def0367a17e0058a3e1e1fe44d330fb35512e6e8d7f504ef955b49da4e5f81eb"
@@ -1066,8 +1076,8 @@
   },
   {
     "path": "releases/README.md",
-    "bytes": 2784,
-    "sha256": "2f0ccaf67251a21d444c41a6c5240c76b7d15e028fe7c54a56facb8faf772164"
+    "bytes": 3314,
+    "sha256": "00ca45288007cf775a8d08ee84cb9882743557db7414939ed8718eff1e5b3e21"
   },
   {
     "path": "releases/ayf/v1.0.0.json",
@@ -1090,6 +1100,11 @@
     "sha256": "cc8e7c08476a3d9c9e1daec4ae715a2347e8e59530f435822926047432feb847"
   },
   {
+    "path": "releases/ayf/v1.2.0.json",
+    "bytes": 1266,
+    "sha256": "e82444972a7db1f93d8c7b64584f7bc90431eb090f85dfeec9c4143cc5156a1f"
+  },
+  {
     "path": "releases/cayf/v1.0.0.json",
     "bytes": 761,
     "sha256": "adf8064912a02e89dfcb6fa335b5537a3007954eade4f0f0727ad3773bbbd5a9"
@@ -1098,6 +1113,11 @@
     "path": "releases/cayf/v1.1.2.json",
     "bytes": 1420,
     "sha256": "3765adb2cb663b3e327384b4bc44746e613c1697974a1bc29ddb74058a343fa5"
+  },
+  {
+    "path": "releases/cayf/v1.2.0.json",
+    "bytes": 1267,
+    "sha256": "754a2c3d1b0249216b35257bf493c4a125c761f4fc20b742cd4c7e60dc0b8e08"
   },
   {
     "path": "releases/fowi/v1.0.0.json",
@@ -1115,6 +1135,11 @@
     "sha256": "17da3c278b68d9da239365d50cef1c3eb8b1c17d5119981062635d4db281a291"
   },
   {
+    "path": "releases/fowi/v1.2.0.json",
+    "bytes": 1267,
+    "sha256": "6bc2863502c50c266a4e2dea535092c1dd8f8dc9ccc0bd4a55303284124e24c8"
+  },
+  {
     "path": "releases/khidi/v1.0.0.json",
     "bytes": 766,
     "sha256": "67bd7604ec1a78f2f8df13fd8011bc81aa0e5b26d1678cc12b168062ad6f8609"
@@ -1123,6 +1148,11 @@
     "path": "releases/khidi/v1.1.2.json",
     "bytes": 1427,
     "sha256": "fe9443ec20de02a4ba196cbc1f61a90629317848cffa0b367db0a63f7ba9596b"
+  },
+  {
+    "path": "releases/khidi/v1.2.0.json",
+    "bytes": 1272,
+    "sha256": "1957e3fceee0bbecaa10a7464c94bb8032106c2ea8a04c777b5de201015701d4"
   },
   {
     "path": "releases/knf/v1.0.0.json",
@@ -1135,6 +1165,11 @@
     "sha256": "3360309b83baf03ccbc5ae006b4502aa03f80c7db01ab6dd6f2f77c66b54ec95"
   },
   {
+    "path": "releases/knf/v1.2.0.json",
+    "bytes": 1262,
+    "sha256": "3b335bbd1453781e1632044f732edf580a21286b517efbf98da142baf968154c"
+  },
+  {
     "path": "releases/knps/v1.0.0.json",
     "bytes": 761,
     "sha256": "50b612272f5d114ecba18cad8bb53f9018cbf74cd1a379a19cdaeb9d925e5d6c"
@@ -1145,6 +1180,11 @@
     "sha256": "c0c9f24990fbee1b11c42087de73e47c415f6cbff4f92b9c9a99070fc1022e8a"
   },
   {
+    "path": "releases/knps/v1.2.0.json",
+    "bytes": 1267,
+    "sha256": "8bc960a220e6d33f42982a47b75a79b30a8ed4964dc2ceb04b9be34524b8f419"
+  },
+  {
     "path": "releases/kohi/v1.0.0.json",
     "bytes": 761,
     "sha256": "698da6b90529c0f75c90f878f650f9fa8b2d4649826631168d5dd73e1052632c"
@@ -1153,6 +1193,11 @@
     "path": "releases/kohi/v1.1.2.json",
     "bytes": 1422,
     "sha256": "e18ba5c9020f96e7783abcc9ad7f37237c85c7830913a297ce4595a739e42e96"
+  },
+  {
+    "path": "releases/kohi/v1.2.0.json",
+    "bytes": 1267,
+    "sha256": "9c481cbb5891ac29e72681f388692c2a9404f1e7ada9cb938e217b0fe7bf1941"
   },
   {
     "path": "releases/kywa/v1.0.0.json",
@@ -1173,6 +1218,11 @@
     "path": "releases/kywa/v1.1.2.json",
     "bytes": 1434,
     "sha256": "7e06792daf75559a2e8f2ab453066820867564fe594e405e0605420320471a5e"
+  },
+  {
+    "path": "releases/kywa/v1.2.0.json",
+    "bytes": 1279,
+    "sha256": "9e9eb3fb914d2d71b32db22ccb3199673ad5012b1efcdd8f9abd357e6e96fae8"
   },
   {
     "path": "render.yaml",
@@ -1211,8 +1261,8 @@
   },
   {
     "path": "scripts/package_source.py",
-    "bytes": 2611,
-    "sha256": "f6a45d353f8a6034733a37334579a573a7d834f202368c0cb740ab88dace8358"
+    "bytes": 2465,
+    "sha256": "e0f47c5efde3b50d0ae0af7e7801cb4f7b4f5c0940bc1c53c22b8439eae2e285"
   },
   {
     "path": "scripts/release_registry.py",
