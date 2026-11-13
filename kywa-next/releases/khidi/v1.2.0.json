@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "organization": "khidi",
+  "version": "v1.2.0",
+  "tag": "khidi/v1.2.0",
+  "source_commit": "aa30598da1d019b01742fa8ea378ef6d42feb8fd",
+  "state": "deployed",
+  "site": "https://khidi-safety.onrender.com",
+  "organization_config_sha256": "774744524c02779f5eecaa23a28edd52d8b52fbe2f49a4e1310a272e854bc384",
+  "policy_version": "KHIDI-2026-v1",
+  "prompt_version": "KHIDI-2026-11-02-v2",
+  "prompt_source_sha256": "231ebfc93d6630ae49cf6e91dfa80179e79939d93bbd46295567ee8bb1739cd6",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbrdc95ckfvc73dv0dg0",
+    "status": "Live",
+    "checked_at": "2026-11-13T09:21:44.904Z"
+  },
+  "verification": {
+    "reference": "artifacts/v1.2-verification.json",
+    "new_actions_ci": false,
+    "backend_tests": 337,
+    "frontend_unit_tests": 20,
+    "browser": "Local CUA synthetic data; independent panes, drafts, root/AX, compact partner headers",
+    "render_docker_build_and_live": true,
+    "postdeployment_business_tests": false,
+    "sheet_schema_unchanged": true,
+    "detailed_risk_enabled": false,
+    "actions_disabled_on_rollback": true
+  }
+}
