@@ -7,6 +7,7 @@ export function ProgressDialog({ busy, error, notice, onClose, onRetry, onHome }
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const success = !busy && !error && !!notice;
+  const errorTitle=/로그인|세션/.test(error)?"로그인이 필요합니다":/사진|파일|용량/.test(error)?"사진을 확인해 주세요":/변경|충돌|삭제/.test(error)?"변경된 기록을 확인해 주세요":/네트워크|연결|연동|응답|대기시간/.test(error)?"연결을 확인해 주세요":"작업을 완료하지 못했습니다";
   useEffect(() => {
     const target = dialog.current, previous = document.activeElement as HTMLElement | null;
     target?.showModal();
@@ -22,7 +23,7 @@ export function ProgressDialog({ busy, error, notice, onClose, onRetry, onHome }
     onCancel={e => { if (busy) e.preventDefault(); else onClose(); }}>
     {!busy && <button className="icon-button progress-close" aria-label="알림 닫기" onClick={onClose}><X size={18} /></button>}
     <div className="progress-symbol">{busy ? <LoaderCircle className="spin" /> : error ? <TriangleAlert /> : <CheckCircle2 />}</div>
-    <h2 id="progress-title">{busy ? "잠시만 기다려 주세요" : error ? "작업을 완료하지 못했습니다" : "완료되었습니다"}</h2>
+    <h2 id="progress-title">{busy ? "잠시만 기다려 주세요" : error ? errorTitle : "완료되었습니다"}</h2>
     <p role={error ? "alert" : "status"} aria-live="polite">{busy || error || notice}</p>
     {busy && <div className="progress-track" aria-hidden="true"><i /></div>}
     {error && <div className="button-row">{onRetry && <button className="button primary" onClick={onRetry}>다시 시도</button>}<button className="button secondary" onClick={onClose}>내용 확인</button></div>}

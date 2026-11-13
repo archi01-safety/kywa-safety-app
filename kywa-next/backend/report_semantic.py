@@ -9,6 +9,7 @@ import subprocess
 from PIL import Image, ImageDraw, ImageOps
 from .chart_colors import CATEGORY_COLOR_MAP, FALLBACK_COLOR
 from .services import ServiceError
+from .photo_records import report_slots
 
 
 class ReportError(ServiceError):
@@ -21,8 +22,11 @@ class Photos:
     def __init__(self, records, store):
         self.data = {}
         self.keys = []
+        self.labels = []
         for record in records:
-            pair = [record.get('photo_id') or '', (record.get('after') or {}).get('photo_id') or '']
+            slots=report_slots(record)
+            pair=[key for _,key in slots]
+            self.labels.append([label for label,_ in slots])
             self.keys.append(pair)
             for key in pair:
                 if not key or key in self.data:
@@ -60,8 +64,11 @@ def hwpx(model, photos):
     from .report_layout import wrapped
     # Estimate flow heights before serialization. Do not silently clip/scale text.
     for detail in model['details']:
-        lines = sum(len(wrapped(label + '  ' + (detail['summary'][key] or '기록 없음'), 523, 9.5))
-                    for label, key in [('위험상황', 'scenario'), ('감소대책', 'solution'), ('실제 조치', 'action'), ('관련근거', 'law')])
+        action_field=('조치계획','plan') if not detail.get('after') and detail.get('plan',{}).get('text') else ('실제 조치','action')
+        lines = sum(len(wrapped(label + '  ' + (detail['summary'].get(key,'') or '기록 없음'), 523, 9.5))
+                    for label, key in [('위험상황', 'scenario'), ('감소대책', 'solution'), action_field])
+        refs=detail.get('law_references') or []
+        lines+=sum(len(wrapped(r['label']+('' if r['verified'] else ' · 원문 확인 필요'),523,8.5)) for r in refs) if refs else len(wrapped(detail['summary']['law'] or '기록 없음',523,9.5))
         if lines > 12 or len(wrapped(detail['before']['location'], 523, 11)) > 2:
             raise ReportError('layout', '한글 문서의 세부 내용이 배치 한도를 넘었습니다. 요약을 다시 생성해 주세요.')
     node = os.environ.get('REPORT_NODE') or shutil.which('node')
@@ -71,7 +78,7 @@ def hwpx(model, photos):
     if not node:
         raise ReportError('runtime', '한글 보고서 실행 환경이 준비되지 않았습니다.')
     payload = {'model': model, 'photos': {k: base64.b64encode(v).decode() for k, v in photos.data.items()},
-               'photoKeys': photos.keys, 'chart': base64.b64encode(chart(model['facts']['categories'])).decode(),
+               'photoKeys': photos.keys,'photoLabels':photos.labels, 'chart': base64.b64encode(chart(model['facts']['categories'])).decode(),
                'colors': CATEGORY_COLOR_MAP}
     try:
         result = subprocess.run([node, str(Path(__file__).parent / 'assets/hwpx-semantic.cjs')],

@@ -24,6 +24,8 @@ cd ..
 
 `.env`는 `APP_ENV=demo`, `ORGANIZATION_ID=kywa`, `AUTH_MODE=google`, `APP_BASE_URL=http://localhost:8000`으로 시작한다. demo에서는 Google/API 연결 성공을 의미하지 않는다. 실제 API 키를 넣기 전에 테스트용 시트와 폴더를 지정한다.
 
+v1.1 추가 사진 열·조치예정·복구 절차는 [PHOTO-REVIEW-V1.1.ko.md](PHOTO-REVIEW-V1.1.ko.md)를 먼저 따른다. 시트 확장은 별도 사본 검증과 운영 쓰기 점검 후 명시적으로 실행하며 앱 시작 시 자동 이관하지 않는다. 법령 API의 `LAW_API_OC`는 [신청 안내](LAW-API-SETUP.ko.md)를 따른다. `DETAILED_RISK_ENABLED`는 대표 사례 대조 전에는 false로 유지한다. 생산 PIN 세션은 숨김 관리 탭에 해시와 만료 시각을 보관하며 하나의 worker/인스턴스로 운영한다.
+
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
 ```

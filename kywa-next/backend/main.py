@@ -16,12 +16,12 @@ from fastapi import FastAPI, Request, HTTPException, UploadFile, File, Form
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
-from starlette.middleware.sessions import SessionMiddleware
+from .session_middleware import StableSessionMiddleware
 from starlette._utils import get_route_path
 
 from .config import Settings, ROOT
 from .domain import (FACILITIES, DEPARTMENTS, CATEGORIES, POLICY, now, risk, digest,
-                     SubmitRequest, ActionRequest, StateRequest, ReportRequest, PolicyConfirmRequest)
+                     SubmitRequest, ActionRequest, StateRequest, ReportRequest, PolicyConfirmRequest, PlanRequest)
 from .repository import DemoRepository, SheetsRepository, DriveStore, RepositoryError
 from .services import Drafts, RateLimiter, AIService, ServiceError, prepare_image, kosha_search
 from . import reports
@@ -33,6 +33,8 @@ from .branding import palette
 from .sheet_schema import SheetSchemaError
 from .storage_metrics import submission_metrics, phase
 from .filenames import report_filename
+from .api_errors import error_response, unexpected, http_code
+from .photo_records import before_ids
 
 log = logging.getLogger('kywa')
 
@@ -70,10 +72,19 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     drive = drive or DriveStore(cfg)
     ai = ai or AIService(cfg)
     drafts, limits = Drafts(), RateLimiter()
+    from .observation_cache import ObservationCache
+    from .detailed_risk import ConfirmFacts, VERSION as FACT_VERSION, resolve as resolve_facts, public_item
+    from .organization import Policy as AssessmentPolicy
+    observations_cache = ObservationCache()
+    from .law_links import LawLinks, references
+    law_links = LawLinks(cfg.law_api_oc)
     overview_cache = {}
     draft_epochs = {}
     epoch_lock = threading.Lock()
     pin_auth = PinAuth(cfg.admin_pin_hash) if cfg.auth_mode == 'pin' else None
+    if pin_auth and org.enhanced and not cfg.demo and isinstance(repo,SheetsRepository):
+        from .persistent_pin import PersistentPinAuth,SheetsPinSessions
+        pin_auth=PersistentPinAuth(cfg.admin_pin_hash,SheetsPinSessions(repo,cfg.admin_pin_hash))
     expensive, memory_lock = threading.BoundedSemaphore(2), threading.BoundedSemaphore(1)
     from .report_jobs import ReportJobs, MIMES
     report_jobs = ReportJobs(ai,drive,org,memory_lock)
@@ -83,7 +94,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     app.state.pin_auth = pin_auth
     app.state.storage_pause_until = 0.0
     cookie_name = 'kywa_session' + ('_' + hashlib.sha256(cfg.app_base_path.encode()).hexdigest()[:12] if cfg.app_base_path else '')
-    app.add_middleware(SessionMiddleware, secret_key=cfg.session_secret, session_cookie=cookie_name,
+    app.add_middleware(StableSessionMiddleware, secret_key=cfg.session_secret, session_cookie=cookie_name,
                        max_age=SESSION_SECONDS if pin_auth and not org.enhanced else 28800, path=cfg.app_base_path or '/', same_site='lax', https_only=cfg.app_base_url.startswith('https://'))
     app.add_middleware(BodySizeLimit, max_bytes=(21 if org.enhanced else 11)*1024*1024)
     oauth = OAuth()
@@ -93,8 +104,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     @app.middleware('http')
     async def security_headers(request, call_next):
+        request.state.request_id = uuid.uuid4().hex[:16]
+        started = time.monotonic()
         route_path = get_route_path(request.scope)
-        if cfg.setup and request.method == 'POST' and route_path not in {
+        if cfg.setup and request.method == 'POST' and not route_path.startswith('/api/analyses/') and route_path not in {
             '/api/auth/pin', '/api/auth/logout', '/api/photos/prepare', '/api/analyses'
         }:
             return JSONResponse({'detail': '기관별 저장소 연결을 준비 중입니다. 분석은 가능하지만 제출·저장은 아직 사용할 수 없습니다.'}, status_code=503)
@@ -108,6 +121,13 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if request.method == 'POST' and route_path == '/api/photos/prepare' and not length:
             return JSONResponse({'detail': 'Content-Length가 필요합니다.'}, status_code=411)
         response = await call_next(request)
+        response.headers['X-Request-ID'] = request.state.request_id
+        if response.status_code >= 400 or time.monotonic()-started >= 3:
+            # Route templates exclude evaluation IDs; never log query, body or credentials.
+            route = getattr(request.scope.get('route'), 'path', 'unmatched')
+            log.info('request id=%s method=%s route=%s status=%d elapsed_ms=%d code=%s',
+                     request.state.request_id, request.method, route, response.status_code,
+                     round((time.monotonic()-started)*1000),getattr(request.state,'error_code',''))
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['X-Frame-Options'] = 'DENY'
         response.headers['Referrer-Policy'] = 'same-origin'
@@ -119,26 +139,33 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     async def invalid_request(request, exc):
         # FastAPI's default includes rejected inputs (and potentially raw names).
         # Never serialize or log exc.errors(), exc.body, or the exception text.
-        return JSONResponse({'detail': '입력 형식을 확인해 주세요. 성명은 첫 글자와 초성으로 변환하여 제출해야 합니다.'}, status_code=422)
+        return error_response(request,422,'invalid_input','입력 형식을 확인해 주세요. 성명은 첫 글자와 초성으로 변환하여 제출해야 합니다.')
+
+    @app.exception_handler(HTTPException)
+    async def http_error(request, exc):
+        response=error_response(request,exc.status_code,http_code(exc),str(exc.detail),exc.status_code in (429,502,503,504))
+        for key,value in (exc.headers or {}).items():
+            if key.lower() in ('retry-after','www-authenticate'): response.headers[key]=value
+        return response
 
     @app.exception_handler(PolicyError)
     async def invalid_policy_value(request, exc):
-        return JSONResponse({'detail': str(exc)}, status_code=422)
+        return error_response(request,422,'policy_input',str(exc))
 
     @app.exception_handler(ServiceError)
     async def service_error(request, exc):
-        return JSONResponse({'detail': str(exc)}, status_code=422)
+        return error_response(request,getattr(exc,'status',422),getattr(exc,'code','processing_error'),str(exc),getattr(exc,'retryable',False))
 
     @app.exception_handler(SheetSchemaError)
     @app.exception_handler(RepositoryError)
     async def repository_error(request, exc):
-        return JSONResponse({'detail': str(exc), 'code':getattr(exc,'code','storage_conflict')}, status_code=409)
+        return error_response(request,409,getattr(exc,'code','storage_conflict'),str(exc))
 
     @app.exception_handler(Exception)
     async def unexpected_error(request, exc):
         # Provider exceptions may include keys/URLs. Never echo them into HTML or logs.
-        log.error('Request failed: %s %s (%s)', request.method, request.url.path, type(exc).__name__)
-        return JSONResponse({'detail': '처리 결과를 확인하지 못했습니다. 입력은 유지됩니다. 같은 요청으로 재시도하세요.'}, status_code=503)
+        log.error('Request failed id=%s type=%s',getattr(request.state,'request_id',''),type(exc).__name__)
+        return unexpected(request,exc)
 
     def session(request):
         if 'owner' not in request.session:
@@ -185,9 +212,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
     def can_view(account, record):
         return account['role'] == 'admin' or record['facility'] in account.get('facilities', [])
 
-    def get_record(request, record_id):
+    def get_record(request, record_id, readonly=False):
         account = user(request)
-        records,issues=repo.snapshot() if hasattr(repo,'snapshot') else (repo.records(),[])
+        records,issues=listing_snapshot() if readonly else (repo.snapshot() if hasattr(repo,'snapshot') else (repo.records(),[]))
         issue=next((i for i in issues if i['id']==record_id and can_view(account,i)),None)
         if issue:
             from .sheet_sync import SyncError
@@ -204,17 +231,26 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     def public_record(record):
         r = copy.deepcopy(record)
+        def strip_internal(value):
+            if isinstance(value,dict):
+                return {k:strip_internal(v) for k,v in value.items() if not k.startswith('_internal')}
+            if isinstance(value,list): return [strip_internal(v) for v in value]
+            return value
+        r = strip_internal(r)
         for key in list(r):
             if key.startswith('_sheet_'): r.pop(key)
         for key in ('submit_hash', 'operation_id', 'submit_owner', 'legacy_values', '_sheet_row', '_sheet_hash', '_sheet_revision'):
             r.pop(key, None)
         b = r['before']
+        b['law_references']=references(r)
         # Preserve the recorded grade, even when today's institution policy differs.
         r['current_risk'] = {key:b[key] for key in ('p','s','score','grade')}
         for target in [r, r.get('after') or {}]:
             target.pop('photo_view_url', None)
+            target.pop('photo_view_urls', None)
             fid = target.get('photo_id')
             target['photo_url'] = cfg.public_path(f"/api/assessments/{r['id']}/photos/{fid}") if fid else ''
+        r['photo_urls'] = [cfg.public_path(f"/api/assessments/{r['id']}/photos/{fid}") for fid in before_ids(record)]
         r['reassessment_policy'] = None
         try:
             r['reassessment_policy'] = record_policy(r, org).model_dump()
@@ -293,6 +329,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not org.enhanced or not pin_auth: raise HTTPException(404)
         if not pin_auth.extend(request.session.get('pin_session','')):
             raise HTTPException(401,'로그인이 만료되었습니다. 작성 내용은 유지됩니다. 다시 로그인하세요.')
+        request.session['renewed_at']=int(time.time())
         return auth_status(request)
 
     @app.get('/api/bootstrap')
@@ -404,7 +441,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                 data = normalize_photo(raw)
             else:
                 data = prepare_image(raw)
-            key = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data})
+            key = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data, 'source_digest':hashlib.sha256(data).hexdigest()})
             return {'id': key, 'url': cfg.public_path(f'/api/drafts/{key}/photo'),
                     'notice': '자동 얼굴 처리에는 누락이 있을 수 있습니다. 미리보기에서 얼굴·개인정보를 확인하세요.'}
         finally:
@@ -438,7 +475,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             from .photo_privacy import deidentify_photo
             with memory_lock:
                 data = deidentify_photo(ai, original['photo'])
-            processed_id = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data, 'deidentified': True})
+            processed_id = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data, 'deidentified': True, 'source_digest':original.get('source_digest',hashlib.sha256(original['photo']).hexdigest())})
             original['processed_id'] = processed_id
             return {'id': processed_id, 'url': cfg.public_path(f'/api/drafts/{processed_id}/photo'), 'processed': True}
         finally:
@@ -461,27 +498,75 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             raise HTTPException(422, '사진의 얼굴 비식별화를 먼저 완료해 주세요.')
         return draft['photo']
 
+    def analysis_reply(request, key, value):
+        photo_urls = [cfg.public_path(f'/api/drafts/{photo_key}/photo') for photo_key in value.get('photo_keys',[])]
+        if value['type'].endswith('_pending'):
+            _,questions,_ = resolve_facts(value['observations'],AssessmentPolicy.model_validate(value['policy_snapshot']))
+            return {'draft_id':key,'items':[],'questions':questions,'guide_keywords':[],
+                    'photo_urls':photo_urls,'photo_url':photo_urls[0] if photo_urls else ''}
+        if value['type']=='after':
+            return {'draft_id':key,'revision':value['revision'],**public_item(value['result']),
+                    'photo_url':cfg.public_path(f'/api/drafts/{key}/photo') if value.get('photo') else ''}
+        items=[{**public_item(item),'law_references':references(item)} for item in value['items']]
+        return {'draft_id':key,'items':items,'questions':[],'guide_keywords':guide_keywords(items),
+                'photo_urls':photo_urls,'photo_url':photo_urls[0] if photo_urls else ''}
+
+    def finish_observations(value, answers=()):
+        observed,questions,items=resolve_facts(value['observations'],AssessmentPolicy.model_validate(value['policy_snapshot']),answers)
+        value['observations']=observed
+        if not questions:
+            if value['type']=='after_pending':
+                if len(items)!=1: raise ServiceError('재평가 대상 한 건을 확인하지 못했습니다.',code='ai_result')
+                value.update(type='after',result={**items[0],'rationale':'관찰 사실과 확인한 현장 조건을 기준으로 판정한 재평가 초안'})
+            else: value.update(type='initial',items=items)
+
+    @app.post('/api/analyses/{key}/confirm')
+    def confirm_facts(request:Request,key:str,data:ConfirmFacts):
+        mutation(request)
+        value=drafts.get(draft_owner(request),key)
+        if value.get('type') not in ('initial_pending','after_pending'):
+            raise HTTPException(409,'현재 초안의 추가 확인 대상이 아닙니다. 다시 분석하세요.')
+        try: finish_observations(value,data.answers)
+        except ValueError:
+            raise HTTPException(422,'현재 질문의 응답을 확인해 주세요.') from None
+        return analysis_reply(request,key,value)
+
     @app.post('/api/analyses')
     def analyze(request: Request, facility: str = Form(...), department: str = Form(''),
-                description: str = Form(''), photo_id: str = Form('')):
+                description: str = Form(''), photo_id: str = Form(''),photo_ids:list[str]=Form([])):
         mutation(request)
+        keys = photo_ids or ([photo_id] if photo_id else [])
+        if len(keys)>2 or len(set(keys))!=len(keys) or (photo_id and photo_ids and photo_id!=photo_ids[0]):
+            raise HTTPException(422,'최초 평가 사진은 서로 다른 사진을 최대 2장 등록하세요.')
         if facility not in FACILITIES or (department not in DEPARTMENTS if org.department_enabled else bool(department)):
             raise HTTPException(422, '시설과 부서를 확인하세요.')
-        if len(description) > 6000 or (not description.strip() and not photo_id):
+        if len(description) > 6000 or (not description.strip() and not keys):
             raise HTTPException(422, '사진 또는 6,000자 이하의 상황 설명을 입력하세요.')
-        photo = selected_photo(request, photo_id)
+        photos = [selected_photo(request,key) for key in keys]
+        photo = photos[0] if photos else None
         draft_owner(request)
         guard_ai(request)
         try:
-            items = ai.analyze(facility, department, description, photo)
+            value = {'type':'initial','facility':facility,'department':department,'description':description,
+                     'photo':photo,'photos':photos,'photo_keys':keys,'policy_snapshot':org.policy.model_dump()}
+            if cfg.detailed_risk_enabled and not cfg.demo:
+                signatures=[drafts.get(draft_owner(request),key)['source_digest'] for key in keys]
+                cache_key=digest([draft_owner(request),org.id,facility,department,description,signatures,
+                                  cfg.gemini_model,org.prompt_version,org.policy.model_dump(),FACT_VERSION])
+                value.update(type='initial_pending',observations=observations_cache.resolve(cache_key,
+                    lambda:ai.observe(facility,department,description,photos)))
+                if any(item['category'] not in CATEGORIES for item in value['observations']):
+                    raise PolicyError('기관 기준에 없는 위험 분류입니다. 다시 분석하세요.')
+                finish_observations(value)
+                key=drafts.put(draft_owner(request),value)
+                return analysis_reply(request,key,value)
+            items = ai.analyze(facility, department, description, photos if len(photos)>1 else photo)
             if any(item['category'] not in CATEGORIES for item in items):
                 raise PolicyError('기관 기준에 없는 위험 분류입니다. 다시 분석하세요.')
             results = [{**item, **risk(item['p'], item['s'])} for item in items]
-            value = {'type': 'initial', 'facility': facility, 'department': department, 'description': description,
-                     'items': results, 'photo': photo, 'policy_snapshot': org.policy.model_dump()}
+            value['items']=results
             key = drafts.put(draft_owner(request), value)
-            return {'draft_id': key, 'items': results, 'guide_keywords': guide_keywords(results),
-                    'photo_url': cfg.public_path(f'/api/drafts/{key}/photo') if photo else ''}
+            return analysis_reply(request,key,value)
         finally:
             expensive.release()
 
@@ -523,6 +608,9 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             created_at = now()
             with phase('photo'):
                 photo = drive.put_photo(draft['photo'],data.request_id,draft['facility'],created_at) if org.enhanced else {'id':drive.put(draft['photo'],data.request_id),'created_at':created_at}
+                stored_photos=[photo] if photo.get('id') else []
+                for offset,picture in enumerate(draft.get('photos',[])[1:],start=2):
+                    stored_photos.append(drive.put_photo(picture,data.request_id+f'-{offset}',draft['facility'],created_at))
             records = []
             for item in data.items:
                 before = dict(draft['items'][item.index])
@@ -533,7 +621,10 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                     policy_snapshot=draft['policy_snapshot'], prompt_version=org.prompt_version, policy=POLICY, status='접수', revision=1,
                     operation_id=data.request_id, submit_hash=body_hash, submit_owner=digest(session(request))))
             if org.enhanced:
-                for record in records: record['photo_view_url']=photo['view_url']
+                for record in records:
+                    record['photo_view_url']=photo['view_url']
+                    record['photo_ids']=[p['id'] for p in stored_photos]
+                    record['photo_view_urls']=[p['view_url'] for p in stored_photos]
             repo.apply(records, [])
             overview_cache['expires'] = 0
             return {'ids': [r['id'] for r in records], 'replayed': False}
@@ -557,14 +648,19 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
 
     @app.get('/api/assessments/{record_id}/history')
     def history(request: Request, record_id: str):
-        get_record(request, record_id)
-        return {'items': [{k:v for k,v in e.items() if k not in {'body_hash','sheet_before','sheet_after'}} for e in repo.events(record_id)]}
+        get_record(request, record_id,readonly=True)
+        def clean(value):
+            if isinstance(value,dict): return {k:clean(v) for k,v in value.items() if k not in {'body_hash','sheet_before','sheet_after'} and not k.startswith('_internal')}
+            if isinstance(value,list): return [clean(v) for v in value]
+            return value
+        return {'items':clean(repo.events(record_id))}
 
     @app.get('/api/assessments/{record_id}/photos/{file_id}')
     def stored_photo(request: Request, record_id: str, file_id: str):
-        record, _ = get_record(request, record_id)
-        allowed = {record.get('photo_id'), (record.get('after') or {}).get('photo_id')}
-        allowed.update((e.get('after') or {}).get('photo_id') for e in repo.events(record_id))
+        record, _ = get_record(request, record_id,readonly=True)
+        allowed = {*before_ids(record), (record.get('after') or {}).get('photo_id')}
+        if file_id not in allowed:
+            allowed.update((e.get('after') or {}).get('photo_id') for e in repo.events(record_id))
         if file_id not in allowed:
             raise HTTPException(404)
         data = drive.get(file_id)
@@ -585,6 +681,13 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         guard_ai(request)
         try:
             policy = record_policy(record, org)
+            if cfg.detailed_risk_enabled and not cfg.demo:
+                observed=ai.observe_after(record,text,photo)
+                value=dict(type='after_pending',record_id=record_id,revision=record['revision'],
+                    text=text,photo=photo,observations=observed,policy_snapshot=policy.model_dump(),photo_keys=[photo_id] if photo_id else [])
+                finish_observations(value)
+                key=drafts.put(draft_owner(request),value)
+                return analysis_reply(request,key,value)
             result = ai.reassess(record, text, photo)
             result.update(policy.risk(result['p'], result['s']))
             draft_id = drafts.put(draft_owner(request), dict(type='after', record_id=record_id,
@@ -618,6 +721,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             after = dict(**calculated, text=draft['text'],
                          photo_id=photo['id'], actor=account['email'], created_at=photo['created_at'],
                          policy=policy.version, policy_snapshot=policy.model_dump(), prompt_version=org.prompt_version, rationale=draft['result']['rationale'], ai_result=draft['result'])
+            if '_internal_risk' in draft['result']:
+                after['_internal_risk']=draft['result']['_internal_risk']
             if org.enhanced: after['photo_view_url']=photo['view_url']
             record.update(after=after, status='완료' if data.complete else '조치 중', revision=record['revision']+1)
             event = dict(id=data.request_id, record_id=record_id, at=now(), actor=account['email'],
@@ -625,6 +730,28 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             repo.apply([record], [event])
             overview_cache['expires'] = 0
             return {'item': public_record(record), 'replayed': False}
+
+    @app.post('/api/assessments/{record_id}/plan')
+    def plan_action(request:Request,record_id:str,data:PlanRequest):
+        mutation(request)
+        body_hash=digest(data.model_dump())
+        with repo.lock,(repo.operation() if hasattr(repo,'operation') and org.enhanced else nullcontext()):
+            storage_ready()
+            record,account=get_record(request,record_id)
+            saved=next((e for e in repo.events(record_id) if e['id']==data.request_id),None)
+            if saved:
+                if saved.get('body_hash')!=body_hash:
+                    raise HTTPException(409,'같은 요청번호로 다른 계획을 저장할 수 없습니다.')
+                return {'item':public_record(record),'replayed':True}
+            if record['revision']!=data.revision or record['status']=='완료':
+                raise HTTPException(409,'평가가 변경되었거나 완료되었습니다. 초안을 유지한 채 목록을 확인하세요.')
+            plan=dict(text=data.text,due_date=data.due_date,created_at=now(),actor=account['email'])
+            record.update(plan=plan,status='조치예정',revision=record['revision']+1)
+            event=dict(id=data.request_id,record_id=record_id,at=plan['created_at'],actor=account['email'],
+                       kind='조치계획',text=data.text,plan=plan,body_hash=body_hash)
+            repo.apply([record],[event])
+            overview_cache['expires']=0
+            return {'item':public_record(record),'replayed':False}
 
     @app.post('/api/assessments/{record_id}/state')
     def state(request: Request, record_id: str, data: StateRequest):
@@ -653,6 +780,13 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not limits.allow('guides:' + session(request), 30, 600):
             raise HTTPException(429, '검색 요청이 많습니다.')
         return kosha_search(cfg, keyword.strip())
+
+    @app.get('/api/law-links')
+    def laws(request:Request,text:str=''):
+        if len(text)>2000: raise HTTPException(422,'관련근거가 너무 깁니다.')
+        if not limits.allow('laws:'+session(request),60,600):
+            raise HTTPException(429,'법령 확인 요청이 많습니다. 잠시 후 다시 시도하세요.')
+        return {'items':law_links.resolve(text),'configured':bool(cfg.law_api_oc)}
 
     @app.post('/api/reports')
     def report(request: Request, data: ReportRequest):

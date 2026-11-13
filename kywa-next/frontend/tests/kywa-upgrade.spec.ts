@@ -7,11 +7,11 @@ test('KYWA photo pipeline, checked confirmation, reset and late response', async
   await page.getByLabel('제출자 성명',{exact:true}).fill('홍길동');
   await page.getByLabel('어떤 위험이 있나요?',{exact:false}).fill('분전반 정비');
   await page.getByLabel('현장 사진 선택',{exact:true}).setInputFiles({name:'wrong-name.jpg',mimeType:'image/jpeg',buffer:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1cAAAAASUVORK5CYII=','base64')});
-  await expect(page.getByAltText('분석 전 사진 미리보기')).toBeVisible();
+  await expect(page.getByAltText('분석 전 사진 1 미리보기')).toBeVisible();
   await expect(page.getByRole('checkbox',{name:'사진에 남은 얼굴·개인정보가 없는지 확인했습니다.'})).toHaveCount(0);
   await page.getByRole('button',{name:'KYWA AI 위험요인 분석 시작',exact:true}).click();
   await expect(page.locator('.evaluation-row')).toHaveCount(1);
-  const check=page.getByRole('checkbox',{name:'사진에 남은 얼굴·개인정보가 없는지 확인했습니다.'});
+  const check=page.getByRole('checkbox',{name:'사진 1 개인정보 확인'});
   await expect(check).toBeChecked();
   const submit=page.getByRole('button',{name:'KYWA AI 안전센터로 데이터 전송',exact:true});
   await check.uncheck();await expect(submit).toBeDisabled();
@@ -22,7 +22,7 @@ test('KYWA photo pipeline, checked confirmation, reset and late response', async
   await page.locator('.brand').click();
   await expect(page.getByLabel('제출자 성명',{exact:true})).toHaveValue('');
   await expect(page.locator('.evaluation-row')).toHaveCount(0);
-  await expect(page.getByAltText('제출할 사진 미리보기')).toHaveCount(0);
+  await expect(page.getByAltText('제출할 사진 1 미리보기')).toHaveCount(0);
   let release!:()=>void;
   const gate=new Promise<void>(resolve=>{release=resolve});
   await page.route('**/api/analyses',async route=>{const response=await route.fetch();await gate;await route.fulfill({response});});

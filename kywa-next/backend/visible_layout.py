@@ -15,12 +15,16 @@ class VisibleLayout:
     def __init__(self, header, org):
         layout = Layout(header, org)
         expected = set(VISIBLE_KEYS)
-        if not org.department_enabled and org.submitter_name.mode == "disabled" and len(header) == 17:
+        if not org.department_enabled and org.submitter_name.mode == "disabled" and len(header) in (17, 18):
             expected -= {"department", "submitter_name"}
+        self.multiple_photos = 'before_photo2' in layout.columns
+        if self.multiple_photos:
+            expected.add('before_photo2')
         if len(header) != len(expected) or set(layout.columns) != expected:
             raise SheetSchemaError('기관 평가표의 열 구성과 기관 설정을 확인하세요.')
         self.header = list(header)
-        self.positions = [layout.columns.get(k) for k in VISIBLE_KEYS]
+        keys = VISIBLE_KEYS + (['before_photo2'] if self.multiple_photos else [])
+        self.positions = [layout.columns.get(k) for k in keys]
 
     def canonical(self, row, empty=''):
         return [row[i] if i is not None and i < len(row) else empty for i in self.positions]

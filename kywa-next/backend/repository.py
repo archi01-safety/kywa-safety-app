@@ -10,6 +10,8 @@ import json
 import os
 import threading
 import hashlib
+import time
+from concurrent.futures import Future
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -50,7 +52,13 @@ class DemoRepository:
     def _write(self, data):
         temp = self.path.with_suffix('.tmp')
         temp.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
-        os.replace(temp, self.path)
+        for attempt in range(5):
+            try:
+                os.replace(temp,self.path)
+                break
+            except PermissionError as error:
+                if os.name!='nt' or getattr(error,'winerror',0) not in (5,32) or attempt==4:raise
+                time.sleep(.02*2**attempt)
 
     def records(self):
         with self.lock:
@@ -124,6 +132,8 @@ class SheetsRepository:
         self.lock = threading.RLock()
         self._operation_store = None
         self._in_operation = False
+        self._listing_lock=threading.Lock()
+        self._listing_future=None
 
     @contextmanager
     def operation(self):
@@ -210,6 +220,22 @@ class SheetsRepository:
             return store.sync() if store else (self.records(), [])
 
     def listing_snapshot(self):
+        # Join only an active read. A completed result is never cached across requests.
+        with self._listing_lock:
+            pending=self._listing_future
+            if pending is None or pending.done():
+                pending=self._listing_future=Future();creator=True
+            else:creator=False
+        if not creator:return copy.deepcopy(pending.result(timeout=45))
+        try:
+            result=self._listing_snapshot()
+            pending.set_result(copy.deepcopy(result))
+            return result
+        except BaseException as error:
+            pending.set_exception(error)
+            raise
+
+    def _listing_snapshot(self):
         """Use the same reconciliation rules with a request-local Google response."""
         from .sheet_sync import GoogleRows, Store
         with self.lock:

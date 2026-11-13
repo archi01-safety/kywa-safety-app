@@ -32,9 +32,9 @@ def test_excel_print_dates_masking_integers_and_picture_anchors():
     wb=load_workbook(io.BytesIO(create_excel([r],SimpleNamespace(get=lambda _:image.getvalue()),cfg.organization)))
     ws=wb['위험성평가'];headers=[c.value for c in ws[1]]
     assert not set(headers)&{'타임스탬프','평가기준','평가ID','재평가 기준','처리자','조치시각'}
-    assert ws['U2'].value=='홍㉠㉢' and ws['S2'].value.date()==date(2026,10,30)
-    assert [ws.cell(2,c).value for c in (13,14,15)]==[1,4,4]
-    assert all(ws.cell(2,c).number_format=='0' and ws.cell(2,c).data_type=='n' for c in (6,7,8,13,14,15))
+    assert ws['V2'].value=='홍㉠㉢' and ws['T2'].value.date()==date(2026,10,30)
+    assert [ws.cell(2,c).value for c in (14,15,16)]==[1,4,4]
+    assert all(ws.cell(2,c).number_format=='0' and ws.cell(2,c).data_type=='n' for c in (6,7,8,14,15,16))
     assert ws.page_setup.orientation=='landscape' and str(ws.page_setup.paperSize)==ws.PAPERSIZE_A3
     assert (ws.page_setup.fitToWidth,ws.page_setup.fitToHeight)==(1,0)
     assert ws.sheet_view.view=='pageBreakPreview' and ws.print_title_rows=='$1:$1'
@@ -44,7 +44,7 @@ def test_excel_print_dates_masking_integers_and_picture_anchors():
     for image in ws._images:
         assert image.anchor.editAs=='twoCell'
         assert image.anchor._from.row==image.anchor.to.row==1
-        assert image.anchor._from.col in (11,16) and image.anchor.to.col==image.anchor._from.col
+        assert image.anchor._from.col in (11,17) and image.anchor.to.col==image.anchor._from.col
         assert image.anchor.to.rowOff < ws.row_dimensions[2].height*96/72*9525
     r['after']['score']=4.5
     with pytest.raises(ValueError):create_excel([r],None,cfg.organization)

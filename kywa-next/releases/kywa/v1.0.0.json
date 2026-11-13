@@ -1,0 +1,19 @@
+{
+  "format": 1,
+  "organization": "kywa",
+  "version": "v1.0.0",
+  "tag": "kywa/v1.0.0",
+  "source_commit": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
+  "state": "baseline_registered",
+  "site": "https://kywa-safety.onrender.com",
+  "organization_config_sha256": "fd22ea9c09b05f2d9135f1fe9001962c1ad0137a3cc55e5f5bf25b1c37ec4515",
+  "policy_version": "KYWA-2026-6LEVEL-v1",
+  "prompt_version": "KYWA-PROMPT-20261030-v2",
+  "prompt_source_sha256": "27a3c8c1393170f0d27e4c55e0deb97f568f920080b89d65f59b15a4248dd440",
+  "sheet_schema": "visible19-row-metadata-v2",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": null,
+  "verification": {
+    "runtime_baseline_evidence": "HANDOFF.md 2026-11-10"
+  }
+}

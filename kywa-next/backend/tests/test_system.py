@@ -178,7 +178,7 @@ def test_photos_and_foreign_drafts(context):
     analyzed=c.post('/api/analyses',data={'facility':'중앙','department':'협력부(국립청소년시설)','photo_id':photo['id']})
     assert analyzed.status_code==200
     c.cookies.clear();c.headers['X-CSRF-Token']=c.get('/api/bootstrap').json()['csrf']
-    assert c.get(photo['url']).status_code==422
+    assert c.get(photo['url']).status_code==409
     assert c.post('/api/photos/prepare',files={'photo':('bad.jpg',b'fake','image/jpeg')}).status_code==422
 
 

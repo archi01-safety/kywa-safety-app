@@ -13,6 +13,8 @@ from reportlab.pdfbase.ttfonts import TTFont
 from .report_model import GRADES
 from .report_semantic import ReportError
 from .services import ServiceError
+from .photo_records import report_slots, before_ids
+from .law_links import references
 
 WIDTH, HEIGHT = 595.28, 841.89
 INK, MUTED, LINE, ACCENT = '#202C3B', '#526172', '#D8DFE7', '#A9133C'
@@ -32,7 +34,7 @@ def font(bold=False):
 
 
 def page(number):
-    return dict(number=number,width=WIDTH,height=HEIGHT,lines=[],tables=[],pictures=[],rules=[],warnings=[],nativeText=True)
+    return dict(number=number,width=WIDTH,height=HEIGHT,lines=[],tables=[],pictures=[],rules=[],links=[],warnings=[],nativeText=True)
 
 
 def line(text,x,y,size=10,color=INK,bold=False):
@@ -139,23 +141,36 @@ def build(model,records,store):
         before=f"최초  빈도 {b['p']} × 강도 {b['s']} = {b['score']}점 · {b['grade']}"
         after=f"개선 후  빈도 {a['p']} × 강도 {a['s']} = {a['score']}점 · {a['grade']}" if a else '개선 후  미기록'
         y=table(p,[[before],[after]],42,y+4,511,19,9.5)+6
-        for label,key,limit in [('위험상황','scenario',3),('감소대책','solution',3),('실제 조치','action',2),('관련근거','law',3)]:
+        action_field=('조치계획','plan',2) if not a and detail.get('plan',{}).get('text') else ('실제 조치','action',2)
+        for label,key,limit in [('위험상황','scenario',3),('감소대책','solution',3),action_field,('관련근거','law',3)]:
             text(p,label,42,y,55,9.5,bold=True)
-            y=text(p,s[key] or '기록 없음',102,y,451,9.5,12,max_lines=limit)+4
+            refs=references(records[index]) if key=='law' else []
+            if refs:
+                for ref in refs:
+                    start_y=y
+                    y=text(p,ref['label']+('' if ref['verified'] else ' · 원문 확인 필요'),102,y,451,8,10,max_lines=2)
+                    p['links'].append(dict(url=ref['url'],x=102,y=start_y,width=451,height=y-start_y))
+                y+=4
+            else:
+                y=text(p,s.get(key,'') or '기록 없음',102,y,451,9.5,12,max_lines=limit)+4
         # Fixed photo frame, with measured text stopping before it.
         photo_y=max(y+8,top+186)
         if y>top+241:
             raise ReportError('layout','세부 요약이 사진 영역을 초과했습니다. 다시 생성해 주세요.')
         record=records[index]
-        for col,(label,fid) in enumerate([('개선 전',record.get('photo_id')),('개선 후',(record.get('after') or {}).get('photo_id'))]):
-            x=42+col*260
-            text(p,label,x,photo_y,248,9,color=MUTED)
+        slots=report_slots(record); cell_width=511/len(slots)
+        after_missing=len(slots)==2 and len(before_ids(record))==2 and not (record.get('after') or {}).get('photo_id')
+        for col,(label,fid) in enumerate(slots):
+            x=42+col*cell_width
+            text(p,label,x,photo_y,cell_width-12,9,color=MUTED)
             if fid:
                 try: data=store.get(fid)
                 except Exception: raise ServiceError('보고서 사진을 불러오지 못했습니다. 다시 시도해 주세요.') from None
                 if not data: raise ServiceError('보고서 사진을 불러오지 못했습니다. 다시 시도해 주세요.')
-                picture(p,data,x,photo_y+14,248,top+346-photo_y-14,f'{index+1}-{col}')
-            else: text(p,'사진 없음',x+95,photo_y+48,150,9,color=MUTED)
+                picture(p,data,x,photo_y+14,cell_width-12,top+346-photo_y-14-(12 if after_missing else 0),f'{index+1}-{col}')
+            else: text(p,'등록된 사진이 없습니다',x+12,photo_y+48,cell_width-20,8,color=MUTED)
+        if after_missing:
+            text(p,'개선 후 사진 미등록',42,top+338,511,8,color=MUTED)
         rule(p,36,top+351,523)
     for p in pages:
         text(p,f"- {p['number']} -",275,812,100,9,color=MUTED)
@@ -182,6 +197,8 @@ def pdf(pages):
         for item in p['lines']: draw_line(item)
         for i in p['pictures']:
             canvas.drawImage(ImageReader(io.BytesIO(base64.b64decode(i['data']))),i['x'],HEIGHT-i['y']-i['height'],i['width'],i['height'])
+        for link in p.get('links',[]):
+            canvas.linkURL(link['url'],(link['x'],HEIGHT-link['y']-link['height'],link['x']+link['width'],HEIGHT-link['y']),relative=0,thickness=0)
         canvas.showPage()
     canvas.save(); return out.getvalue()
 

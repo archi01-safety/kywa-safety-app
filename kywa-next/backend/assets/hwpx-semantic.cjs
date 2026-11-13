@@ -29,9 +29,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// node_modules/process-nextick-args/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/process-nextick-args/index.js
 var require_process_nextick_args = __commonJS({
-  "node_modules/process-nextick-args/index.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/process-nextick-args/index.js"(exports2, module2) {
     "use strict";
     if (typeof process === "undefined" || !process.version || process.version.indexOf("v0.") === 0 || process.version.indexOf("v1.") === 0 && process.version.indexOf("v1.8.") !== 0) {
       module2.exports = { nextTick };
@@ -74,9 +74,9 @@ var require_process_nextick_args = __commonJS({
   }
 });
 
-// node_modules/isarray/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/isarray/index.js
 var require_isarray = __commonJS({
-  "node_modules/isarray/index.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/isarray/index.js"(exports2, module2) {
     var toString = {}.toString;
     module2.exports = Array.isArray || function(arr) {
       return toString.call(arr) == "[object Array]";
@@ -84,16 +84,16 @@ var require_isarray = __commonJS({
   }
 });
 
-// node_modules/readable-stream/lib/internal/streams/stream.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/internal/streams/stream.js
 var require_stream = __commonJS({
-  "node_modules/readable-stream/lib/internal/streams/stream.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/internal/streams/stream.js"(exports2, module2) {
     module2.exports = require("stream");
   }
 });
 
-// node_modules/safe-buffer/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/safe-buffer/index.js
 var require_safe_buffer = __commonJS({
-  "node_modules/safe-buffer/index.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/safe-buffer/index.js"(exports2, module2) {
     var buffer = require("buffer");
     var Buffer3 = buffer.Buffer;
     function copyProps(src, dst) {
@@ -148,9 +148,9 @@ var require_safe_buffer = __commonJS({
   }
 });
 
-// node_modules/core-util-is/lib/util.js
+// ../../../../kywa-next/tools/hwpx/node_modules/core-util-is/lib/util.js
 var require_util = __commonJS({
-  "node_modules/core-util-is/lib/util.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/core-util-is/lib/util.js"(exports2) {
     function isArray(arg) {
       if (Array.isArray) {
         return Array.isArray(arg);
@@ -218,9 +218,9 @@ var require_util = __commonJS({
   }
 });
 
-// node_modules/inherits/inherits_browser.js
+// ../../../../kywa-next/tools/hwpx/node_modules/inherits/inherits_browser.js
 var require_inherits_browser = __commonJS({
-  "node_modules/inherits/inherits_browser.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/inherits/inherits_browser.js"(exports2, module2) {
     if (typeof Object.create === "function") {
       module2.exports = function inherits(ctor, superCtor) {
         if (superCtor) {
@@ -250,9 +250,9 @@ var require_inherits_browser = __commonJS({
   }
 });
 
-// node_modules/inherits/inherits.js
+// ../../../../kywa-next/tools/hwpx/node_modules/inherits/inherits.js
 var require_inherits = __commonJS({
-  "node_modules/inherits/inherits.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/inherits/inherits.js"(exports2, module2) {
     try {
       util = require("util");
       if (typeof util.inherits !== "function") throw "";
@@ -264,9 +264,9 @@ var require_inherits = __commonJS({
   }
 });
 
-// node_modules/readable-stream/lib/internal/streams/BufferList.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/internal/streams/BufferList.js
 var require_BufferList = __commonJS({
-  "node_modules/readable-stream/lib/internal/streams/BufferList.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/internal/streams/BufferList.js"(exports2, module2) {
     "use strict";
     function _classCallCheck(instance, Constructor) {
       if (!(instance instanceof Constructor)) {
@@ -342,9 +342,9 @@ var require_BufferList = __commonJS({
   }
 });
 
-// node_modules/readable-stream/lib/internal/streams/destroy.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/internal/streams/destroy.js
 var require_destroy = __commonJS({
-  "node_modules/readable-stream/lib/internal/streams/destroy.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/internal/streams/destroy.js"(exports2, module2) {
     "use strict";
     var pna = require_process_nextick_args();
     function destroy(err, cb) {
@@ -411,16 +411,16 @@ var require_destroy = __commonJS({
   }
 });
 
-// node_modules/util-deprecate/node.js
+// ../../../../kywa-next/tools/hwpx/node_modules/util-deprecate/node.js
 var require_node = __commonJS({
-  "node_modules/util-deprecate/node.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/util-deprecate/node.js"(exports2, module2) {
     module2.exports = require("util").deprecate;
   }
 });
 
-// node_modules/readable-stream/lib/_stream_writable.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_writable.js
 var require_stream_writable = __commonJS({
-  "node_modules/readable-stream/lib/_stream_writable.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_writable.js"(exports2, module2) {
     "use strict";
     var pna = require_process_nextick_args();
     module2.exports = Writable;
@@ -858,9 +858,9 @@ var require_stream_writable = __commonJS({
   }
 });
 
-// node_modules/readable-stream/lib/_stream_duplex.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_duplex.js
 var require_stream_duplex = __commonJS({
-  "node_modules/readable-stream/lib/_stream_duplex.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_duplex.js"(exports2, module2) {
     "use strict";
     var pna = require_process_nextick_args();
     var objectKeys = Object.keys || function(obj) {
@@ -935,9 +935,9 @@ var require_stream_duplex = __commonJS({
   }
 });
 
-// node_modules/string_decoder/lib/string_decoder.js
+// ../../../../kywa-next/tools/hwpx/node_modules/string_decoder/lib/string_decoder.js
 var require_string_decoder = __commonJS({
-  "node_modules/string_decoder/lib/string_decoder.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/string_decoder/lib/string_decoder.js"(exports2) {
     "use strict";
     var Buffer3 = require_safe_buffer().Buffer;
     var isEncoding = Buffer3.isEncoding || function(encoding) {
@@ -1173,9 +1173,9 @@ var require_string_decoder = __commonJS({
   }
 });
 
-// node_modules/readable-stream/lib/_stream_readable.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_readable.js
 var require_stream_readable = __commonJS({
-  "node_modules/readable-stream/lib/_stream_readable.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_readable.js"(exports2, module2) {
     "use strict";
     var pna = require_process_nextick_args();
     module2.exports = Readable;
@@ -1859,9 +1859,9 @@ var require_stream_readable = __commonJS({
   }
 });
 
-// node_modules/readable-stream/lib/_stream_transform.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_transform.js
 var require_stream_transform = __commonJS({
-  "node_modules/readable-stream/lib/_stream_transform.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_transform.js"(exports2, module2) {
     "use strict";
     module2.exports = Transform;
     var Duplex = require_stream_duplex();
@@ -1959,9 +1959,9 @@ var require_stream_transform = __commonJS({
   }
 });
 
-// node_modules/readable-stream/lib/_stream_passthrough.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_passthrough.js
 var require_stream_passthrough = __commonJS({
-  "node_modules/readable-stream/lib/_stream_passthrough.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/lib/_stream_passthrough.js"(exports2, module2) {
     "use strict";
     module2.exports = PassThrough;
     var Transform = require_stream_transform();
@@ -1978,9 +1978,9 @@ var require_stream_passthrough = __commonJS({
   }
 });
 
-// node_modules/readable-stream/readable.js
+// ../../../../kywa-next/tools/hwpx/node_modules/readable-stream/readable.js
 var require_readable = __commonJS({
-  "node_modules/readable-stream/readable.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/readable-stream/readable.js"(exports2, module2) {
     var Stream = require("stream");
     if (process.env.READABLE_STREAM === "disable" && Stream) {
       module2.exports = Stream;
@@ -2003,9 +2003,9 @@ var require_readable = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/support.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/support.js
 var require_support = __commonJS({
-  "node_modules/jszip/lib/support.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/support.js"(exports2) {
     "use strict";
     exports2.base64 = true;
     exports2.array = true;
@@ -2043,9 +2043,9 @@ var require_support = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/base64.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/base64.js
 var require_base64 = __commonJS({
-  "node_modules/jszip/lib/base64.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/base64.js"(exports2) {
     "use strict";
     var utils = require_utils();
     var support = require_support();
@@ -2120,9 +2120,9 @@ var require_base64 = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/nodejsUtils.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/nodejsUtils.js
 var require_nodejsUtils = __commonJS({
-  "node_modules/jszip/lib/nodejsUtils.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/nodejsUtils.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       /**
@@ -2176,9 +2176,9 @@ var require_nodejsUtils = __commonJS({
   }
 });
 
-// node_modules/immediate/lib/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/immediate/lib/index.js
 var require_lib = __commonJS({
-  "node_modules/immediate/lib/index.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/immediate/lib/index.js"(exports2, module2) {
     "use strict";
     var Mutation = global.MutationObserver || global.WebKitMutationObserver;
     var scheduleDrain;
@@ -2250,9 +2250,9 @@ var require_lib = __commonJS({
   }
 });
 
-// node_modules/lie/lib/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/lie/lib/index.js
 var require_lib2 = __commonJS({
-  "node_modules/lie/lib/index.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/lie/lib/index.js"(exports2, module2) {
     "use strict";
     var immediate = require_lib();
     function INTERNAL() {
@@ -2520,9 +2520,9 @@ var require_lib2 = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/external.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/external.js
 var require_external = __commonJS({
-  "node_modules/jszip/lib/external.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/external.js"(exports2, module2) {
     "use strict";
     var ES6Promise = null;
     if (typeof Promise !== "undefined") {
@@ -2536,9 +2536,9 @@ var require_external = __commonJS({
   }
 });
 
-// node_modules/setimmediate/setImmediate.js
+// ../../../../kywa-next/tools/hwpx/node_modules/setimmediate/setImmediate.js
 var require_setImmediate = __commonJS({
-  "node_modules/setimmediate/setImmediate.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/setimmediate/setImmediate.js"(exports2) {
     (function(global2, undefined2) {
       "use strict";
       if (global2.setImmediate) {
@@ -2684,9 +2684,9 @@ var require_setImmediate = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/utils.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/utils.js
 var require_utils = __commonJS({
-  "node_modules/jszip/lib/utils.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/utils.js"(exports2) {
     "use strict";
     var support = require_support();
     var base64 = require_base64();
@@ -3009,9 +3009,9 @@ var require_utils = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/stream/GenericWorker.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/GenericWorker.js
 var require_GenericWorker = __commonJS({
-  "node_modules/jszip/lib/stream/GenericWorker.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/GenericWorker.js"(exports2, module2) {
     "use strict";
     function GenericWorker(name) {
       this.name = name || "default";
@@ -3236,9 +3236,9 @@ var require_GenericWorker = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/utf8.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/utf8.js
 var require_utf8 = __commonJS({
-  "node_modules/jszip/lib/utf8.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/utf8.js"(exports2) {
     "use strict";
     var utils = require_utils();
     var support = require_support();
@@ -3426,9 +3426,9 @@ var require_utf8 = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/stream/ConvertWorker.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/ConvertWorker.js
 var require_ConvertWorker = __commonJS({
-  "node_modules/jszip/lib/stream/ConvertWorker.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/ConvertWorker.js"(exports2, module2) {
     "use strict";
     var GenericWorker = require_GenericWorker();
     var utils = require_utils();
@@ -3447,9 +3447,9 @@ var require_ConvertWorker = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/nodejs/NodejsStreamOutputAdapter.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/nodejs/NodejsStreamOutputAdapter.js
 var require_NodejsStreamOutputAdapter = __commonJS({
-  "node_modules/jszip/lib/nodejs/NodejsStreamOutputAdapter.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/nodejs/NodejsStreamOutputAdapter.js"(exports2, module2) {
     "use strict";
     var Readable = require_readable().Readable;
     var utils = require_utils();
@@ -3478,9 +3478,9 @@ var require_NodejsStreamOutputAdapter = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/stream/StreamHelper.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/StreamHelper.js
 var require_StreamHelper = __commonJS({
-  "node_modules/jszip/lib/stream/StreamHelper.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/StreamHelper.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     var ConvertWorker = require_ConvertWorker();
@@ -3638,9 +3638,9 @@ var require_StreamHelper = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/defaults.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/defaults.js
 var require_defaults = __commonJS({
-  "node_modules/jszip/lib/defaults.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/defaults.js"(exports2) {
     "use strict";
     exports2.base64 = false;
     exports2.binary = false;
@@ -3655,9 +3655,9 @@ var require_defaults = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/stream/DataWorker.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/DataWorker.js
 var require_DataWorker = __commonJS({
-  "node_modules/jszip/lib/stream/DataWorker.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/DataWorker.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     var GenericWorker = require_GenericWorker();
@@ -3743,9 +3743,9 @@ var require_DataWorker = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/crc32.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/crc32.js
 var require_crc32 = __commonJS({
-  "node_modules/jszip/lib/crc32.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/crc32.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     function makeTable() {
@@ -3790,9 +3790,9 @@ var require_crc32 = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/stream/Crc32Probe.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/Crc32Probe.js
 var require_Crc32Probe = __commonJS({
-  "node_modules/jszip/lib/stream/Crc32Probe.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/Crc32Probe.js"(exports2, module2) {
     "use strict";
     var GenericWorker = require_GenericWorker();
     var crc32 = require_crc32();
@@ -3810,9 +3810,9 @@ var require_Crc32Probe = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/stream/DataLengthProbe.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/DataLengthProbe.js
 var require_DataLengthProbe = __commonJS({
-  "node_modules/jszip/lib/stream/DataLengthProbe.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/stream/DataLengthProbe.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     var GenericWorker = require_GenericWorker();
@@ -3833,9 +3833,9 @@ var require_DataLengthProbe = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/compressedObject.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/compressedObject.js
 var require_compressedObject = __commonJS({
-  "node_modules/jszip/lib/compressedObject.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/compressedObject.js"(exports2, module2) {
     "use strict";
     var external = require_external();
     var DataWorker = require_DataWorker();
@@ -3878,9 +3878,9 @@ var require_compressedObject = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/zipObject.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/zipObject.js
 var require_zipObject = __commonJS({
-  "node_modules/jszip/lib/zipObject.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/zipObject.js"(exports2, module2) {
     "use strict";
     var StreamHelper = require_StreamHelper();
     var DataWorker = require_DataWorker();
@@ -3995,9 +3995,9 @@ var require_zipObject = __commonJS({
   }
 });
 
-// node_modules/pako/lib/utils/common.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/utils/common.js
 var require_common = __commonJS({
-  "node_modules/pako/lib/utils/common.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/utils/common.js"(exports2) {
     "use strict";
     var TYPED_OK = typeof Uint8Array !== "undefined" && typeof Uint16Array !== "undefined" && typeof Int32Array !== "undefined";
     function _has(obj, key) {
@@ -4086,9 +4086,9 @@ var require_common = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/trees.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/trees.js
 var require_trees = __commonJS({
-  "node_modules/pako/lib/zlib/trees.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/trees.js"(exports2) {
     "use strict";
     var utils = require_common();
     var Z_FIXED = 4;
@@ -4728,9 +4728,9 @@ var require_trees = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/adler32.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/adler32.js
 var require_adler32 = __commonJS({
-  "node_modules/pako/lib/zlib/adler32.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/adler32.js"(exports2, module2) {
     "use strict";
     function adler32(adler, buf, len, pos) {
       var s1 = adler & 65535 | 0, s2 = adler >>> 16 & 65535 | 0, n = 0;
@@ -4750,9 +4750,9 @@ var require_adler32 = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/crc32.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/crc32.js
 var require_crc322 = __commonJS({
-  "node_modules/pako/lib/zlib/crc32.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/crc32.js"(exports2, module2) {
     "use strict";
     function makeTable() {
       var c, table = [];
@@ -4778,9 +4778,9 @@ var require_crc322 = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/messages.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/messages.js
 var require_messages = __commonJS({
-  "node_modules/pako/lib/zlib/messages.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/messages.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       2: "need dictionary",
@@ -4805,9 +4805,9 @@ var require_messages = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/deflate.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/deflate.js
 var require_deflate = __commonJS({
-  "node_modules/pako/lib/zlib/deflate.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/deflate.js"(exports2) {
     "use strict";
     var utils = require_common();
     var trees = require_trees();
@@ -5854,9 +5854,9 @@ var require_deflate = __commonJS({
   }
 });
 
-// node_modules/pako/lib/utils/strings.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/utils/strings.js
 var require_strings = __commonJS({
-  "node_modules/pako/lib/utils/strings.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/utils/strings.js"(exports2) {
     "use strict";
     var utils = require_common();
     var STR_APPLY_OK = true;
@@ -5996,9 +5996,9 @@ var require_strings = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/zstream.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/zstream.js
 var require_zstream = __commonJS({
-  "node_modules/pako/lib/zlib/zstream.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/zstream.js"(exports2, module2) {
     "use strict";
     function ZStream() {
       this.input = null;
@@ -6018,9 +6018,9 @@ var require_zstream = __commonJS({
   }
 });
 
-// node_modules/pako/lib/deflate.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/deflate.js
 var require_deflate2 = __commonJS({
-  "node_modules/pako/lib/deflate.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/deflate.js"(exports2) {
     "use strict";
     var zlib_deflate = require_deflate();
     var utils = require_common();
@@ -6179,9 +6179,9 @@ var require_deflate2 = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/inffast.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/inffast.js
 var require_inffast = __commonJS({
-  "node_modules/pako/lib/zlib/inffast.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/inffast.js"(exports2, module2) {
     "use strict";
     var BAD = 30;
     var TYPE = 12;
@@ -6408,9 +6408,9 @@ var require_inffast = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/inftrees.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/inftrees.js
 var require_inftrees = __commonJS({
-  "node_modules/pako/lib/zlib/inftrees.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/inftrees.js"(exports2, module2) {
     "use strict";
     var utils = require_common();
     var MAXBITS = 15;
@@ -6724,9 +6724,9 @@ var require_inftrees = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/inflate.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/inflate.js
 var require_inflate = __commonJS({
-  "node_modules/pako/lib/zlib/inflate.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/inflate.js"(exports2) {
     "use strict";
     var utils = require_common();
     var adler32 = require_adler32();
@@ -7963,9 +7963,9 @@ var require_inflate = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/constants.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/constants.js
 var require_constants = __commonJS({
-  "node_modules/pako/lib/zlib/constants.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/constants.js"(exports2, module2) {
     "use strict";
     module2.exports = {
       /* Allowed flush values; see deflate() and inflate() below for details */
@@ -8010,9 +8010,9 @@ var require_constants = __commonJS({
   }
 });
 
-// node_modules/pako/lib/zlib/gzheader.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/gzheader.js
 var require_gzheader = __commonJS({
-  "node_modules/pako/lib/zlib/gzheader.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/zlib/gzheader.js"(exports2, module2) {
     "use strict";
     function GZheader() {
       this.text = 0;
@@ -8030,9 +8030,9 @@ var require_gzheader = __commonJS({
   }
 });
 
-// node_modules/pako/lib/inflate.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/lib/inflate.js
 var require_inflate2 = __commonJS({
-  "node_modules/pako/lib/inflate.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/lib/inflate.js"(exports2) {
     "use strict";
     var zlib_inflate = require_inflate();
     var utils = require_common();
@@ -8204,9 +8204,9 @@ var require_inflate2 = __commonJS({
   }
 });
 
-// node_modules/pako/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/pako/index.js
 var require_pako = __commonJS({
-  "node_modules/pako/index.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/pako/index.js"(exports2, module2) {
     "use strict";
     var assign = require_common().assign;
     var deflate = require_deflate2();
@@ -8218,9 +8218,9 @@ var require_pako = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/flate.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/flate.js
 var require_flate = __commonJS({
-  "node_modules/jszip/lib/flate.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/flate.js"(exports2) {
     "use strict";
     var USE_TYPEDARRAY = typeof Uint8Array !== "undefined" && typeof Uint16Array !== "undefined" && typeof Uint32Array !== "undefined";
     var pako = require_pako();
@@ -8277,9 +8277,9 @@ var require_flate = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/compressions.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/compressions.js
 var require_compressions = __commonJS({
-  "node_modules/jszip/lib/compressions.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/compressions.js"(exports2) {
     "use strict";
     var GenericWorker = require_GenericWorker();
     exports2.STORE = {
@@ -8295,9 +8295,9 @@ var require_compressions = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/signature.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/signature.js
 var require_signature = __commonJS({
-  "node_modules/jszip/lib/signature.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/signature.js"(exports2) {
     "use strict";
     exports2.LOCAL_FILE_HEADER = "PK";
     exports2.CENTRAL_FILE_HEADER = "PK";
@@ -8308,9 +8308,9 @@ var require_signature = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/generate/ZipFileWorker.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/generate/ZipFileWorker.js
 var require_ZipFileWorker = __commonJS({
-  "node_modules/jszip/lib/generate/ZipFileWorker.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/generate/ZipFileWorker.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     var GenericWorker = require_GenericWorker();
@@ -8592,9 +8592,9 @@ var require_ZipFileWorker = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/generate/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/generate/index.js
 var require_generate = __commonJS({
-  "node_modules/jszip/lib/generate/index.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/generate/index.js"(exports2) {
     "use strict";
     var compressions = require_compressions();
     var ZipFileWorker = require_ZipFileWorker();
@@ -8633,9 +8633,9 @@ var require_generate = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/nodejs/NodejsStreamInputAdapter.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/nodejs/NodejsStreamInputAdapter.js
 var require_NodejsStreamInputAdapter = __commonJS({
-  "node_modules/jszip/lib/nodejs/NodejsStreamInputAdapter.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/nodejs/NodejsStreamInputAdapter.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     var GenericWorker = require_GenericWorker();
@@ -8692,9 +8692,9 @@ var require_NodejsStreamInputAdapter = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/object.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/object.js
 var require_object = __commonJS({
-  "node_modules/jszip/lib/object.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/object.js"(exports2, module2) {
     "use strict";
     var utf8 = require_utf8();
     var utils = require_utils();
@@ -8965,9 +8965,9 @@ var require_object = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/reader/DataReader.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/DataReader.js
 var require_DataReader = __commonJS({
-  "node_modules/jszip/lib/reader/DataReader.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/DataReader.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     function DataReader(data) {
@@ -9087,9 +9087,9 @@ var require_DataReader = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/reader/ArrayReader.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/ArrayReader.js
 var require_ArrayReader = __commonJS({
-  "node_modules/jszip/lib/reader/ArrayReader.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/ArrayReader.js"(exports2, module2) {
     "use strict";
     var DataReader = require_DataReader();
     var utils = require_utils();
@@ -9129,9 +9129,9 @@ var require_ArrayReader = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/reader/StringReader.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/StringReader.js
 var require_StringReader = __commonJS({
-  "node_modules/jszip/lib/reader/StringReader.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/StringReader.js"(exports2, module2) {
     "use strict";
     var DataReader = require_DataReader();
     var utils = require_utils();
@@ -9159,9 +9159,9 @@ var require_StringReader = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/reader/Uint8ArrayReader.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/Uint8ArrayReader.js
 var require_Uint8ArrayReader = __commonJS({
-  "node_modules/jszip/lib/reader/Uint8ArrayReader.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/Uint8ArrayReader.js"(exports2, module2) {
     "use strict";
     var ArrayReader = require_ArrayReader();
     var utils = require_utils();
@@ -9182,9 +9182,9 @@ var require_Uint8ArrayReader = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/reader/NodeBufferReader.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/NodeBufferReader.js
 var require_NodeBufferReader = __commonJS({
-  "node_modules/jszip/lib/reader/NodeBufferReader.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/NodeBufferReader.js"(exports2, module2) {
     "use strict";
     var Uint8ArrayReader = require_Uint8ArrayReader();
     var utils = require_utils();
@@ -9202,9 +9202,9 @@ var require_NodeBufferReader = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/reader/readerFor.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/readerFor.js
 var require_readerFor = __commonJS({
-  "node_modules/jszip/lib/reader/readerFor.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/reader/readerFor.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     var support = require_support();
@@ -9229,9 +9229,9 @@ var require_readerFor = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/zipEntry.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/zipEntry.js
 var require_zipEntry = __commonJS({
-  "node_modules/jszip/lib/zipEntry.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/zipEntry.js"(exports2, module2) {
     "use strict";
     var readerFor = require_readerFor();
     var utils = require_utils();
@@ -9447,9 +9447,9 @@ var require_zipEntry = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/zipEntries.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/zipEntries.js
 var require_zipEntries = __commonJS({
-  "node_modules/jszip/lib/zipEntries.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/zipEntries.js"(exports2, module2) {
     "use strict";
     var readerFor = require_readerFor();
     var utils = require_utils();
@@ -9645,9 +9645,9 @@ var require_zipEntries = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/load.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/load.js
 var require_load = __commonJS({
-  "node_modules/jszip/lib/load.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/load.js"(exports2, module2) {
     "use strict";
     var utils = require_utils();
     var external = require_external();
@@ -9724,9 +9724,9 @@ var require_load = __commonJS({
   }
 });
 
-// node_modules/jszip/lib/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/index.js
 var require_lib3 = __commonJS({
-  "node_modules/jszip/lib/index.js"(exports2, module2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/jszip/lib/index.js"(exports2, module2) {
     "use strict";
     function JSZip3() {
       if (!(this instanceof JSZip3)) {
@@ -9761,9 +9761,9 @@ var require_lib3 = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/conventions.js
+// ../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/conventions.js
 var require_conventions = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/conventions.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/conventions.js"(exports2) {
     "use strict";
     function find(list, predicate, ac) {
       if (ac === void 0) {
@@ -9970,9 +9970,9 @@ var require_conventions = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/errors.js
+// ../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/errors.js
 var require_errors = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/errors.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/errors.js"(exports2) {
     "use strict";
     var conventions = require_conventions();
     function extendError(constructor, writableName) {
@@ -10129,9 +10129,9 @@ var require_errors = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/grammar.js
+// ../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/grammar.js
 var require_grammar = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/grammar.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/grammar.js"(exports2) {
     "use strict";
     function detectUnicodeSupport(RegExpImpl) {
       try {
@@ -10336,9 +10336,9 @@ var require_grammar = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/dom.js
+// ../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/dom.js
 var require_dom = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/dom.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/dom.js"(exports2) {
     "use strict";
     var conventions = require_conventions();
     var find = conventions.find;
@@ -13003,9 +13003,9 @@ var require_dom = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/entities.js
+// ../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/entities.js
 var require_entities = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/entities.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/entities.js"(exports2) {
     "use strict";
     var freeze = require_conventions().freeze;
     exports2.XML_ENTITIES = freeze({
@@ -15146,9 +15146,9 @@ var require_entities = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/sax.js
+// ../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/sax.js
 var require_sax = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/sax.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/sax.js"(exports2) {
     "use strict";
     var conventions = require_conventions();
     var g = require_grammar();
@@ -15928,9 +15928,9 @@ var require_sax = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/dom-parser.js
+// ../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/dom-parser.js
 var require_dom_parser = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/dom-parser.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/dom-parser.js"(exports2) {
     "use strict";
     var conventions = require_conventions();
     var dom = require_dom();
@@ -16196,9 +16196,9 @@ var require_dom_parser = __commonJS({
   }
 });
 
-// node_modules/@xmldom/xmldom/lib/index.js
+// ../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/index.js
 var require_lib4 = __commonJS({
-  "node_modules/@xmldom/xmldom/lib/index.js"(exports2) {
+  "../../../../kywa-next/tools/hwpx/node_modules/@xmldom/xmldom/lib/index.js"(exports2) {
     "use strict";
     var conventions = require_conventions();
     exports2.assign = conventions.assign;
@@ -18101,6 +18101,14 @@ async function generate(input) {
   function p(text, o = {}) {
     return `<hp:p id="${next()}" paraPrIDRef="${ps(o.align, o.before || 0, o.after || 0, !!o.keep, o.line || 130)}" styleIDRef="0" pageBreak="${o.break ? 1 : 0}" columnBreak="0" merged="0">${run(text, o.pt || 10, !!o.bold, o.color)}</hp:p>`;
   }
+  function link(ref) {
+    const url = new URL(ref.url);
+    if (url.protocol !== "https:" || !["www.law.go.kr", "law.go.kr"].includes(url.hostname) || url.username || url.password || url.searchParams.has("OC")) throw Error("Unsafe law link");
+    const id = next(), field = 627600491, char = styles.char({ font: "\uB9D1\uC740 \uACE0\uB515", pt: 8.5, color: "#175493" });
+    const command = escapeTextXml(ref.url.replace(/:/g, "\\:"));
+    const begin = `<hp:ctrl><hp:fieldBegin id="${id}" type="HYPERLINK" name="" editable="0" dirty="0" zorder="-1" fieldid="${field}"><hp:parameters cnt="6" name=""><hp:integerParam name="Prop">0</hp:integerParam><hp:stringParam name="Command">${command};1;0;0</hp:stringParam><hp:stringParam name="Path">${escapeTextXml(ref.url)}</hp:stringParam><hp:stringParam name="Category">HWPHYPERLINK_TYPE_URL</hp:stringParam><hp:stringParam name="TargetType">HWPHYPERLINK_TARGET_BOOKMARK</hp:stringParam><hp:stringParam name="DocOpenType">HWPHYPERLINK_JUMP_CURRENTTAB</hp:stringParam></hp:parameters></hp:fieldBegin></hp:ctrl>`;
+    return `<hp:p id="${next()}" paraPrIDRef="${ps("LEFT", 1, 0, false, 110)}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="${char}">${begin}<hp:t>${escapeTextXml(ref.label + (ref.verified ? "" : " \xB7 \uC6D0\uBB38 \uD655\uC778 \uD544\uC694"))}</hp:t><hp:ctrl><hp:fieldEnd beginIDRef="${id}" fieldid="${field}"/></hp:ctrl></hp:run></hp:p>`;
+  }
   function object(xml, align = "LEFT") {
     return `<hp:p id="${next()}" paraPrIDRef="${ps(align, 1, 1, false, 100)}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="${styles.char({ font: "\uB9D1\uC740 \uACE0\uB515", pt: 1 })}">${xml}<hp:t/></hp:run></hp:p>`;
   }
@@ -18148,9 +18156,15 @@ async function generate(input) {
     body += p(`${String(i + 1).padStart(2, "0")}  ${b.location}`, { pt: 11, bold: true, before: i % 2 ? 12 : 0, after: 3, keep: true });
     body += p([d.facility, d.department, b.category, d.status].filter(Boolean).join(" \xB7 "), { pt: 9.5, after: 3, keep: true });
     body += textTable([["\uCD5C\uCD08", `\uBE48\uB3C4 ${b.p}`, `\uAC15\uB3C4 ${b.s}`, `${b.score}\uC810`, b.grade], a ? ["\uAC1C\uC120 \uD6C4", `\uBE48\uB3C4 ${a.p}`, `\uAC15\uB3C4 ${a.s}`, `${a.score}\uC810`, a.grade] : ["\uAC1C\uC120 \uD6C4", "\uBBF8\uAE30\uB85D", "", "", ""]], 18, 9.5);
-    for (const [label, key] of [["\uC704\uD5D8\uC0C1\uD669", "scenario"], ["\uAC10\uC18C\uB300\uCC45", "solution"], ["\uC2E4\uC81C \uC870\uCE58", "action"], ["\uAD00\uB828\uADFC\uAC70", "law"]]) body += p(`${label}  ${s[key] || "\uAE30\uB85D \uC5C6\uC74C"}`, { pt: 9.5, before: 2, line: 125 });
+    for (const [label, key] of [["\uC704\uD5D8\uC0C1\uD669", "scenario"], ["\uAC10\uC18C\uB300\uCC45", "solution"], !a && d.plan?.text ? ["\uC870\uCE58\uACC4\uD68D", "plan"] : ["\uC2E4\uC81C \uC870\uCE58", "action"]]) body += p(`${label}  ${s[key] || "\uAE30\uB85D \uC5C6\uC74C"}`, { pt: 9.5, before: 2, line: 125 });
+    if (d.law_references?.length) {
+      for (const ref of d.law_references) body += link(ref);
+    } else body += p(`\uAD00\uB828\uADFC\uAC70  ${s.law || "\uAE30\uB85D \uC5C6\uC74C"}`, { pt: 9.5, before: 2, line: 125 });
     const keys = input.photoKeys[i];
-    body += table([[{ xml: p("\uAC1C\uC120 \uC804", { pt: 9, align: "CENTER" }) }, { xml: p("\uAC1C\uC120 \uD6C4", { pt: 9, align: "CENTER" }) }], keys.map((key) => ({ xml: key ? object(picture(key, 249, 94), "CENTER") : p("\uC0AC\uC9C4 \uC5C6\uC74C", { pt: 9, align: "CENTER" }) }))], [15, 98], [261.5, 261.5], true);
+    const labels = input.photoLabels?.[i] || ["\uAC1C\uC120 \uC804", "\uAC1C\uC120 \uD6C4"], width = 523 / keys.length;
+    if (keys.length !== 2 && keys.length !== 3) throw Error("Invalid photo slots");
+    body += table([labels.map((label) => ({ xml: p(label, { pt: 9, align: "CENTER" }) })), keys.map((key) => ({ xml: key ? object(picture(key, width - 12, 94), "CENTER") : p("\uB4F1\uB85D\uB41C \uC0AC\uC9C4\uC774 \uC5C6\uC2B5\uB2C8\uB2E4", { pt: 8, align: "CENTER" }) }))], [15, 98], keys.map(() => width), true);
+    if (keys.length === 2 && labels[1] === "\uAC1C\uC120 \uC804 \u2461") body += p("\uAC1C\uC120 \uD6C4 \uC0AC\uC9C4 \uBBF8\uB4F1\uB85D", { pt: 8, color: "#526172" });
   }
   let sec = generateSecPr(null).replace(/<hp:margin[^>]*\/>/, '<hp:margin header="0" footer="1800" gutter="0" left="3600" right="3600" top="3600" bottom="3000"/>') + pageNumCtrl();
   body = body.replace(/(<hp:run[^>]*>)/, `$1${sec}`);
