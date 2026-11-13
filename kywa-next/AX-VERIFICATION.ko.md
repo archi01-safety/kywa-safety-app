@@ -1,5 +1,9 @@
 # AX 호환 변경·검증 기록
 
+## 2026-11-13 v1.1.2 갱신
+
+소스 329f2f8384c6c94f3cdbe360dfadfbb41b9c024a의 [CI](https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457) verify/ax가 성공했다. 백엔드337·프런트단위15·8개기관 PC/모바일과 root/AX, 비root·읽기전용·재시작 Docker를 통과했다. 최신 소스와 /apps/kywa-safety 정적 화면으로 ZIP을 재생성했다. 실제 AX 플랫폼 등록·AX 출발 외부 연동·한글2014·실제 모바일 진동·Google 시트 호버 미리보기는 계속 미검증이다. 실제 한글2020 문단·표·사진 편집/저장/재열기·공식 링크 열기·16건9쪽/30건16쪽 PDF 출력은 별도 통과했다. 아래 날짜가 이전인 검증 표는 당시 기록이다.
+
 2026-11-02. AX 운영 등록은 아직 수행하지 않았다. 실제 등록 방법은 AX-DEPLOYMENT.ko.md, 배포 ZIP의 경로와 해시는 artifacts/ax-package.json을 확인한다. 아래 상태는 이번 AX 호환 소스에 대한 것이며 완료된 7개 기관 Render 운영 검증과 구분한다.
 
 ## 파일별 변경

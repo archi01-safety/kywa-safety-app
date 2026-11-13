@@ -8,7 +8,7 @@ root=Path(__file__).resolve().parent.parent
 out=root/'artifacts'
 out.mkdir(exist_ok=True)
 patterns=['.gitignore','.dockerignore','.env.example','*.md','app.py','requirements.txt','Dockerfile','render.yaml','pytest.ini','artifacts/render-deployments.json','artifacts/partner-rollout-verification.json','backend/assets/*.cjs','backend/assets/*LICENSE.txt','backend/assets/hwpx-semantic-source.zip','backend/tests/fixtures/*.heic',
-          'artifacts/design-colors.json','artifacts/design-scope-audit.json','artifacts/design-verification.json','releases/*/*.json','releases/*.md',
+          'artifacts/design-colors.json','artifacts/design-scope-audit.json','artifacts/design-verification.json','artifacts/v1.1-verification.json','artifacts/risk-score-review-20261113.xlsx','releases/*/*.json','releases/*.md',
           'backend/prompt_profiles/*.txt','backend/prompt_profiles/*.json','backend/policies/*.json','backend/organizations/*.json','backend/*.py','backend/requirements*','backend/tests/*.py','frontend/app/*.tsx','frontend/app/*.ts','frontend/app/*.css',
           'frontend/public/*.png','frontend/package*.json','frontend/next.config.ts','frontend/next-env.d.ts',
           'frontend/tsconfig.json','frontend/playwright.config.ts','frontend/scripts/*.mjs','frontend/tests/*.ts','frontend/tests/*.mjs','scripts/*.py','scripts/*.ps1','deploy/*.yml']

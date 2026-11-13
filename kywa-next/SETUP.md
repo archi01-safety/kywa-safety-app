@@ -1,5 +1,9 @@
 # 새 PC에서 작업 이어가기
 
+## 2026-11-13 v1.1.2 재개 기준
+
+8개 Render의 현재 소스/기관 버전은 HANDOFF.md와 releases/를 먼저 확인한다. 신규 설치라는 이유로 기존 운영 시트 이관을 반복하지 않는다. 최종 구조는 일반20열/AYF18열이며 마지막 열은 개선 전 사진2다. Google 정렬 도구는 SHEET-EDITING.ko.md를 따른다. 인증값 LAW_API_OC는 기존 비공개 환경 그룹에 있으며 키 원문을 소스나 문서에 넣지 않는다. DETAILED_RISK_ENABLED=false를 유지하고 담당자 사례 검토 후 별도 활성화한다. PIN은 변경하지 않았으며 서버 재시작 후에도 절대 만료 전 세션을 복원한다. 단일 worker/instance 운영을 유지한다.
+
 먼저 HANDOFF.md와 AGENTS.md를 읽고 현재 브랜치·배포 상태를 확인한다. 운영 데이터 변경 없이 체험 환경부터 실행한다.
 
 AX 등록은 [AX-DEPLOYMENT.ko.md](AX-DEPLOYMENT.ko.md)를 별도로 따른다. 실행 진입점은 `python app.py`, 지정된 `PORT`와 `APP_BASE_PATH`, 소스 밖 `APP_DATA_DIR`를 사용한다. 기존 Render/root 화면은 APP_BASE_PATH를 비워 빌드한다. AX용 ZIP의 경로를 다른 슬러그로 바꾸면 화면도 재빌드해야 한다.

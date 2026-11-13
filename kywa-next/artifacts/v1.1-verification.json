@@ -1,0 +1,95 @@
+{
+  "checked_at": "2026-11-13T06:53:58.759833+00:00",
+  "runtime_source": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+  "ci": {
+    "url": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457",
+    "verify": "success",
+    "ax": "success",
+    "backend_tests": 337,
+    "frontend_unit_tests": 15,
+    "desktop_mobile_orgs": 8
+  },
+  "google_copies": {
+    "institutions": 8,
+    "originals_unchanged": true,
+    "migration_idempotency": true,
+    "three_photos": true,
+    "receipt_retries": true,
+    "plan_without_ai": true,
+    "sessions_survive_restart": true,
+    "deletion_then_append": true,
+    "downgrade_preserves_newer_records": true
+  },
+  "native_hwp_2020": {
+    "fixtures": "synthetic only",
+    "cases_16_pages_before": 9,
+    "cases_16_pages_after_edit": 9,
+    "cases_30_pages": 16,
+    "paragraph_edit": true,
+    "table_edit": true,
+    "picture_replace": true,
+    "save_reopen": true,
+    "official_article_opened": true,
+    "pdf_hyperlinks_16": 16,
+    "rendered_pages_visually_reviewed": true
+  },
+  "automated_report_fixture_pages": {
+    "1": 2,
+    "2": 2,
+    "3": 3,
+    "16": 9,
+    "30": 16
+  },
+  "detailed_risk": {
+    "organization": "kywa",
+    "model": "gemini-3.6-flash",
+    "cases": 4,
+    "repeats": 3,
+    "identical_public_scores": 4,
+    "all_facts_resolved": true,
+    "expert_comparison": "not_provided",
+    "photo_angle_comparison": "not_tested",
+    "notes": "No result cache used; temperature zero alone does not guarantee identical observations.",
+    "activated": false,
+    "review_cases": 12,
+    "review_workbook": "artifacts/risk-score-review-20261113.xlsx",
+    "activation_gate": "pending expert and photo-angle calibration"
+  },
+  "not_verified": [
+    "Hancom 2014",
+    "physical mobile vibration",
+    "photo-angle score consistency",
+    "expert score calibration",
+    "Google Sheets hover preview"
+  ],
+  "production": {
+    "state": "all eight independently Live and verified",
+    "post_fix_ayf_seconds": 535,
+    "post_fix_ayf_window_utc": [
+      "2026-11-13T05:17:29Z",
+      "2026-11-13T05:26:24Z"
+    ],
+    "original_503_reproduced": false,
+    "browser_excel_pdf_saved": true,
+    "hwpx_transfer": "UI triggered; file checked through authenticated report API because IAB saved path was unavailable",
+    "test_cleanup_completed": true,
+    "original_ayf_records_preserved": 8,
+    "all_law_origins_verified": true,
+    "write_maintenance": false,
+    "aligned_excel": {
+      "rows": 1,
+      "short_fields_centered": true,
+      "narratives_left": true,
+      "a3_landscape_preview": true,
+      "photo2_column": true,
+      "checked_real_download": true
+    }
+  },
+  "google_alignment": {
+    "institutions": 8,
+    "existing_records": 703,
+    "copies_passed": true,
+    "new_row_native_table_expansion_passed": true,
+    "original_values_and_other_formats_preserved": true
+  }
+}

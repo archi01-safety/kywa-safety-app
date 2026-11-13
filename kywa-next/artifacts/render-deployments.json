@@ -1,7 +1,139 @@
 {
-  "checked_at": "2026-11-10T04:38:18.239357+00:00",
-  "verification": "Eight Render Live deployment details with the released Git commit; KYWA production dashboard revisits measured five times.",
+  "checked_at": "2026-11-13T06:53:58.759833+00:00",
+  "verification": "Eight independent Render Live pages plus authenticated API, original-value/identity and short-column alignment checks; AYF browser exercise separately recorded.",
   "services": [
+    {
+      "org": "kywa",
+      "id": "srv-datkiq6gekts73b716eg",
+      "deployment": "dep-dbrau5tg1s2s73fv373g",
+      "status": "Live",
+      "sha": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+      "url": "https://kywa-safety.onrender.com",
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-datkiq6gekts73b716eg/deploys/dep-dbrau5tg1s2s73fv373g",
+      "version": "v1.1.2"
+    },
+    {
+      "org": "ayf",
+      "id": "srv-dbhh880473hc73a09jn0",
+      "deployment": "dep-dbrb00gae00c73f4opg0",
+      "status": "Live",
+      "sha": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+      "url": "https://ayf-safety.onrender.com",
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jn0/deploys/dep-dbrb00gae00c73f4opg0",
+      "version": "v1.1.2"
+    },
+    {
+      "org": "fowi",
+      "id": "srv-dbhh880473hc73a09jlg",
+      "deployment": "dep-dbrb00t9fdbs73drbqag",
+      "status": "Live",
+      "sha": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+      "url": "https://fowi-safety.onrender.com",
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jlg/deploys/dep-dbrb00t9fdbs73drbqag",
+      "version": "v1.1.2"
+    },
+    {
+      "org": "khidi",
+      "id": "srv-dbhh880473hc73a09jqg",
+      "deployment": "dep-dbrb19c9v7es73c2h5fg",
+      "status": "Live",
+      "sha": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+      "url": "https://khidi-safety.onrender.com",
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jqg/deploys/dep-dbrb19c9v7es73c2h5fg",
+      "version": "v1.1.2"
+    },
+    {
+      "org": "knps",
+      "id": "srv-dbhh880473hc73a09jng",
+      "deployment": "dep-dbrb2e3tqb8s73e1r2k0",
+      "status": "Live",
+      "sha": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+      "url": "https://knps-safety.onrender.com",
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jng/deploys/dep-dbrb2e3tqb8s73e1r2k0",
+      "version": "v1.1.2"
+    },
+    {
+      "org": "knf",
+      "id": "srv-dbhh880473hc73a09jj0",
+      "deployment": "dep-dbrb33gae00c73f50l1g",
+      "status": "Live",
+      "sha": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+      "url": "https://knf-safety.onrender.com",
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jj0/deploys/dep-dbrb33gae00c73f50l1g",
+      "version": "v1.1.2"
+    },
+    {
+      "org": "kohi",
+      "id": "srv-dbhh880473hc73a09jp0",
+      "deployment": "dep-dbrb498u01pc73anpbrg",
+      "status": "Live",
+      "sha": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+      "url": "https://kohi-safety.onrender.com",
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jp0/deploys/dep-dbrb498u01pc73anpbrg",
+      "version": "v1.1.2"
+    },
+    {
+      "org": "cayf",
+      "id": "srv-dbhh880473hc73a09jpg",
+      "deployment": "dep-dbrb5i3tqb8s73e22chg",
+      "status": "Live",
+      "sha": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+      "url": "https://cayf-safety.onrender.com",
+      "plan": "Free",
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jpg/deploys/dep-dbrb5i3tqb8s73e22chg",
+      "version": "v1.1.2"
+    }
+  ],
+  "previous_release": [
+    {
+      "org": "kywa",
+      "deployment": "dep-dbr9gsc9v7es73bue9q0",
+      "sha": "a0b4177ce33e75d51391a66b208d11be10fa37a0"
+    },
+    {
+      "org": "ayf",
+      "deployment": "dep-dbp9udo8v5cc73dl1n90",
+      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf"
+    },
+    {
+      "org": "fowi",
+      "deployment": "dep-dbp9ue3rjlhs73faektg",
+      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf"
+    },
+    {
+      "org": "khidi",
+      "deployment": "dep-dbp9udon74is73db58cg",
+      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf"
+    },
+    {
+      "org": "knps",
+      "deployment": "dep-dbp9ug8n74is73db5fb0",
+      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf"
+    },
+    {
+      "org": "knf",
+      "deployment": "dep-dbp9ug3m8hqs73da3kk0",
+      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf"
+    },
+    {
+      "org": "kohi",
+      "deployment": "dep-dbp9ugetlv9c73evh3fg",
+      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf"
+    },
+    {
+      "org": "cayf",
+      "deployment": "dep-dbp9ufrm8hqs73da3ihg",
+      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf"
+    }
+  ],
+  "history": [
     {
       "org": "kywa",
       "id": "srv-datkiq6gekts73b716eg",
@@ -11,119 +143,6 @@
       "url": "https://kywa-safety.onrender.com",
       "plan": "Free",
       "dashboard_url": "https://dashboard.render.com/web/srv-datkiq6gekts73b716eg/deploys/dep-dbp9t6bbc2fs739jggo0"
-    },
-    {
-      "org": "ayf",
-      "id": "srv-dbhh880473hc73a09jn0",
-      "deployment": "dep-dbp9udo8v5cc73dl1n90",
-      "status": "Live",
-      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
-      "url": "https://ayf-safety.onrender.com",
-      "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jn0/deploys/dep-dbp9udo8v5cc73dl1n90"
-    },
-    {
-      "org": "fowi",
-      "id": "srv-dbhh880473hc73a09jlg",
-      "deployment": "dep-dbp9ue3rjlhs73faektg",
-      "status": "Live",
-      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
-      "url": "https://fowi-safety.onrender.com",
-      "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jlg/deploys/dep-dbp9ue3rjlhs73faektg",
-      "note": "Session configuration recovery; application commit unchanged"
-    },
-    {
-      "org": "khidi",
-      "id": "srv-dbhh880473hc73a09jqg",
-      "deployment": "dep-dbp9udon74is73db58cg",
-      "status": "Live",
-      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
-      "url": "https://khidi-safety.onrender.com",
-      "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jqg/deploys/dep-dbp9udon74is73db58cg"
-    },
-    {
-      "org": "knps",
-      "id": "srv-dbhh880473hc73a09jng",
-      "deployment": "dep-dbp9ug8n74is73db5fb0",
-      "status": "Live",
-      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
-      "url": "https://knps-safety.onrender.com",
-      "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jng/deploys/dep-dbp9ug8n74is73db5fb0"
-    },
-    {
-      "org": "knf",
-      "id": "srv-dbhh880473hc73a09jj0",
-      "deployment": "dep-dbp9ug3m8hqs73da3kk0",
-      "status": "Live",
-      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
-      "url": "https://knf-safety.onrender.com",
-      "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jj0/deploys/dep-dbp9ug3m8hqs73da3kk0"
-    },
-    {
-      "org": "kohi",
-      "id": "srv-dbhh880473hc73a09jp0",
-      "deployment": "dep-dbp9ugetlv9c73evh3fg",
-      "status": "Live",
-      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
-      "url": "https://kohi-safety.onrender.com",
-      "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jp0/deploys/dep-dbp9ugetlv9c73evh3fg"
-    },
-    {
-      "org": "cayf",
-      "id": "srv-dbhh880473hc73a09jpg",
-      "deployment": "dep-dbp9ufrm8hqs73da3ihg",
-      "status": "Live",
-      "sha": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
-      "url": "https://cayf-safety.onrender.com",
-      "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jpg/deploys/dep-dbp9ufrm8hqs73da3ihg"
-    }
-  ],
-  "previous_release": [
-    {
-      "org": "kywa",
-      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
-      "deployment": "dep-dbkm23s9v7es73eo7t3g"
-    },
-    {
-      "org": "ayf",
-      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
-      "deployment": "dep-dbkm013bc2fs739o0fa0"
-    },
-    {
-      "org": "fowi",
-      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
-      "deployment": "dep-dbkmald9fdbs73boc17g"
-    },
-    {
-      "org": "khidi",
-      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
-      "deployment": "dep-dbkm17h9dmos739iq8u0"
-    },
-    {
-      "org": "knps",
-      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
-      "deployment": "dep-dbkm0k2jnfac739aua2g"
-    },
-    {
-      "org": "knf",
-      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
-      "deployment": "dep-dbkm0pegekts73ehsqog"
-    },
-    {
-      "org": "kohi",
-      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
-      "deployment": "dep-dbkm0vqjnfac739avah0"
-    },
-    {
-      "org": "cayf",
-      "sha": "939dbe4cdca9967766b6440610cd269100ee4f5b",
-      "deployment": "dep-dbkm1dbbc2fs739o3rvg"
     }
   ]
 }
