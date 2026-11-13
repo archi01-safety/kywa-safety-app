@@ -1,0 +1,19 @@
+{
+  "format": 1,
+  "organization": "khidi",
+  "version": "v1.0.0",
+  "tag": "khidi/v1.0.0",
+  "source_commit": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
+  "state": "baseline_registered",
+  "site": "https://khidi-safety.onrender.com",
+  "organization_config_sha256": "774744524c02779f5eecaa23a28edd52d8b52fbe2f49a4e1310a272e854bc384",
+  "policy_version": "KHIDI-2026-v1",
+  "prompt_version": "KHIDI-2026-11-02-v2",
+  "prompt_source_sha256": "4cde9fcccd8696cd47f7697af8e77ead182814be835a75e4737422d431dd9173",
+  "sheet_schema": "visible19-row-metadata-v2",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": null,
+  "verification": {
+    "runtime_baseline_evidence": "HANDOFF.md 2026-11-10"
+  }
+}

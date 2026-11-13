@@ -10,6 +10,8 @@ KEYS = ['created_at','facility','department','location','category','scenario','p
         'solution','law','photo','after_p','after_s','after_score','after_grade','after_photo',
         'id','policy','status','revision','data','submitter_name']
 LABELS = dict(zip(KEYS, HEADERS+['제출자 성명']))
+KEYS = KEYS + ['before_photo2']
+LABELS['before_photo2'] = '개선 전 사진 2'
 ALIASES = {
     'created_at':['제출일시','제출일','등록일시'], 'facility':['시설','기관명'],
     'department':['담당부서','부서','부서명','사업장','담당 팀명','팀명'], 'category':['유해위험요인(분류)','분류'],
@@ -57,7 +59,7 @@ class Layout:
         return row[col] if col is not None and col < len(row) else ''
 
     def require_writable(self):
-        required = KEYS if self.org.submitter_name.mode != 'disabled' else KEYS[:-1]
+        required = [key for key in KEYS[:24] if key != 'submitter_name' or self.org.submitter_name.mode != 'disabled']
         if any(key not in self.columns for key in required):
             raise SheetSchemaError('관리 열 준비가 필요합니다. migrate 미리보기 후 적용하세요. KYWA 성명은 X1을 확인하세요.')
 
@@ -119,7 +121,9 @@ class Layout:
         for key in list(clean):
             if key.startswith('_sheet_'): clean.pop(key)
         values=sheet_row(clean,True)
-        return dict(zip(KEYS,values))
+        from .photo_records import before_links
+        links=before_links(record)
+        return {**dict(zip(KEYS,values)),'before_photo2':links[1] if len(links)>1 else ''}
 
     def new_row(self,record):
         self.require_writable()

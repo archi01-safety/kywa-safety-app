@@ -17,7 +17,9 @@ from .organization import record_policy
 
 
 class ServiceError(Exception):
-    pass
+    def __init__(self, message, *, code='processing_error', status=422, retryable=False):
+        super().__init__(message)
+        self.code, self.status, self.retryable = code, status, retryable
 
 
 def ai_response_schema(model):
@@ -95,10 +97,10 @@ class Drafts:
         with self.lock:
             entry = self.items.get(key)
             if not entry or entry[1] != owner:
-                raise ServiceError('분석 초안이 만료되었습니다. 입력을 유지한 채 다시 분석하세요.')
+                raise ServiceError('분석 초안이 만료되었거나 서버가 다시 시작되었습니다. 입력을 유지한 채 다시 분석하세요.',code='draft_expired',status=409)
             if time.monotonic() - entry[0] > self.ttl:
                 del self.items[key]
-                raise ServiceError('분석 초안이 만료되었습니다. 다시 분석하세요.')
+                raise ServiceError('분석 초안이 만료되었습니다. 다시 분석하세요.',code='draft_expired',status=409)
             return entry[2]
 
 
@@ -174,24 +176,29 @@ class AIService:
         self.settings = settings
         self.org = settings.organization
 
-    def _generate(self, prompt, schema, photo=None):
+    def _generate(self, prompt, schema, photo=None, *, deterministic=False):
         from google import genai
         from google.genai import types
         content = [prompt]
-        if photo:
-            content.append(types.Part.from_bytes(data=photo, mime_type='image/jpeg'))
+        for picture in (photo if isinstance(photo,(list,tuple)) else [photo]):
+            if picture:
+                content.append(types.Part.from_bytes(data=picture, mime_type='image/jpeg'))
         with genai.Client(api_key=self.settings.gemini_api_key,
                           http_options=types.HttpOptions(timeout=60000)) as client:
             for attempt in range(3):
                 try:
                     response = client.models.generate_content(model=self.settings.gemini_model,
                         contents=content, config=types.GenerateContentConfig(
-                            response_mime_type='application/json', response_schema=ai_response_schema(schema)))
+                            response_mime_type='application/json', response_schema=ai_response_schema(schema),
+                            **({'temperature':0} if deterministic else {})))
                     return schema.model_validate_json(response.text)
                 except Exception as exc:
                     if getattr(exc, 'code', None) not in {429, 500, 502, 503, 504} or attempt == 2:
                         log_ai_failure(exc)
-                        raise ServiceError('AI 분석 응답을 확인하지 못했습니다. 입력은 보존됩니다. 잠시 후 재시도하세요.') from exc
+                        code = getattr(exc,'code',None)
+                        raise ServiceError('AI 분석 응답을 확인하지 못했습니다. 입력은 보존됩니다. 잠시 후 재시도하세요.',
+                            code='ai_rate_limit' if code==429 else 'ai_unavailable',
+                            status=429 if code==429 else 502, retryable=True) from exc
                     time.sleep(2 ** (attempt + 1))
 
     def analyze(self, facility, department, description, photo=None):
@@ -238,6 +245,21 @@ class AIService:
 개선이 불충분하면 위험도는 동일하거나 높을 수 있다. 확인할 수 없는 사항과 판단 이유를 rationale에 작성한다.'''
         return self._generate(prompt, AfterRisk, photo).model_dump()
 
+    def observe(self, facility, department, description, photos=None):
+        from .detailed_risk import Observations
+        from .prompts import observation_prompt
+        return [x.model_dump() for x in self._generate(
+            observation_prompt(self.org,facility,department,description),Observations,photos,deterministic=True).items]
+
+    def observe_after(self, record, text, photo=None):
+        from .detailed_risk import Observations
+        from .prompts import observation_prompt
+        original = {k:record['before'].get(k,'') for k in ('category','location','scenario','solution')}
+        description = json.dumps({'original_observation':original,'completed_action':text},ensure_ascii=False)
+        prompt = observation_prompt(self.org,record['facility'],record.get('department',''),description)
+        prompt += '\n개선 이후의 현재 상태만 관찰한다. 조치 주장만으로 안전조치가 효과적이라고 단정하지 않는다. 해당 위험 한 건만 반환한다.'
+        return [x.model_dump() for x in self._generate(prompt,Observations,photo,deterministic=True).items]
+
 
 def kosha_search(settings, keyword):
     if settings.demo:
@@ -250,9 +272,17 @@ def kosha_search(settings, keyword):
             headers={'User-Agent': 'Mozilla/5.0 (compatible; KYWA-Safety/1.0)'},
             verify=ssl.create_default_context(), timeout=15)
         response.raise_for_status()
-        return parse_kosha_response(response.json())
+        payload=response.json()
+        header=payload.get('response',payload).get('header',{})
+        if str(header.get('resultCode','')) in {'30','31','32','33'}:
+            raise ServiceError('KOSHA 인증키 또는 이용 승인을 확인하지 못했습니다. 운영 담당자에게 오류번호를 알려주세요.',
+                code='kosha_access',status=502)
+        return parse_kosha_response(payload)
+    except ServiceError:
+        raise
     except Exception as exc:
-        raise ServiceError('KOSHA 검색에 실패했습니다. 인증키·이용 승인·서버 연결을 확인하세요.') from exc
+        raise ServiceError('KOSHA 검색에 실패했습니다. 잠시 후 다시 시도하거나 운영 담당자에게 오류번호를 알려주세요.',
+            code='kosha_unavailable',status=502,retryable=True) from exc
 
 
 def parse_kosha_response(payload):

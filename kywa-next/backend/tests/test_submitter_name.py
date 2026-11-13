@@ -46,7 +46,7 @@ def test_raw_or_invalid_submission_is_rejected_without_echo(tmp_path, caplog, va
     body = {**submission(c), 'submitter_name':value}
     result = c.post('/api/assessments', json=body)
     assert result.status_code == 422
-    assert set(result.json()) == {'detail'} and isinstance(result.json()['detail'], str)
+    assert set(result.json()) == {'detail','code','request_id','retryable'} and isinstance(result.json()['detail'], str)
     assert '홍' not in result.text and 'Hong' not in result.text
     assert '홍' not in caplog.text and 'Hong' not in caplog.text
     assert app.state.repo.records() == []

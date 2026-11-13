@@ -32,6 +32,8 @@ class Settings(BaseSettings):
     gemini_api_key: str = ''
     gemini_model: str = 'gemini-3.6-flash'
     kosha_api_key: str = ''
+    law_api_oc: str = ''
+    detailed_risk_enabled: bool = False
     access_accounts_json: str = '{}'
     demo_data_path: str = str(ROOT / 'local-data' / 'demo.json')
     allow_legacy_writes: bool = False

@@ -8,7 +8,9 @@ import copy
 import json
 import uuid
 
-from .compact_storage import TAB, VISIBLE, clean, metadata, metadata_entries, packed, padded, visible
+from .compact_storage import TAB, VISIBLE, clean, metadata, metadata_entries, packed
+from .compact_storage import padded as base_padded, visible as base_visible
+from .photo_records import before_ids, before_links
 from .domain import HISTORY_HEADERS, digest, now
 from .migrate import timestamp, integer, drive_id
 from .organization import Policy
@@ -23,6 +25,15 @@ from .storage_metrics import phase
 KEY = 'kywa.assessment.id'
 CONFIG = ('config', 'row_identity')
 NOTE = 'KYWA_APPEND:'
+
+
+def padded(row):
+    return base_padded(row, 20)
+
+
+def visible(record):
+    links = before_links(record)
+    return base_visible(record) + [links[1] if len(links) > 1 else '']
 
 
 class SyncError(RepositoryError):
@@ -47,7 +58,9 @@ def comparable(row):
 
 
 def fingerprint(row):
-    return digest(comparable(row))
+    values = comparable(row)
+    # Empty new columns retain every existing 19-cell fingerprint.
+    return digest(values if values[19] else values[:19])
 
 
 def blank(row):
@@ -117,7 +130,7 @@ class GoogleRows:
         sheet, self._first_grid = self._first_grid, None
         light = sheet is not None
         if not light:
-            data = self.api.get(spreadsheetId=self.sid, ranges=[quoted(self.repo.settings.sheet_name)+'!A:S'],
+            data = self.api.get(spreadsheetId=self.sid, ranges=[quoted(self.repo.settings.sheet_name)+'!A:T'],
                 includeGridData=True, fields='sheets(properties,tables,basicFilter,bandedRanges,data(startRow,rowMetadata(developerMetadata),rowData(values(effectiveValue,note,userEnteredFormat))))').execute()
             sheet = self._sheet_info = data['sheets'][0]
         rows, notes, formats = [], {}, {}
@@ -126,13 +139,13 @@ class GoogleRows:
             for dimension in block.get('rowMetadata',[]): found.extend(dimension.get('developerMetadata',[]))
             for index, item in enumerate(block.get('rowData', []), block.get('startRow', 0)):
                 while len(rows) <= index: rows.append([])
-                cs = item.get('values', [])[:19]
+                cs = item.get('values', [])
                 rows[index] = [next(iter(c.get('effectiveValue', {}).values()), '') for c in cs]
                 if cs and cs[0].get('note', '').startswith(NOTE): notes[index] = cs[0]['note']
                 if not light:
                     formats[index] = [c.get('userEnteredFormat', {}) for c in cs]
         if not rows:
-            raise SyncError('sheet_schema', '기관 평가표의 19개 열을 확인하세요.')
+            raise SyncError('sheet_schema', '기관 평가표의 열 구성을 확인하세요.')
         while rows[0] and rows[0][-1] == '': rows[0].pop()
         self.layout = VisibleLayout(rows[0], self.repo.settings.organization)
         rows = [VISIBLE] + [self.layout.canonical(r) for r in rows[1:]]
@@ -321,9 +334,13 @@ class Store:
         self._delete_many(deleted)
         appended=[]
         for record in records:
+            if len(before_ids(record)) > 1 and not self.g.layout.multiple_photos:
+                raise SyncError('photo_schema', '두 번째 사진 열을 준비한 뒤 다시 전송해 주세요. 입력은 유지됩니다.')
             row=cells(visible(record))
-            for index,cell in enumerate(row['values']): cell['userEnteredFormat']=copy.deepcopy(template[index])
-            for index in (12,17):
+            for index,cell in enumerate(row['values']):
+                template_index = index if index < len(template) else 12
+                cell['userEnteredFormat']=copy.deepcopy(template[template_index])
+            for index in (12,17,19):
                 # Do not inherit an earlier photo's explicitly formatted hyperlink.
                 text = row['values'][index]['userEnteredFormat'].setdefault('textFormat',{})
                 text.pop('link',None)
@@ -360,6 +377,9 @@ class Store:
             record[key]=str(row[col]).strip()
             if not record[key] and (key != 'department' or self.org.department_enabled): issues.append(f'{VISIBLE[col]}을 입력하세요.')
         record['submitter_name']=display_name(row[18]); record['photo_id']=drive_id(row[12])
+        extra_id = drive_id(row[19])
+        record['photo_ids'] = [value for value in (record['photo_id'], extra_id) if value]
+        record['photo_view_urls'] = [str(row[index]) for index in (12,19) if drive_id(row[index])]
         if 'photo_view_url' in record:
             record['photo_view_url'] = str(row[12]) if record['photo_id'] else ''
         before=copy.deepcopy(record.get('before') or {})

@@ -104,3 +104,23 @@ def institution_prompt(org, facility, department, description):
         org.policy.prompt()+'\n현재 서버 등급표: '+json.dumps(grades,ensure_ascii=False)+
         '\n기관별 판정 전제와 경미한 위험 지침을 적용한다. AI는 category, location, scenario, p, s, law, solution만 반환한다. '
         'score와 grade는 서버가 확정한다. 서로 다른 위험만 최대 12개를 지정된 items 응답 스키마로 반환한다.')
+
+
+def observation_prompt(org,facility,department,description):
+    guidance = institution_prompt(org,facility,department,description)
+    return guidance + '''
+[이번 응답 계약: 관찰 사실 추출]
+위 지침의 역할·분류·장소·법령·피해 예시는 유지하되 p, s, score, grade를 제안하지 않는다.
+점수는 서버가 별도 규칙으로 계산한다. 스키마에 정의된 관찰 사실만 반환한다.
+두 사진은 같은 위험상황의 전체·근접 모습이다. 중복된 위험을 다른 항목으로 만들지 않는다.
+exposure: rare(드문 이용), monthly(월 단위), daily(일 단위), continuous(상시·반복).
+contact: isolated(분리), unlikely(접촉 가능성 낮음), possible(부주의 시 접촉), likely(접촉 가능성 높음), direct(직접 노출).
+controls: effective(효과 확인), partial(일부 확인), ineffective(효과 부족 확인), none(없음 확인).
+condition: stable(악화·반복 없음 확인), degrading(악화 확인), repeated(위험 반복 확인).
+consequence: minor(경미), first_aid(응급처치 이상/비휴업), lost_time(중상/휴업), fatal(사망/영구 장애).
+extent: very_limited, limited, moderate, extensive, critical 순서로 피해 범위가 커진다.
+설명이나 사진에서 확인할 수 없는 항목은 unknown으로 표시한다. 이용 빈도나 가려진 안전조치를 추측하지 않는다.
+자료에 없는 전제는 기존 프롬프트의 관행적 가정보다 이 관찰 규칙을 우선한다.
+경미한 손상이라는 단어만으로 사망·추락·감전 가능성을 지우지 않는다.
+안전조치의 존재와 실제 효과는 구분한다. 동일한 관찰에는 동일한 분류 값을 선택한다.
+'''

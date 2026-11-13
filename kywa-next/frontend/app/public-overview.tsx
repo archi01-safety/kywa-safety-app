@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { BarChart3, CheckCircle2, Building2 } from "lucide-react";
+import {aborted} from "./request-api";
 type Count = { name: string; count: number; color?: string };
 type Summary = { year: number; years: number[]; total: number; completed: number; facility_count: number; categories: Count[]; facilities: Count[] };
-type Api = (path: string, body?: object | FormData) => Promise<Response>;
+type Api = (path: string, body?: object | FormData,signal?:AbortSignal) => Promise<Response>;
 
 export type OverviewSnapshot = {data: Summary; at: number; revision: number};
 
-export function PublicOverview({ api, revision, snapshots }: { api: Api; revision: number; snapshots: Map<number, OverviewSnapshot> }) {
+export function PublicOverview({ api, revision, snapshots,onLoading }: { api: Api; revision: number; snapshots: Map<number, OverviewSnapshot>;onLoading?:(loading:boolean)=>void }) {
   const [year, setYear] = useState(new Date().getFullYear());
   const [, redraw] = useState(0);
   const saved = snapshots.get(year);
@@ -26,14 +27,15 @@ export function PublicOverview({ api, revision, snapshots }: { api: Api; revisio
     return () => document.removeEventListener("visibilitychange", resume);
   }, [year, snapshots]);
   useEffect(() => {
-    let live = true; setError("");
+    let live = true;const controller=new AbortController(); setError("");
     const cached = snapshots.get(year);
     if (cached && cached.revision === revision && Date.now() - cached.at < 30_000) return;
     const refresh = Boolean(cached);
-    api(`/overview?year=${year}${refresh ? "&fresh=1&t="+Date.now() : ""}`).then(r => r.json()).then(d => {
+    const loadingTimer=setTimeout(()=>onLoading?.(true),300);
+    api(`/overview?year=${year}${refresh ? "&fresh=1&t="+Date.now() : ""}`,undefined,controller.signal).then(r => r.json()).then(d => {
       if (live) { snapshots.set(year, {data:d, at:Date.now(), revision}); redraw(i => i+1); }
-    }).catch(e => { if (live) setError(e.message); });
-    return () => { live = false; };
+    }).catch(e => { if (live&&!aborted(e)) setError(e.message); }).finally(()=>{clearTimeout(loadingTimer);if(live)onLoading?.(false);});
+    return () => { live = false;clearTimeout(loadingTimer);controller.abort();onLoading?.(false); };
   }, [api, year, revision, retry, snapshots]);
   return <section className="public-overview" aria-labelledby="overview-title">
     <div className="section-top"><div><div className="eyebrow">SAFETY OVERVIEW</div><h2 id="overview-title">함께 만드는 안전 현황</h2><p className="muted">시설별 참여와 위험요인 분포를 확인하세요. 평가항목 기준 집계입니다.</p></div><label className="year-filter">조회 연도<select value={year} onChange={e => setYear(Number(e.target.value))}>{(data?.years || [year]).map(y => <option key={y} value={y}>{y}년</option>)}</select></label></div>

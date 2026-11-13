@@ -102,6 +102,22 @@ class StateRequest(StrictModel):
     status: Literal['조치 중', '접수']
 
 
+class PlanRequest(StrictModel):
+    request_id: str = Field(pattern=r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+    revision: StrictInt = Field(ge=1)
+    text: str = Field(min_length=1, max_length=6000)
+    due_date: str = ''
+
+    @field_validator('due_date')
+    @classmethod
+    def valid_date(cls, value):
+        if value:
+            from datetime import date
+            if date.fromisoformat(value).isoformat() != value:
+                raise ValueError('예정일을 확인하세요.')
+        return value
+
+
 class ReportRequest(StrictModel):
     format: Literal['xlsx', 'pdf', 'hwpx']
     facility: str = ''
