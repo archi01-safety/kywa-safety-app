@@ -19,6 +19,7 @@ from .repository import RepositoryError, cells, quoted
 from .sheet_format import canonical, DATE_FORMAT, format_requests
 from .sheet_schema import Layout
 from .visible_layout import VisibleLayout, is_visible
+from .column_alignment import row_alignment
 from .submitter_name import display_name
 from .storage_metrics import phase
 
@@ -225,6 +226,11 @@ class GoogleRows:
         # Only expand native table/filter ranges; never copy a possibly deleted row's format.
         requests = format_requests(self.api, self.sid, self.repo.settings.sheet_name, len(rows), len(rows), width=len(self.layout.header), sheet_info=self._sheet_info)
         for index in indexes:
+            # Native-table expansion can replace the appended cells' alignment.
+            # Apply only alignment after that update; keep fonts, dates and links.
+            aligned=[{'userEnteredFormat':{'horizontalAlignment':row_alignment(i)}} for i in range(len(self.layout.positions))]
+            requests.append({'updateCells':{'start':{'sheetId':self.sheet_id,'rowIndex':index,'columnIndex':0},
+                'rows':[{'values':self.layout.physical(aligned,{})}], 'fields':'userEnteredFormat.horizontalAlignment'}})
             requests.append({'updateCells':{'start':{'sheetId':self.sheet_id, 'rowIndex':index, 'columnIndex':0},
                 'rows':[{'values':[{}]}], 'fields':'note'}})
         with phase('format'):
@@ -340,6 +346,7 @@ class Store:
             for index,cell in enumerate(row['values']):
                 template_index = index if index < len(template) else 12
                 cell['userEnteredFormat']=copy.deepcopy(template[template_index])
+                cell['userEnteredFormat']['horizontalAlignment']=row_alignment(index)
             for index in (12,17,19):
                 # Do not inherit an earlier photo's explicitly formatted hyperlink.
                 text = row['values'][index]['userEnteredFormat'].setdefault('textFormat',{})
