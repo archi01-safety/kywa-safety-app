@@ -1,5 +1,11 @@
 # KYWA 개발·운영 인수인계
 
+## 2026-11-13 — v1.2.0 개선조치 화면·모바일 헤더 검증 및 배포 준비
+
+현재 후보는 `feature/action-workspace-v1.2`다. 기준 운영 SHA는 `329f2f8`/기관별 v1.1.2이며 아래 과거 기록은 시점별 이력이다. 새 작업 화면은 목록·원본·조치의 독립 스크롤, 선택 요약 고정, 작은 화면 원본 이동, 메뉴 이동 후 초안/필터 유지, 불필요한 focus 재조회 차단을 포함한다. 지원기관 모바일 헤더는 KYWA와 같은 68px다. 상세 근거는 ACTION-WORKSPACE.ko.md와 artifacts/v1.2-verification.json을 따른다. 이번에는 Google 시트·환경변수·기관별 평가 기준을 바꾸지 않는다.
+
+사용자 요청으로 두 저장소 Actions를 비활성화하고 결과 산출물70개를 삭제했다. 마지막 운영 CI의 ZIP2개는 local-data/actions-retirement-20261113/에 비공개 보관했다. main의 워크플로17개와 현재 운영 소스의 워크플로/템플릿을 제거했다. Render YAML은 유지한다. CI를 재활성화하거나 소스 패키지에서 워크플로를 복원하지 않는다. 로컬 검사와 실제 배포 상태를 구분해 마지막 배포 후 이 문단을 확정한다.
+
 ## 2026-11-13 — 8개 기관 v1.1.2 배포·기존 행 정렬 완료
 
 운영 소스는 `329f2f8384c6c94f3cdbe360dfadfbb41b9c024a`다. [PR #7](https://github.com/archi01-safety/kywa-safety-app/pull/7)과 [CI](https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457)에서 백엔드 337개, 프런트 단위 15개, 8개 기관 PC/모바일·root/AX 및 Docker 검사를 통과했다. 8개 독립 서비스의 해당 SHA **Deploy succeeded / Live**를 확인했다. 서비스별 배포 ID는 artifacts/render-deployments.json, 고정 버전·설정/프롬프트/시트 구조·복구 근거는 releases/<기관>/v1.1.2.json과 <기관>/v1.1.2 태그를 따른다. 다른 기관까지 한 번에 Blueprint 동기화하지 않았다.

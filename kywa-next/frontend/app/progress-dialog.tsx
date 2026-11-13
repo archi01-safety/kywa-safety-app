@@ -11,7 +11,7 @@ export function ProgressDialog({ busy, error, notice, onClose, onRetry, onHome }
   useEffect(() => {
     const target = dialog.current, previous = document.activeElement as HTMLElement | null;
     target?.showModal();
-    return () => { target?.close(); if (previous?.isConnected) previous.focus(); };
+    return () => { target?.close(); if (previous?.isConnected) previous.focus({preventScroll:true}); };
   }, []);
   useEffect(() => {
     if (!success) return;

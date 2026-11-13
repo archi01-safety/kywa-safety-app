@@ -8,6 +8,7 @@ import {LoadingPhoto} from "./loading-photo";
 import {FactQuestions,type FactQuestion,type FactAnswer} from "./fact-questions";
 import {LawReferences,type LawReference} from "./law-references";
 import {requestApi,RequestError,aborted} from "./request-api";
+import {ResumeGate} from "./resume-gate";
 import { TechnicalSupport, DeveloperDialog } from "./technical-support";
 import { SessionClock, type AuthSession } from "./session-clock";
 import { SheetIssues, type SheetIssue } from "./sheet-issues";
@@ -105,6 +106,9 @@ export default function Home() {
   const recordsPending=!!boot?.user&&tab!=="inspect"&&loadedKey!==listKey&&!listCache.current.has(listKey)&&!listError;
   const sheetIssues = boot?.user ? (loadedKey === listKey ? loadedIssues : listCache.current.get(listKey)?.issues ?? []) : [];
   const running = useRef(false);
+  const refreshOnReturn = useRef<(() => void) | null>(null);
+  const workspace = useRef<HTMLDivElement>(null);
+  const detailPanel = useRef<HTMLElement>(null);
 
   const api = useCallback(async (path:string,body?:object|FormData,signal?:AbortSignal)=>{
     const generation=epoch.current;
@@ -161,13 +165,26 @@ export default function Home() {
   }, [bootstrap]);
   useEffect(() => {
     if (!boot?.user) return;
-    let lastRefresh = 0;
-    const refresh = () => { if (document.visibilityState !== "visible" || Date.now() - lastRefresh < 1000) return; lastRefresh=Date.now(); void bootstrap().catch(() => {}); if (enhanced) setRevision(v => v+1); };
-    const timer = enhanced ? undefined : window.setInterval(refresh, 60000);
+    const gate = new ResumeGate();
+    const refresh = () => {
+      if (document.visibilityState !== "visible" || !gate.resume(Date.now(), running.current)) return;
+      void bootstrap().catch(() => {});
+      if (enhanced) setRevision(v => v + 1);
+    };
+    const leave = () => gate.leave(Date.now());
+    const visibility = () => { if (document.visibilityState === "hidden") leave(); else refresh(); };
+    refreshOnReturn.current = refresh;
+    window.addEventListener("blur", leave);
     window.addEventListener("focus", refresh);
-    document.addEventListener("visibilitychange", refresh);
-    return () => { if (timer) window.clearInterval(timer); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      refreshOnReturn.current = null;
+      window.removeEventListener("blur", leave);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", visibility);
+    };
   }, [boot?.user?.email, bootstrap, enhanced]);
+  useEffect(() => { if (!busy) refreshOnReturn.current?.(); }, [busy]);
   useEffect(() => { if (!enhanced) return; const channel = new BroadcastChannel(authChannel); channel.onmessage = () => { void bootstrap(); }; return () => channel.close(); }, [enhanced, bootstrap]);
   useEffect(() => {
     const controller=new AbortController(),sequence=++querySequence.current;
@@ -192,7 +209,15 @@ export default function Home() {
     },150);
     return()=>{clearTimeout(timer);if(loadingTimer)clearTimeout(loadingTimer);controller.abort();};
   }, [api,listKey,boot?.user?.email,filters,revision,tab]);
-  const navigate = (next: string) => { setTab(next); setSelectedId(""); setError(""); setFilters(emptyFilters); history.replaceState(null, "", appPath(`/#${next}`)); };
+  const navigate = (next: string) => { if (next === tab) return; setTab(next); setError(""); history.replaceState(null, "", appPath(`/#${next}`)); };
+  const selectAssessment = (id: string) => {
+    setSelectedId(id);
+    if (window.matchMedia("(min-width:1001px) and (min-height:650px)").matches) {
+      workspace.current?.scrollIntoView({block:"start",behavior:window.matchMedia("(prefers-reduced-motion:reduce)").matches?"instant":"smooth"});
+    } else {
+      detailPanel.current?.scrollIntoView({block:"start",behavior:window.matchMedia("(prefers-reduced-motion:reduce)").matches?"instant":"smooth"});
+    }
+  };
   const confirmPolicy = (item: SheetIssue) => run("현재 KYWA 기준을 적용하고 있습니다", async () => {
     const body={revision:item.revision}; await api(`/assessments/${item.id}/policy`, {...body, request_id:requestId(`policy:${item.id}`,body)});
     setRevision(v=>v+1); setNotice("현재 KYWA 기준으로 점수와 등급을 반영했습니다.");
@@ -305,7 +330,7 @@ export default function Home() {
             <section className="panel filter-panel"><div className="filter-heading"><Search size={17} /><strong>조회 조건</strong><button className="text-button" onClick={() => { setFilters(emptyFilters); setSelectedId(""); }}><RotateCcw size={13} />초기화</button></div><div className="filters"><label>시설<select value={filters.facility} onChange={e => setFilters({ ...filters, facility: e.target.value })}><option value="">전체 시설</option>{boot.facilities.filter(f => boot.user!.role === "admin" || boot.user!.facilities.includes(f)).map(f => <option key={f}>{f}</option>)}</select></label>{org?.department_enabled !== false && <label>부서<select value={filters.department} onChange={e => setFilters({ ...filters, department: e.target.value })}><option value="">전체 부서</option>{boot.departments.map(d => <option key={d}>{d}</option>)}</select></label>}<label>처리상태<select value={filters.status} onChange={e => setFilters({ ...filters, status: e.target.value })}><option value="">전체 상태</option>{["접수", "조치예정", "조치 중", "완료"].map(s => <option key={s} value={s}>{s==="완료"?"조치완료":s==="조치 중"?"조치중":s}</option>)}</select></label><label>시작일<input aria-label="조회 시작일" type="date" value={filters.start} onChange={e => setFilters({ ...filters, start: e.target.value })} /></label><label>종료일<input aria-label="조회 종료일" type="date" value={filters.end} onChange={e => setFilters({ ...filters, end: e.target.value })} /></label></div></section>
             {enhanced && <SheetIssues institution={brand.shortName} items={sheetIssues} admin={boot.user.role === "admin"} busy={!!busy} onConfirm={confirmPolicy} onRefresh={() => setRevision(v => v+1)} />}
             {listError && <p className="draft-conflict" role="alert">{listError}<button className="text-button" onClick={()=>setRevision(v=>v+1)}>목록 다시 불러오기</button></p>}
-            {tab === "actions" ? <div className="actions-grid"><section className="panel record-list"><div className="panel-heading"><h2>위험요인 목록 <span className="count">{records.length}</span></h2><button aria-label="목록 새로고침" className="icon-button" onClick={() => setRevision(v => v + 1)}><RotateCcw size={16} /></button></div>{records.length ? records.map(r => <button key={r.id} className={`record-item ${selectedId === r.id ? "selected" : ""}`} onClick={() => setSelectedId(r.id)}><div><span className="facility-tag">{r.facility}</span><Badge value={r.status} /><span className="record-date">{dateText(r.created_at)}</span></div><h3>{r.before.location}</h3><p>{r.before.scenario}</p>{org?.submitter_name.mode !== "disabled" && <p className="record-submitter">{org?.submitter_name.label}: {r.submitter_name || ""}</p>}<div className="record-meta"><span>{r.before.category}</span><Score value={r.after || r.before} /></div></button>) : <Empty>{recordsPending?"평가 목록을 불러오는 중입니다":"조회 조건에 맞는 평가가 없습니다."}</Empty>}</section><section className="panel detail-panel">{selected ? <ActionDetail initialDraft={actionDrafts.current.get(selected.id)} onDraftChange={d => actionDrafts.current.set(selected.id,d)} key={`${selected.id}:${selected.revision}`} enhanced={enhanced} protect={protect} record={selected} nameLabel={boot.organization.submitter_name.label} busy={busy} api={api} run={run} upload={upload} requestId={requestId} onSaved={() => { actionDrafts.current.delete(selected.id); setRevision(v => v + 1); setNotice("개선조치 기록을 저장했습니다."); }} /> : <Empty>목록에서 평가를 선택하면<br />개선조치와 이력을 확인할 수 있습니다.</Empty>}</section></div> : <>
+            {tab === "actions" ? <div className="actions-grid" ref={workspace}><section className="panel record-list" aria-label="위험요인 목록"><div className="panel-heading"><h2>위험요인 목록 <span className="count">{records.length}</span></h2><button aria-label="목록 새로고침" className="icon-button" onClick={() => setRevision(v => v + 1)}><RotateCcw size={16} /></button></div><div className="record-list-body" role="region" aria-label="위험요인 목록 스크롤 영역" tabIndex={0}>{records.length ? records.map(r => <button key={r.id} className={`record-item ${selectedId === r.id ? "selected" : ""}`} aria-pressed={selectedId === r.id} onClick={() => selectAssessment(r.id)}><div><span className="facility-tag">{r.facility}</span><Badge value={r.status} /><span className="record-date">{dateText(r.created_at)}</span></div><h3>{r.before.location}</h3><p>{r.before.scenario}</p>{org?.submitter_name.mode !== "disabled" && <p className="record-submitter">{org?.submitter_name.label}: {r.submitter_name || ""}</p>}<div className="record-meta"><span>{r.before.category}</span><Score value={r.after || r.before} /></div></button>) : <Empty>{recordsPending?"평가 목록을 불러오는 중입니다":"조회 조건에 맞는 평가가 없습니다."}</Empty>}</div></section><section ref={detailPanel} className="panel detail-panel" aria-label="선택한 평가의 원본 및 개선조치">{selected ? <ActionDetail initialDraft={actionDrafts.current.get(selected.id)} onDraftChange={d => actionDrafts.current.set(selected.id,d)} key={`${selected.id}:${selected.revision}`} enhanced={enhanced} protect={protect} record={selected} nameLabel={boot.organization.submitter_name.label} busy={busy} api={api} run={run} upload={upload} requestId={requestId} onSaved={() => { actionDrafts.current.delete(selected.id); setRevision(v => v + 1); setNotice("개선조치 기록을 저장했습니다."); }} /> : <Empty>목록에서 평가를 선택하면<br />개선조치와 이력을 확인할 수 있습니다.</Empty>}</section></div> : <>
               <div className="report-grid"><section className="panel distribution"><div className="panel-heading"><h2>최초 위험등급 분포</h2><span className="muted small">당시 평가 기준</span></div>{grades.map((g, i) => { const count = records.filter(r => r.before.grade === g).length; return <div className="bar-row" key={g}><span>{g}</span><div className="bar-track"><i className={`bar-${boot.organization.policy.grades[i].tone}`} style={{ width: `${records.length ? count / records.length * 100 : 0}%` }} /></div><strong>{count}<small>건</small></strong></div>; })}<p className="small muted">과거 평가의 등급은 그대로 보존됩니다.{records.some(r => !grades.includes(r.before.grade)) && ` 기타 기존 등급 ${records.filter(r => !grades.includes(r.before.grade)).length}건`}</p></section><section className={`panel export-panel ${enhanced && records.length ? "next-action" : ""}`}><span className="export-icon"><FileText size={28} /></span><h2>평가 결과를 보고서로</h2><p>현재 조회 조건의 평가와 개선 전후 사진,<br />조치내용을 하나의 보고서에 담습니다.</p><div className="download-options"><button disabled={!!busy || !records.length || sheetIssues.length > 0} onClick={() => download("xlsx")}><span className="file-format excel">X</span><span><strong>Excel 다운로드</strong><small>평가 목록과 집계 · .xlsx</small></span><ArrowDownToLine size={18} /></button><button disabled={!!busy || !records.length || sheetIssues.length > 0} onClick={() => download("pdf")}><span className="file-format pdf">P</span><span><strong>PDF 다운로드</strong><small>개선 전후 사진 포함 · .pdf</small></span><ArrowDownToLine size={18} /></button><button disabled={!enhanced || !!busy || !records.length || sheetIssues.length > 0} onClick={() => download("hwpx")}><span className="file-format">H</span><span><strong>한글 보고서</strong><small>{enhanced ? "편집 가능한 결과보고서 · .hwpx" : "HWPX 양식 연동 준비 중"}</small></span>{enhanced ? <ArrowDownToLine size={18} /> : <span className="coming-soon">예정</span>}</button></div><p className="small muted">한 번에 최대 {boot.report_max_rows}건까지 출력할 수 있습니다.</p></section></div>
               <section className="panel table-panel"><div className="panel-heading"><h2>위험성평가 내역 <span className="count">{records.length}</span></h2><span className="muted small">조회 결과 기준</span></div><div className="table-scroll"><table><thead><tr><th>시설 / 장소</th><th>위험요인</th>{org?.submitter_name.mode !== "disabled" && <th>{org?.submitter_name.label}</th>}<th>최초 평가</th><th>개선 후</th><th>상태</th><th>평가일</th></tr></thead><tbody>{records.map(r => <tr key={r.id}><td><strong>{r.facility} · {r.before.location}</strong><small>{r.department}</small></td><td>{r.before.category}</td>{org?.submitter_name.mode !== "disabled" && <td className="report-submitter">{r.submitter_name || ""}</td>}<td><Badge value={r.before.grade} tone={r.before.tone} /><small>{r.before.score}점</small></td><td>{r.after ? <><Badge value={r.after.grade} tone={r.after.tone} /><small>{r.after.score}점</small></> : <span className="muted">대기</span>}</td><td><Badge value={r.status} /></td><td>{dateText(r.created_at)}</td></tr>)}</tbody></table>{!records.length && <Empty>조회 조건에 맞는 평가가 없습니다.</Empty>}</div></section>
             </>}
@@ -369,6 +394,18 @@ type Api = (path: string, body?: object | FormData,signal?:AbortSignal) => Promi
 type Runner = (label: string, work: () => Promise<void>) => Promise<void>;
 function ActionDetail({ initialDraft, onDraftChange, enhanced, protect, record: r, nameLabel, busy, api, run, upload, requestId, onSaved }: { initialDraft?: ActionDraft; onDraftChange: (draft: ActionDraft) => void; enhanced: boolean; protect: (p: NonNullable<Photo>) => Promise<NonNullable<Photo>>; record: Assessment; nameLabel: string; busy: string; api: Api; run: Runner; upload: (f: File, update: (p: Photo) => void) => Promise<void>; requestId: (scope: string, body: object) => string; onSaved: () => void }) {
   const policy = r.reassessment_policy;
+  const original = useRef<HTMLElement>(null);
+  const showOriginal = () => {
+    const pane = original.current;
+    if (!pane) return;
+    const context = pane.closest(".action-detail")?.querySelector(".selected-context");
+    const header = document.querySelector(".institution-header");
+    const offset = (header?.getBoundingClientRect().height || 0) + (context?.getBoundingClientRect().height || 0) + 8;
+    const reduce = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+    pane.scrollTo({top:0,behavior:"instant"});
+    window.scrollTo({top:Math.max(0,window.scrollY + pane.getBoundingClientRect().top - offset),behavior:reduce?"instant":"smooth"});
+    pane.focus({preventScroll:true});
+  };
   const [text, setText] = useState(initialDraft?.text || "");
   const [planText,setPlanText]=useState(initialDraft?.planText ?? r.plan?.text ?? ""),[dueDate,setDueDate]=useState(initialDraft?.dueDate ?? r.plan?.due_date ?? "");
   const [pending,setPending]=useState<{draft_id:string;questions:FactQuestion[]}|null>(initialDraft?.revision===r.revision?initialDraft.pending??null:null);
@@ -384,10 +421,23 @@ function ActionDetail({ initialDraft, onDraftChange, enhanced, protect, record: 
   const confirmAfter=(answers:FactAnswer[])=>run("확인한 조건으로 재평가를 정리하고 있습니다",async()=>{if(!pending)return;const data=await(await api(`/analyses/${pending.draft_id}/confirm`,{answers})).json();if(data.questions?.length)setPending(data);else{setPending(null);setResult(data);}});
   const save = (complete: boolean) => run("개선조치 기록을 저장하고 있습니다", async () => { if (!result) return; const body = { draft_id: result.draft_id, revision: result.revision, p: result.p, s: result.s, complete }; await api(`/assessments/${r.id}/actions`, { ...body, request_id: requestId(r.id, body) }); onSaved(); });
   const reopen = () => run("평가 상태를 변경하고 있습니다", async () => { const body = { revision: r.revision, status: "조치 중" }; await api(`/assessments/${r.id}/state`, { ...body, request_id: requestId(r.id, body) }); onSaved(); });
-  return <><div className="detail-heading"><span className="eyebrow">ASSESSMENT DETAIL</span><Badge value={r.status} /></div><h2>{r.facility} · {r.before.location}</h2><p className="muted small">{r.department ? `${r.department} · ` : ""}{dateText(r.created_at)}</p>{r.submitter_name !== undefined && <p className="detail-submitter">{nameLabel}: {r.submitter_name}</p>}<div className="detail-risk"><span>{r.before.category}</span><Score value={r.before} /></div><dl className="record-description"><dt>위험상황</dt><dd>{r.before.scenario}</dd><dt>감소대책</dt><dd>{r.before.solution}</dd></dl><div className="detail-photos">{(r.photo_urls?.length?r.photo_urls:[r.photo_url]).map((url,index)=><LoadingPhoto key={url||index} url={url} alt={`개선 전 현장 사진 ${index+1}`}/>)}</div><details><summary>평가 기준 · 관련근거</summary><p>{r.policy} · 빈도 {r.before.p} / 강도 {r.before.s}</p>{r.policy === "LEGACY-UNKNOWN" && policy && <p>기존 점수·등급은 당시 기록 그대로입니다. 이후 재평가에는 {policy.version} 기준을 적용합니다.</p>}{policy && <Criteria policy={policy} />}<LawReferences text={r.before.law} initial={r.before.law_references}/></details>
-    {draftChanged && <p role="status" className="draft-conflict">시트 또는 앱에서 평가가 변경되었습니다. 작성한 조치내용과 사진은 유지됩니다. 변경 내용을 확인하고 다시 재평가해 주세요.</p>}
+  return <div className="action-detail">
+    <header className="selected-context">
+      <div className="selected-context-title"><span className="eyebrow">선택한 위험요인</span><h2 title={`${r.facility} · ${r.before.location}`}>{r.facility} · {r.before.location}</h2><p className="muted small">{r.department ? `${r.department} · ` : ""}{dateText(r.created_at)}</p><button className="text-button reference-jump" onClick={showOriginal}>원본 보기<ArrowUpRight size={13}/></button></div>
+      <div className="selected-context-risk"><Badge value={r.status} /><span className="small muted">최초 평가</span><Score value={r.before} /></div>
+    </header>
+    <div className="action-detail-body">
+      <section ref={original} className="reference-pane" aria-label="원본 위험성평가" tabIndex={0}>
+        <h3>원본 위험성평가</h3><p className="muted small">{r.before.category} · 빈도 {r.before.p} / 강도 {r.before.s}</p>{r.submitter_name !== undefined && <p className="detail-submitter">{nameLabel}: {r.submitter_name}</p>}
+        <dl className="record-description"><dt>위험상황</dt><dd>{r.before.scenario}</dd><dt>감소대책</dt><dd>{r.before.solution}</dd></dl><div className="detail-photos">{(r.photo_urls?.length?r.photo_urls:[r.photo_url]).map((url,index)=><LoadingPhoto key={url||index} url={url} alt={`개선 전 현장 사진 ${index+1}`}/>)}</div><details><summary>평가 기준 · 관련근거</summary><p>{r.policy} · 빈도 {r.before.p} / 강도 {r.before.s}</p>{r.policy === "LEGACY-UNKNOWN" && policy && <p>기존 점수·등급은 당시 기록 그대로입니다. 이후 재평가에는 {policy.version} 기준을 적용합니다.</p>}{policy && <Criteria policy={policy} />}<LawReferences text={r.before.law} initial={r.before.law_references}/></details>
     {r.after && <div className="saved-action"><div><strong>최근 개선조치</strong><Score value={r.after} /></div><p>{r.after.text || "기존 기록에 조치내용 없음"}</p><LoadingPhoto url={r.after.photo_url} alt="개선 후 현장 사진"/><small>{r.after.actor || "기존 기록"} · {dateText(r.after.created_at || "")}</small></div>}
+      </section>
+      <section className="action-editor" aria-label="개선조치 작성 영역" tabIndex={0}>
+        <h3 className="action-editor-title">개선조치 작성</h3>
+    {draftChanged && <p role="status" className="draft-conflict">시트 또는 앱에서 평가가 변경되었습니다. 작성한 조치내용과 사진은 유지됩니다. 변경 내용을 확인하고 다시 재평가해 주세요.</p>}
     {r.status === "완료" ? <div className="completed-panel"><CheckCircle2 size={22} /><strong>개선조치가 완료되었습니다.</strong><button className="button secondary" disabled={!!busy} onClick={reopen}><RotateCcw size={15} />다시 열기</button></div> : !policy ? <p role="alert">원래 평가 기준이 확인되지 않아 재평가할 수 없습니다. 관리자에게 기준 이관을 요청하세요.</p> : <fieldset disabled={!!busy} className="action-form"><div className="action-plan"><h3>조치계획</h3><label>계획 내용<textarea aria-label="조치계획 내용" rows={3} maxLength={6000} value={planText} onChange={e=>setPlanText(e.target.value)} placeholder="예정된 조치내용을 작성해 주세요."/></label><label>조치 예정일 <span className="optional">선택</span><input aria-label="조치 예정일" type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}/></label><button className="button secondary full" disabled={!!busy||!planText.trim()||draftChanged} onClick={savePlan}>조치예정으로 저장</button><p className="small muted">계획만 저장할 때에는 AI 재평가가 필요하지 않습니다.</p></div><h3><ClipboardCheck size={18} />개선조치 기록</h3><label>실제 조치내용<textarea aria-label="실제 조치내용" rows={4} maxLength={6000} value={text} placeholder="어떤 개선을 했는지 구체적으로 작성해 주세요." onChange={e => { setText(e.target.value); setResult(null); }} /></label><label>개선 후 사진 <span className="optional">선택</span></label><PhotoInput enhanced={enhanced} value={photo} disabled={!!busy} onUpload={f => upload(f, p => { setPhoto(p); setResult(null); })} onChange={p => { setPhoto(p); if (p?.id !== photo?.id) setResult(null); }} /><button className="button secondary full reassess-button" disabled={!!busy || !text.trim() || !enhanced && !!photo && !photo.confirmed} onClick={reassess}><Sparkles size={17} />AI 재평가하기</button>{pending&&<FactQuestions key={pending.draft_id} questions={pending.questions} disabled={!!busy} onConfirm={confirmAfter}/>}<>{result && <div className={`reassessment ${enhanced ? "next-action" : ""}`}><h3>재평가 결과 검토</h3><p>{result.rationale}</p><div className="field-row"><label>빈도<select value={result.p} onChange={e => { const p = +e.target.value; setResult({ ...result, ...calculated(policy, p, result.s) }); }}>{policy.p_levels.map(v => <option key={v.value} value={v.value}>{v.value} · {v.description}</option>)}</select></label><label>강도<select value={result.s} onChange={e => { const s = +e.target.value; setResult({ ...result, ...calculated(policy, result.p, s) }); }}>{policy.s_levels.map(v => <option key={v.value} value={v.value}>{v.value} · {v.description}</option>)}</select></label><Score value={result} /></div><p className="small muted">현장 확인에 따라 값을 조정한 뒤 저장하세요. 완료 처리는 담당자의 확인을 의미합니다.</p><div className="button-row"><button className="button secondary" disabled={!!busy || enhanced && !!photo && !photo.confirmed} onClick={() => save(false)}>조치 중으로 저장</button><button className="button primary" disabled={!!busy || enhanced && !!photo && !photo.confirmed} onClick={() => save(true)}><Check size={16} />확인 후 완료</button></div></div>}</></fieldset>}
-    <div className="history"><h3>변경 이력 <span>{events.length}</span></h3>{historyError ? <p role="alert">{historyError}</p> : events.length ? [...events].reverse().map(e => <div className="history-event" key={e.id}><i /><div><strong>{e.kind}</strong><span>{dateText(e.at)} · {e.actor}</span><p>{e.text}</p>{e.after && <Badge value={`${e.after.grade} · ${e.after.score}점`} tone={e.after.tone} />}</div></div>) : <p className="muted small">아직 변경 이력이 없습니다.</p>}</div></>;
+    <div className="history"><h3>변경 이력 <span>{events.length}</span></h3>{historyError ? <p role="alert">{historyError}</p> : events.length ? [...events].reverse().map(e => <div className="history-event" key={e.id}><i /><div><strong>{e.kind}</strong><span>{dateText(e.at)} · {e.actor}</span><p>{e.text}</p>{e.after && <Badge value={`${e.after.grade} · ${e.after.score}점`} tone={e.after.tone} />}</div></div>) : <p className="muted small">아직 변경 이력이 없습니다.</p>}</div>      </section>
+    </div>
+  </div>;
 }
 

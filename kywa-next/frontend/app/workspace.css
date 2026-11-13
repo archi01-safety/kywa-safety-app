@@ -1,0 +1,86 @@
+/* Keep the selected source, list and editor available without coupling their scroll. */
+.record-list { display:flex; flex-direction:column; }
+.record-list > .panel-heading { flex-shrink:0; }
+.record-list-body { min-height:0; max-height:440px; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
+.actions-grid .detail-panel { padding:0; overflow:visible; scroll-margin-top:calc(var(--header-height) + 12px); }
+.action-detail { min-width:0; }
+.selected-context { position:sticky; top:calc(var(--header-height) + 8px); z-index:20; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:18px 22px; background:var(--surface); border-bottom:1px solid var(--line); border-radius:var(--radius) var(--radius) 0 0; }
+.selected-context-title { min-width:0; }
+.selected-context .eyebrow { display:block; margin-bottom:6px; }
+.selected-context h2 { font-size:18px; line-height:1.5; overflow-wrap:anywhere; }
+.selected-context p { margin-top:5px; }
+.selected-context-risk { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+.selected-context-risk .score { flex-wrap:wrap; justify-content:flex-end; }
+.reference-jump { margin-top:7px; color:var(--accent); min-height:24px; }
+.reference-pane,.action-editor { min-width:0; padding:22px; overflow-wrap:anywhere; }
+.reference-pane { max-height:420px; overflow:auto; overscroll-behavior:contain; border-bottom:1px solid var(--line); scroll-margin-top:calc(var(--header-height) + 112px); }
+.reference-pane > h3,.action-editor-title { font-size:15px; margin:0 0 12px; }
+.reference-pane > .small { margin-bottom:10px; }
+.reference-pane .detail-photos { margin-bottom:18px; }
+.action-editor-title { padding-bottom:14px; border-bottom:1px solid var(--line); }
+.action-editor .action-form { margin-top:18px; padding-top:0; border-top:0; }
+.action-editor .history { margin-top:24px; }
+.record-list-body:focus-visible,.reference-pane:focus-visible,.action-editor:focus-visible { outline:2px solid var(--focus); outline-offset:-3px; }
+
+@media screen and (min-width:1001px) and (min-height:650px) {
+  .actions-grid { grid-template-columns:minmax(250px,28%) minmax(0,1fr); align-items:stretch; position:sticky; top:calc(var(--header-height) + 12px); height:calc(100dvh - var(--header-height) - 24px); max-height:900px; min-height:440px; scroll-margin-top:calc(var(--header-height) + 12px); }
+  .actions-grid > .panel { min-height:0; max-height:none; height:100%; overflow:hidden; }
+  .record-list-body { flex:1; max-height:none; }
+  .detail-panel { container:action-record / inline-size; }
+  .action-detail { display:flex; flex-direction:column; height:100%; }
+  .selected-context { position:relative; top:auto; flex-shrink:0; padding:16px 20px; }
+  .selected-context h2 { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .reference-jump { display:none; }
+  .action-detail-body { flex:1; min-height:0; display:grid; grid-template-rows:minmax(0,.85fr) minmax(0,1.15fr); }
+  .reference-pane,.action-editor { min-height:0; max-height:none; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; padding:18px 20px; }
+  .detail-panel > .empty { height:100%; }
+}
+@container action-record (min-width:720px) {
+  .action-detail-body { grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); grid-template-rows:minmax(0,1fr); }
+  .reference-pane { border-bottom:0; border-right:1px solid var(--line); }
+}
+@media screen and (max-width:720px) {
+  .record-list-body { max-height:360px; }
+  .selected-context { padding:13px 16px; gap:10px; }
+  .selected-context h2 { font-size:16px; }
+  .selected-context .eyebrow { font-size:9px; }
+  .selected-context p { font-size:10px; }
+  .selected-context-risk { max-width:115px; }
+  .selected-context-risk .badge { font-size:10px; }
+  .reference-pane,.action-editor { padding:18px 16px; }
+  .reference-pane { max-height:min(420px,50dvh); }
+}
+
+/* Partners retain both institution names, with controls beside them on phones. */
+.partner-app { --header-height:76px; }
+.partner-app .institution-header { height:var(--header-height); min-height:0; }
+.partner-brand { gap:1px; }
+.partner-brand strong { line-height:1.25; }
+.partner-brand > span { line-height:1; }
+.partner-brand small { line-height:1.25; }
+@media screen and (max-width:720px) {
+  .partner-app { --header-height:68px; }
+  .partner-app .institution-header { height:var(--header-height); min-height:0; flex-direction:row; justify-content:space-between; gap:8px; padding:6px 12px; }
+  .partner-app .institution-header .brand { flex:1; min-width:0; justify-content:flex-start; }
+  .partner-brand { display:grid; grid-template-columns:auto minmax(0,1fr); gap:2px 4px; text-align:left; align-items:center; }
+  .partner-brand strong { grid-column:1/-1; font-size:13px; white-space:normal; overflow-wrap:anywhere; }
+  .partner-brand > span { grid-column:1; grid-row:2; font-size:10px; }
+  .partner-brand small { grid-column:2; grid-row:2; font-size:10px; white-space:nowrap; }
+  .partner-app .institution-header .topbar-right { flex:0 0 auto; max-width:156px; align-content:center; justify-content:flex-end; flex-wrap:wrap; gap:2px 6px; }
+  .partner-app .institution-header .session-clock { flex:0 0 100%; justify-content:flex-end; min-height:24px; font-size:11px; gap:4px; }
+  .partner-app .institution-header .session-clock-label { display:none; }
+  .partner-app .institution-header .session-clock button { min-height:24px; padding:2px 8px; line-height:18px; }
+  .partner-app .theme-toggle { width:30px; height:30px; border-radius:7px; }
+  .partner-app .institution-header .icon-button { min-width:28px; width:28px; height:28px; }
+  .partner-app .institution-header .environment { min-height:26px; padding:4px 7px; font-size:10px; }
+}
+@media screen and (max-width:360px) {
+  .partner-app .institution-header { padding-left:10px; padding-right:10px; gap:6px; }
+  .partner-app .institution-header .topbar-right { max-width:148px; gap:2px 4px; }
+}
+@media print {
+  .actions-grid,.action-detail,.action-detail-body { position:static; display:block; height:auto; max-height:none; min-height:0; }
+  .selected-context { position:static; }
+  .record-list-body,.reference-pane,.action-editor { max-height:none; height:auto; overflow:visible; }
+  .reference-jump { display:none; }
+}
