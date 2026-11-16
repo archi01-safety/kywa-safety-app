@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "organization": "cayf",
+  "version": "v1.2.1",
+  "tag": "cayf/v1.2.1",
+  "source_commit": "0a1c236236dcd7a76b8f4c36ac6f88dea40d6b58",
+  "state": "deployed",
+  "site": "https://cayf-safety.onrender.com",
+  "organization_config_sha256": "6200eaa2fb6bb816d087a78b95cdda6ddc32da60e9bd942ba296ad64f8f87f75",
+  "policy_version": "CAYF-2026-v1",
+  "prompt_version": "CAYF-2026-11-02-v2",
+  "prompt_source_sha256": "9ce123b0ebdb6619db16361435cc324fdc4501ebb54106d27b5d00a0da6dc7f4",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbt5150ae00c739mhmv0",
+    "status": "Live",
+    "checked_at": "2026-11-16T00:41:36.556Z"
+  },
+  "verification": {
+    "reference": "JPEG-UPLOAD.ko.md",
+    "photo_regression_tests": 104,
+    "provided_original_local_api": true,
+    "synthetic_production_photo_prepare_and_preview": true,
+    "temporary_photos_reset": true,
+    "root_and_ax_builds": true,
+    "sheet_and_policy_unchanged": true,
+    "detailed_risk_enabled": false,
+    "new_actions_ci": false,
+    "original_deletion": "User will delete; not included in repository or packages"
+  }
+}

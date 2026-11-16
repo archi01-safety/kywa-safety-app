@@ -1,5 +1,9 @@
 # AX 호환 변경·검증 기록
 
+## 2026-11-16 v1.2.1 JPEG 대표사진 보완
+
+0a1c236의 JPEG/MPO 대표사진 처리와 선택창 보완을 포함해 root/AX webpack·TypeScript 빌드를 통과했다. 사진 관련104개 회귀와 제공 원본의 로컬8개기관API/미리보기, 모바일 크기의 입력/교체를 확인했다. Render8개 Live와 합성MPO 사진 준비/미리보기는 별도 통과했다. AX ZIP은 /apps/kywa-safety 정적 화면을 포함하며 원본 사진·인증정보·Actions YAML은 포함하지 않는다. 실제 AX 등록 및 해당 플랫폼 외부 연동은 계속 미검증이다.
+
 ## 2026-11-13 v1.2.0 소스·AX 패키지 갱신
 
 최신 작업 화면·헤더는 ACTION-WORKSPACE.ko.md를 따른다. 로컬 백엔드337개(26모듈 독립 실행), 프런트단위20개, root/AX TypeScript·webpack 빌드와 실제 브라우저를 통과했다. Actions는 사용자 요청으로 중지했고 아래 CI 링크는 과거 로그다. 로컬 Docker 미설치이므로 새 Docker 검증은 실제 Render8개 빌드/Live 성공으로 구분한다. 소스는 aa30598이며 AX 정적 경로는 /apps/kywa-safety다. 실제 AX 등록은 수행하지 않았다.
