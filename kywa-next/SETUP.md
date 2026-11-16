@@ -2,7 +2,7 @@
 
 ## 2026-11-16 v1.3 재개 기준
 
-HANDOFF.md 맨 위와 LEGAL-RISK-ROTATION-V1.3.ko.md를 따른다. 검증된8개기관의 내부 세부 판정 기본값은 true이며 담당자 회신을 필수로 기다리지 않는다. 기존 .env에서 false로 고정한 경우 의도한 복구 설정인지 확인한다. 과거 점수는 일괄 재계산하지 않는다. backend/risk_profiles/의 JSON을 소스/AX패키지에 반드시 포함한다. 공개 탭 일반20열/AYF18열은 그대로다. 아래v1.2의 false 유지 안내는 당시 이력이다.
+HANDOFF.md 맨 위와 LEGAL-RISK-ROTATION-V1.3.ko.md를 따른다. 검증된8개기관의 내부 세부 판정 기본값은 true이며 담당자 회신을 필수로 기다리지 않는다. 기존 .env에서 false로 고정한 경우 의도한 복구 설정인지 확인한다. 과거 점수는 일괄 재계산하지 않는다. backend/risk_profiles/의 JSON을 소스/AX패키지에 반드시 포함한다. 공개 탭 일반20열/AYF18열은 그대로다. 아래 이전 항목은 최신v1.3 설정에 맞춰 해석한다.
 
 ## 2026-11-13 v1.2 작업 재개 기준
 
@@ -10,7 +10,7 @@ HANDOFF.md 맨 위와 LEGAL-RISK-ROTATION-V1.3.ko.md를 따른다. 검증된8개
 
 ### 기존 데이터 재개 기준
 
-8개 Render의 현재 소스/기관 버전은 HANDOFF.md와 releases/를 먼저 확인한다. 신규 설치라는 이유로 기존 운영 시트 이관을 반복하지 않는다. 최종 구조는 일반20열/AYF18열이며 마지막 열은 개선 전 사진2다. Google 정렬 도구는 SHEET-EDITING.ko.md를 따른다. 인증값 LAW_API_OC는 기존 비공개 환경 그룹에 있으며 키 원문을 소스나 문서에 넣지 않는다. DETAILED_RISK_ENABLED=false를 유지하고 담당자 사례 검토 후 별도 활성화한다. PIN은 변경하지 않았으며 서버 재시작 후에도 절대 만료 전 세션을 복원한다. 단일 worker/instance 운영을 유지한다.
+8개 Render의 현재 소스/기관 버전은 HANDOFF.md와 releases/를 먼저 확인한다. 신규 설치라는 이유로 기존 운영 시트 이관을 반복하지 않는다. 최종 구조는 일반20열/AYF18열이며 마지막 열은 개선 전 사진2다. Google 정렬 도구는 SHEET-EDITING.ko.md를 따른다. 인증값 LAW_API_OC는 기존 비공개 환경 그룹에 있으며 키 원문을 소스나 문서에 넣지 않는다. v1.3의 검증된 세부 판정은 기본 활성화하며 담당자 회신은 필수 조건이 아니다. 명시적인 DETAILED_RISK_ENABLED=false는 기존 판정으로 복구할 때 사용한다. PIN은 변경하지 않았으며 서버 재시작 후에도 절대 만료 전 세션을 복원한다. 단일 worker/instance 운영을 유지한다.
 
 먼저 HANDOFF.md와 AGENTS.md를 읽고 현재 브랜치·배포 상태를 확인한다. 운영 데이터 변경 없이 체험 환경부터 실행한다.
 

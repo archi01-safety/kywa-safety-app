@@ -1,7 +1,7 @@
 {
   "format": 1,
   "date": "2026-11-16",
-  "state": "validated_predeployment",
+  "state": "deployed",
   "baseline_runtime": "0a1c236236dcd7a76b8f4c36ac6f88dea40d6b58",
   "organizations": [
     "kywa",
@@ -275,5 +275,8 @@
     "Synthetic policy alignment is not expert accuracy certification.",
     "Real multi-angle site photographs are a separate future validation.",
     "iPhone Safari and physical haptics were not directly controlled."
-  ]
+  ],
+  "source_commit": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+  "render_docker_builds_and_live": 8,
+  "deployment_reference": "artifacts/render-deployments.json"
 }

@@ -16,13 +16,13 @@
   },
   {
     "path": "ACTION-WORKSPACE.ko.md",
-    "bytes": 5184,
-    "sha256": "2b310c1becba2a490242f564ffc2fc45d180ffb3fdf568d77e5eab63c09f3e1d"
+    "bytes": 5325,
+    "sha256": "ed606accc18ce49ca8cb38fd818b26a52d742c16c8f6eb2841a312f7a353cc4e"
   },
   {
     "path": "AGENTS.md",
-    "bytes": 3173,
-    "sha256": "c37eb8818296eaf3daf4ed3a5731d4e8a1dd053ae75d7cca95a9c5ffca378162"
+    "bytes": 3209,
+    "sha256": "a124f95dcdfd017f7aaa0a60e98bf2ef23acd2dcf4bb5d93983e9c68afc21158"
   },
   {
     "path": "AX-BUILD.json",
@@ -46,8 +46,8 @@
   },
   {
     "path": "CHANGELOG.md",
-    "bytes": 20695,
-    "sha256": "a2e700289a3bc6a689339a648de0c6a795382795625fcd0914b58076ceda205a"
+    "bytes": 20948,
+    "sha256": "94939346776747b1af482d953d07df837bca88593a64c8226f93bfbaaeba201b"
   },
   {
     "path": "DEPLOYMENT-NOTES.md",
@@ -66,8 +66,8 @@
   },
   {
     "path": "HANDOFF.md",
-    "bytes": 46105,
-    "sha256": "42fe47cce479d78927beb041fd97611cdbac0fde7363ceba8277fa301d1d927d"
+    "bytes": 47736,
+    "sha256": "29033ab9017b1d48efd83e14f84990128ce468272fe6d99718c26e5507c062f8"
   },
   {
     "path": "JPEG-UPLOAD.ko.md",
@@ -126,8 +126,8 @@
   },
   {
     "path": "SETUP.md",
-    "bytes": 7573,
-    "sha256": "8933d83b52091300e34c9053a00fc56182d1472bff61c4c263cbbabbb64b7bbc"
+    "bytes": 7683,
+    "sha256": "9ae841c86aa358b93f9289a2b2c551bac814ca36c4397b5a1e9f38c12505cc19"
   },
   {
     "path": "SHEET-EDITING.ko.md",
@@ -1185,6 +1185,11 @@
     "sha256": "f9d5f114ea3407855555339cf750ee1400aa1e42056d2fbe28bdc6dd30877368"
   },
   {
+    "path": "releases/ayf/v1.3.0.json",
+    "bytes": 1568,
+    "sha256": "6a33f99d506fbf60ebfcf260cc4c15337d8255451c7f546813bebce568cec948"
+  },
+  {
     "path": "releases/cayf/v1.0.0.json",
     "bytes": 761,
     "sha256": "adf8064912a02e89dfcb6fa335b5537a3007954eade4f0f0727ad3773bbbd5a9"
@@ -1203,6 +1208,11 @@
     "path": "releases/cayf/v1.2.1.json",
     "bytes": 1256,
     "sha256": "2e2b724189c04d1837163e0f59c59a43432a94d93a104e8103bacb653409132c"
+  },
+  {
+    "path": "releases/cayf/v1.3.0.json",
+    "bytes": 1570,
+    "sha256": "3bdb79f7da181c04b41959b85aa79ccd12f4ed12a45cecd04b4fef7e81a257f6"
   },
   {
     "path": "releases/fowi/v1.0.0.json",
@@ -1230,6 +1240,11 @@
     "sha256": "c81b8d53d983524526d207e472e8a1fbc9c0c144df1b5b06752ee47a01af9d85"
   },
   {
+    "path": "releases/fowi/v1.3.0.json",
+    "bytes": 1570,
+    "sha256": "e5843f9c0f3c74c4ec72b8189a83d94630f0120cc8172b976c9a9ae3ae4e00d8"
+  },
+  {
     "path": "releases/khidi/v1.0.0.json",
     "bytes": 766,
     "sha256": "67bd7604ec1a78f2f8df13fd8011bc81aa0e5b26d1678cc12b168062ad6f8609"
@@ -1248,6 +1263,11 @@
     "path": "releases/khidi/v1.2.1.json",
     "bytes": 1261,
     "sha256": "284a430ac7c3dcfa05dffe98c43a8b3168d448de80355c73e42043ea6523d02f"
+  },
+  {
+    "path": "releases/khidi/v1.3.0.json",
+    "bytes": 1576,
+    "sha256": "edfa7096bdc383dd496fe3e0cdf41ef3e98009e7b3eb670c63b7bf38bc75640b"
   },
   {
     "path": "releases/knf/v1.0.0.json",
@@ -1270,6 +1290,11 @@
     "sha256": "2096419a1838b8310fe1c692b8e04c45c635646667d5722e684663882b60cbe9"
   },
   {
+    "path": "releases/knf/v1.3.0.json",
+    "bytes": 1564,
+    "sha256": "dd3cc7416e41625b6d993d4ede79aaeb22eab10565dd18219652a9e30e158a47"
+  },
+  {
     "path": "releases/knps/v1.0.0.json",
     "bytes": 761,
     "sha256": "50b612272f5d114ecba18cad8bb53f9018cbf74cd1a379a19cdaeb9d925e5d6c"
@@ -1290,6 +1315,11 @@
     "sha256": "ca2b728d73074fdbe00afdb8ac83d2188682ebe0259767d8745572201929a828"
   },
   {
+    "path": "releases/knps/v1.3.0.json",
+    "bytes": 1570,
+    "sha256": "de27f60bb25ad725f3bfce3400dbf057281537e402b02749111756ddd9abe7fa"
+  },
+  {
     "path": "releases/kohi/v1.0.0.json",
     "bytes": 761,
     "sha256": "698da6b90529c0f75c90f878f650f9fa8b2d4649826631168d5dd73e1052632c"
@@ -1308,6 +1338,11 @@
     "path": "releases/kohi/v1.2.1.json",
     "bytes": 1256,
     "sha256": "3c50928835909972dc377d43fd75de09e7fdf6e5dacf29e2fdb1dcb2e36971cc"
+  },
+  {
+    "path": "releases/kohi/v1.3.0.json",
+    "bytes": 1570,
+    "sha256": "b3b7d516b3b7e31232be2549ffb2952467993dba13845b77f36f5938448fa5d5"
   },
   {
     "path": "releases/kywa/v1.0.0.json",
@@ -1338,6 +1373,11 @@
     "path": "releases/kywa/v1.2.1.json",
     "bytes": 1268,
     "sha256": "a8badccfa46f1d2fe73685edbfe594751d4457fd6c4b6f5d4115a13806603778"
+  },
+  {
+    "path": "releases/kywa/v1.3.0.json",
+    "bytes": 1577,
+    "sha256": "4651f5525ae2af27d5ce5b47a0d20553e18a4045edc24428aabd1ed287f353c8"
   },
   {
     "path": "render.yaml",

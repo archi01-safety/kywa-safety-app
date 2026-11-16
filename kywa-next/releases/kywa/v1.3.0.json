@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "organization": "kywa",
+  "version": "v1.3.0",
+  "tag": "kywa/v1.3.0",
+  "source_commit": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+  "state": "deployed",
+  "site": "https://kywa-safety.onrender.com",
+  "organization_config_sha256": "1377f26bb362e765a57289ea1ea32fa632f24499d4dbd8ef5dce5a98dcb268d1",
+  "policy_version": "KYWA-2026-6LEVEL-v1",
+  "prompt_version": "KYWA-PROMPT-20261116-v3",
+  "prompt_source_sha256": "829efb7dc164929367f4bbb15b2e257274dd9bf1d65e13db2ba3857ba78f8a52",
+  "detailed_risk_profile": "kywa-facts-20261116-v3",
+  "detailed_risk_profile_sha256": "962a44768f04cd3c63e6afa2b01e06ca7800e31ee740c0449ba46a9daf710aad",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbt7i8uk1f9s73b2mmug",
+    "status": "Live",
+    "checked_at": "2026-11-16T03:33:19.526Z"
+  },
+  "verification": {
+    "reference": "artifacts/v1.3-verification.json",
+    "backend_tests": 483,
+    "frontend_tests": 20,
+    "institution_cases": 60,
+    "internal_combinations": 300,
+    "independent_model_calls": 36,
+    "public_pair_match": 1.0,
+    "critical_underestimates": 0,
+    "synthetic_angle_calls": 6,
+    "expert_accuracy_validated": false,
+    "real_photo_angle_accuracy_validated": false,
+    "detailed_risk_enabled": true,
+    "sheet_schema_unchanged": true,
+    "native_hwp_retested_this_release": false,
+    "new_actions_ci": false,
+    "render_docker_build_and_live": true
+  }
+}

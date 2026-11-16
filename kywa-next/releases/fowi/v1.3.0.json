@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "organization": "fowi",
+  "version": "v1.3.0",
+  "tag": "fowi/v1.3.0",
+  "source_commit": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+  "state": "deployed",
+  "site": "https://fowi-safety.onrender.com",
+  "organization_config_sha256": "b7f4f5846b462e7180e5392846011277614376126367aab69400a258b8fd1410",
+  "policy_version": "FOWI-2026-v1",
+  "prompt_version": "FOWI-PROMPT-20261116-v3",
+  "prompt_source_sha256": "421ca50e20a5075d698c05a9109e8f76c54a882d0d12c1af3c95d587c43df80c",
+  "detailed_risk_profile": "fowi-facts-20261116-v3",
+  "detailed_risk_profile_sha256": "9f87c62b0b0501be24bbf13ac025029e063094c639d1bc26c629700ef982f185",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbt7juhsrm7s73af6cvg",
+    "status": "Live",
+    "checked_at": "2026-11-16T03:36:31.722Z"
+  },
+  "verification": {
+    "reference": "artifacts/v1.3-verification.json",
+    "backend_tests": 483,
+    "frontend_tests": 20,
+    "institution_cases": 60,
+    "internal_combinations": 300,
+    "independent_model_calls": 36,
+    "public_pair_match": 1.0,
+    "critical_underestimates": 0,
+    "synthetic_angle_calls": 6,
+    "expert_accuracy_validated": false,
+    "real_photo_angle_accuracy_validated": false,
+    "detailed_risk_enabled": true,
+    "sheet_schema_unchanged": true,
+    "native_hwp_retested_this_release": false,
+    "new_actions_ci": false,
+    "render_docker_build_and_live": true
+  }
+}

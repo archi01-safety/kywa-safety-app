@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "organization": "ayf",
+  "version": "v1.3.0",
+  "tag": "ayf/v1.3.0",
+  "source_commit": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+  "state": "deployed",
+  "site": "https://ayf-safety.onrender.com",
+  "organization_config_sha256": "ad8b197419ce3988a96144411d5e0483b2913df1e487a17a4417d88bc9be1c12",
+  "policy_version": "AYF-2026-v1",
+  "prompt_version": "AYF-PROMPT-20261116-v3",
+  "prompt_source_sha256": "cb3cae5d28d8fc4298d0273d2c250f32097c255deab94e5caa20263018f5a175",
+  "detailed_risk_profile": "ayf-facts-20261116-v3",
+  "detailed_risk_profile_sha256": "586cc2d7a39ce04948e19b9f957601ffbe8e12f538f5905f0f037187bb80b2b0",
+  "sheet_schema": "ayf-visible18-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbt7j2mi0phs73etv2ng",
+    "status": "Live",
+    "checked_at": "2026-11-16T03:35:10.656Z"
+  },
+  "verification": {
+    "reference": "artifacts/v1.3-verification.json",
+    "backend_tests": 483,
+    "frontend_tests": 20,
+    "institution_cases": 60,
+    "internal_combinations": 300,
+    "independent_model_calls": 36,
+    "public_pair_match": 1.0,
+    "critical_underestimates": 0,
+    "synthetic_angle_calls": 6,
+    "expert_accuracy_validated": false,
+    "real_photo_angle_accuracy_validated": false,
+    "detailed_risk_enabled": true,
+    "sheet_schema_unchanged": true,
+    "native_hwp_retested_this_release": false,
+    "new_actions_ci": false,
+    "render_docker_build_and_live": true
+  }
+}
