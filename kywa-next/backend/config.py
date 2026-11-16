@@ -33,7 +33,8 @@ class Settings(BaseSettings):
     gemini_model: str = 'gemini-3.6-flash'
     kosha_api_key: str = ''
     law_api_oc: str = ''
-    detailed_risk_enabled: bool = False
+    # v1.3 institution profiles are release-validated. Explicit false restores legacy analysis.
+    detailed_risk_enabled: bool = True
     access_accounts_json: str = '{}'
     demo_data_path: str = str(ROOT / 'local-data' / 'demo.json')
     allow_legacy_writes: bool = False
@@ -83,6 +84,9 @@ class Settings(BaseSettings):
             raise ValueError('평가 탭과 조치이력 탭은 서로 달라야 합니다.')
         if org.demo_only and not self.demo:
             raise ValueError("시험 기관 설정은 실제 연동 환경에서 사용할 수 없습니다.")
+        if self.detailed_risk_enabled and not self.demo and not self.setup:
+            from .risk_profiles import load_profile
+            load_profile(org.policy.version)
         if 'demo_data_path' not in self.model_fields_set:
             folder = Path(self.app_data_dir) if self.app_data_dir else ROOT / 'local-data'
             self.demo_data_path = str(folder / org.id / 'demo.json') if org.id != 'kywa' else str(folder / 'demo.json')

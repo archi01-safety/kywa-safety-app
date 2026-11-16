@@ -132,7 +132,7 @@ def test_production_observations_cached_and_private(tmp_path):
         settings=SimpleNamespace(demo=False)
         def __init__(self):self.calls=0
         def observe(self,*args):
-            self.calls+=1;item=facts();item['controls']='unknown';return [item]
+            self.calls+=1;item=facts();item['controls']='unknown';item['extent']='moderate';return [item]
     cfg=Settings(_env_file=None,app_env='production',app_base_url='https://testserver',demo_data_path=str(tmp_path/'data.json'),
         session_secret='test-only-session-key-'*3,auth_mode='pin',admin_pin_hash=make_pin_hash('2468'),allow_legacy_writes=True,
         google_service_account_json=json.dumps({'type':'service_account','client_email':load_organization('kywa').storage.expected_service_account,'private_key':'test-placeholder'}),

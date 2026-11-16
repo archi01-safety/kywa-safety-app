@@ -96,6 +96,18 @@ class ActionRequest(StrictModel):
     complete: bool = True
 
 
+class RotatePhotoRequest(StrictModel):
+    request_id: str = Field(pattern=r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+    quarter_turns: StrictInt = Field(ge=-1, le=1)
+
+    @field_validator('quarter_turns')
+    @classmethod
+    def nonzero_turn(cls, value):
+        if value not in (-1, 1):
+            raise ValueError('회전 방향을 확인하세요.')
+        return value
+
+
 class StateRequest(StrictModel):
     request_id: str = Field(pattern=r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
     revision: StrictInt = Field(ge=1)

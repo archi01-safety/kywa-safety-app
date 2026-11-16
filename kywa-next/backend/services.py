@@ -28,10 +28,10 @@ def ai_response_schema(model):
     def compatible(value):
         if isinstance(value, dict):
             excluded = {'additionalProperties'}
-            if model.__name__ == 'FaceDetection':
+            if model.__name__ in ('FaceDetection', 'Observations'):
                 # Coordinate bounds in nested face arrays are rejected by this API dialect.
                 # Strict bounds/order/count validation still runs on the returned JSON.
-                excluded |= {'minimum','maximum','maxItems'}
+                excluded |= {'minimum','maximum','maxItems','default'}
             return {k: compatible(v) for k, v in value.items() if k not in excluded}
         if isinstance(value, list):
             return [compatible(v) for v in value]
@@ -102,6 +102,12 @@ class Drafts:
                 del self.items[key]
                 raise ServiceError('분석 초안이 만료되었습니다. 다시 분석하세요.',code='draft_expired',status=409)
             return entry[2]
+
+    def invalidate_photo(self, owner, key):
+        with self.lock:
+            for _, entry_owner, value in self.items.values():
+                if entry_owner == owner and key in value.get('photo_keys', []):
+                    value['invalidated'] = True
 
 
 class RateLimiter:
