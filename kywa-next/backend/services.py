@@ -129,12 +129,14 @@ def prepare_image(raw: bytes):
     if not raw:
         return None
     if len(raw) > 10 * 1024 * 1024:
-        raise ServiceError('사진은 10MB 이하의 JPG 또는 PNG로 업로드하세요.')
+        raise ServiceError('사진은 10MB 이하의 JPG/JPEG 또는 PNG로 업로드하세요.')
     try:
         Image.MAX_IMAGE_PIXELS = 25_000_000
         image = Image.open(io.BytesIO(raw))
-        if image.format not in {'JPEG', 'PNG'}:
-            raise ServiceError('JPG와 PNG 사진만 지원합니다.')
+        if image.format not in {'JPEG', 'MPO', 'PNG'}:
+            raise ServiceError('JPG/JPEG와 PNG 사진만 지원합니다.')
+        if image.format == 'MPO':
+            image.seek(0)
         if image.width * image.height > 25_000_000:
             raise ServiceError('사진 해상도가 너무 큽니다. 2,500만 화소 이하로 줄여주세요.')
         # Downsample before making RGB/orientation copies, especially on 512MB hosts.
