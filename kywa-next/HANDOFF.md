@@ -1,5 +1,13 @@
 # KYWA 개발·운영 인수인계
 
+## 2026-11-16 — 작업 컨텍스트·재개 안내 정리 (운영 변경 없음)
+
+[PROJECT-CONTEXT.ko.md](PROJECT-CONTEXT.ko.md)에 현재8개기관/실제v1.3.0소스, 기관별 예외·점수표·색상, 아키텍처/코드 위치, 저장/사진/법령/보고서 계약, 검증 한계, 복구·비공개 자료·새PC 재개 방법과 주요 진행 경과를 정리했다. 날짜별 이력을 모두 읽기 전에 이 문서의 현재 상태와 관련 절을 먼저 읽는다. [RESUME-PROMPT.ko.md](RESUME-PROMPT.ko.md)는 새 대화에 복사할 짧은 시작문이다.
+
+README를 현재 문서의 진입점으로 정리하고 AGENTS/SETUP에 읽는 순서와 작업마다 갱신할 문서를 반영했다. 예전의 Actions 실행·세부판정 비활성·AYF 성명필수 안내를 현재 절차로 혼동하지 않게 했다. 문서 링크·기관 설정·버전/검증 수치를 대조하고 소스/AX ZIP에 새 문서를 포함했다.
+
+이번 작업은 문서·패키지 갱신이다. **운영 소스 bacadc9/8개기관v1.3.0, Google 데이터/구조, 인증/환경설정은 유지하며 재배포나 추가 운영 업무 검증은 하지 않았다.** 다른PC 이동 직전 최종 비공개 백업도 시작하지 않았다. 기존 최신 배포의 상세 근거는 바로 아래 항목을 따른다.
+
 ## 2026-11-16 — v1.3.0 · 8개 기관 배포 완료
 
 운영 소스는 `bacadc94e3f6bf4b87428552c1fac080e2680935`이며 [PR #12](https://github.com/archi01-safety/kywa-safety-app/pull/12)로 공통 운영 브랜치에 병합했다. KYWA → AYF → FoWI → KHIDI → KNPS → KNF → KOHI → CAYF 순서로 Render Docker 빌드와 **Deploy succeeded | Live**를 확인했다. `<기관>/v1.3.0` 태그·releases/<기관>/v1.3.0.json·artifacts/render-deployments.json이 실제 운영/복구 기준이다. 후속 문서·패키지 커밋은 런타임을 바꾸지 않는다.

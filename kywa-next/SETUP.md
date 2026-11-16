@@ -1,5 +1,7 @@
 # 새 PC에서 작업 이어가기
 
+먼저 [PROJECT-CONTEXT.ko.md](PROJECT-CONTEXT.ko.md)의 현재 상태/경로와 [RESUME-PROMPT.ko.md](RESUME-PROMPT.ko.md)를 확인한다. 과거 이력 전체 대신 HANDOFF 최신 항목과 이번 작업 관련 절을 추가로 읽는다.
+
 ## 2026-11-16 v1.3 재개 기준
 
 HANDOFF.md 맨 위와 LEGAL-RISK-ROTATION-V1.3.ko.md를 따른다. 검증된8개기관의 내부 세부 판정 기본값은 true이며 담당자 회신을 필수로 기다리지 않는다. 기존 .env에서 false로 고정한 경우 의도한 복구 설정인지 확인한다. 과거 점수는 일괄 재계산하지 않는다. backend/risk_profiles/의 JSON을 소스/AX패키지에 반드시 포함한다. 공개 탭 일반20열/AYF18열은 그대로다. 아래 이전 항목은 최신v1.3 설정에 맞춰 해석한다.
@@ -36,7 +38,7 @@ cd ..
 
 `.env`는 `APP_ENV=demo`, `ORGANIZATION_ID=kywa`, `AUTH_MODE=google`, `APP_BASE_URL=http://localhost:8000`으로 시작한다. demo에서는 Google/API 연결 성공을 의미하지 않는다. 실제 API 키를 넣기 전에 테스트용 시트와 폴더를 지정한다.
 
-v1.1 추가 사진 열·조치예정·복구 절차는 [PHOTO-REVIEW-V1.1.ko.md](PHOTO-REVIEW-V1.1.ko.md)를 먼저 따른다. 시트 확장은 별도 사본 검증과 운영 쓰기 점검 후 명시적으로 실행하며 앱 시작 시 자동 이관하지 않는다. 법령 API의 `LAW_API_OC`는 [신청 안내](LAW-API-SETUP.ko.md)를 따른다. `DETAILED_RISK_ENABLED`는 대표 사례 대조 전에는 false로 유지한다. 생산 PIN 세션은 숨김 관리 탭에 해시와 만료 시각을 보관하며 하나의 worker/인스턴스로 운영한다.
+v1.1 추가 사진 열·조치예정·복구 절차는 [PHOTO-REVIEW-V1.1.ko.md](PHOTO-REVIEW-V1.1.ko.md)를 먼저 따른다. 시트 확장은 별도 사본 검증과 운영 쓰기 점검 후 명시적으로 실행하며 앱 시작 시 자동 이관하지 않는다. 법령 API의 `LAW_API_OC`는 [신청 안내](LAW-API-SETUP.ko.md)를 따른다. v1.3의 검증된 기관별 세부 판정은 기본 활성화다. `DETAILED_RISK_ENABLED=false`는 기존 판정으로 복구할 때 명시한다. 담당자 검토표 회신은 필수 대기 조건이 아니다. 생산 PIN 세션은 숨김 관리 탭에 해시와 만료 시각을 보관하며 하나의 worker/인스턴스로 운영한다.
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000

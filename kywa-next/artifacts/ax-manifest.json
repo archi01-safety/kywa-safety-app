@@ -21,8 +21,8 @@
   },
   {
     "path": "AGENTS.md",
-    "bytes": 3209,
-    "sha256": "a124f95dcdfd017f7aaa0a60e98bf2ef23acd2dcf4bb5d93983e9c68afc21158"
+    "bytes": 3848,
+    "sha256": "5224d962f031936bb49b79c8e17f84f0f53e23f5ca58f0639959f9e193326923"
   },
   {
     "path": "AX-BUILD.json",
@@ -46,8 +46,8 @@
   },
   {
     "path": "CHANGELOG.md",
-    "bytes": 20948,
-    "sha256": "94939346776747b1af482d953d07df837bca88593a64c8226f93bfbaaeba201b"
+    "bytes": 21657,
+    "sha256": "8c281d904b3c07a3c867b58bfc19a4022faaca7ba745512c376fc680b36ade42"
   },
   {
     "path": "DEPLOYMENT-NOTES.md",
@@ -66,8 +66,8 @@
   },
   {
     "path": "HANDOFF.md",
-    "bytes": 47736,
-    "sha256": "29033ab9017b1d48efd83e14f84990128ce468272fe6d99718c26e5507c062f8"
+    "bytes": 49058,
+    "sha256": "1c8382795ba96a7bc92200d126a24f0e69b7e7d45ad374b0e433b464cc14febf"
   },
   {
     "path": "JPEG-UPLOAD.ko.md",
@@ -115,9 +115,19 @@
     "sha256": "e52c5621520dcc05bfadf1d7565f3d21f191dfd973cae11dc403f6a6c1285ff0"
   },
   {
+    "path": "PROJECT-CONTEXT.ko.md",
+    "bytes": 43009,
+    "sha256": "8864b1290011b11e50e42f7e48d1740129de59c4618133f9e73886351fd7d9e7"
+  },
+  {
     "path": "README.md",
-    "bytes": 13086,
-    "sha256": "e95050a482c05f8e1c703bf67830b2df9edd737f32c2cd9302cf86b1217df2e9"
+    "bytes": 6061,
+    "sha256": "347cc46a71700dcecee67ef20c992302978f2aee0d8d83edd5c80ddde804b385"
+  },
+  {
+    "path": "RESUME-PROMPT.ko.md",
+    "bytes": 2778,
+    "sha256": "15da9f5ef5203726b5f5244debf865b82a87eebb5df2725dabdfa05651bf59f0"
   },
   {
     "path": "SETUP-GUIDE.ko.md",
@@ -126,8 +136,8 @@
   },
   {
     "path": "SETUP.md",
-    "bytes": 7683,
-    "sha256": "9ae841c86aa358b93f9289a2b2c551bac814ca36c4397b5a1e9f38c12505cc19"
+    "bytes": 8060,
+    "sha256": "a4575b71c0ece2f9e4c28f50db480fed7b7a1ee9119d6a9b1ab4ff2653be3d54"
   },
   {
     "path": "SHEET-EDITING.ko.md",
