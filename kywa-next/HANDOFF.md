@@ -1,5 +1,9 @@
 # KYWA 개발·운영 인수인계
 
+## 2026-11-16 — v1.2.1 JPEG 업로드 수정·검증 / 배포 준비
+
+사용자의 실제 실패 JPEG는 내부8프레임 MPO였으며 aa30598에서 형식 거부를 재현했다. 공통 정규화에 MPO 대표사진 읽기를 추가해 일반 JPEG로 변환한다. 선택창 image/*·JPG/JPEG 안내와 업로드 후 선택값 초기화도 보완했다. 실제 원본의 8개 기관 로컬API/미리보기, 사진 회귀104개와 모바일 크기 최초2장/개선1장·교체 미리보기를 확인했다. 상세는 JPEG-UPLOAD.ko.md다. 원본은 공개 저장소/패키지에 넣지 않으며 배포 완료 뒤 삭제한다. 기관별 설정·Google 데이터·평가기준/프롬프트·인증/환경은 유지하고 Actions를 켜지 않는다. 현재 기준 운영은 아래 v1.2.0이며 배포 후 SHA/기관별 버전과 소스·AX ZIP을 확정한다.
+
 ## 2026-11-13 — v1.2.0 · 8개 기관 배포 완료 / Actions 종료
 
 운영 소스는 `aa30598da1d019b01742fa8ea378ef6d42feb8fd`이며 [PR #8](https://github.com/archi01-safety/kywa-safety-app/pull/8)에서 공통 운영 브랜치에 병합했다. KYWA·AYF·FoWI·KHIDI·KNPS·KNF·KOHI·CAYF의 해당 SHA Docker 빌드와 **Deploy succeeded | Live**를 확인했다. 기관별 `<기관>/v1.2.0` 태그·releases/ JSON·artifacts/render-deployments.json에 확정 소스/배포 ID/복구 근거를 보관한다. 이후 문서/패키지 커밋은 이 런타임을 변경하지 않는다.

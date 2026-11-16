@@ -37,7 +37,7 @@ def normalize_photo(raw):
         if heif:
             brands = [raw[i:i+4] for i in range(8,min(len(raw),int.from_bytes(raw[:4],'big'),128),4)]
             if not set(brands).intersection({b'heic',b'heix',b'hevc',b'hevx',b'mif1',b'msf1'}):
-                raise ServiceError('JPG, PNG, WebP, HEIC, HEIF 사진을 선택해 주세요.')
+                raise ServiceError('JPG/JPEG, PNG, WebP, HEIC/HEIF 사진을 선택해 주세요.')
             if sys.platform == 'win32':
                 # Windows libvips wheels omit HEVC codecs. The local development path
                 # uses libheif directly; Linux/Render uses libvips + libheif below.
@@ -56,8 +56,12 @@ def normalize_photo(raw):
             image = pyvips.Image.thumbnail_buffer(raw, 1600, height=1600, size='down')
             return image.jpegsave_buffer(Q=85, strip=True, background=[255, 255, 255])
         image = Image.open(io.BytesIO(raw))
-        if image.format not in {'JPEG', 'PNG', 'WEBP'}:
-            raise ServiceError('JPG, PNG, WebP, HEIC, HEIF 사진을 선택해 주세요.')
+        if image.format not in {'JPEG', 'MPO', 'PNG', 'WEBP'}:
+            raise ServiceError('JPG/JPEG, PNG, WebP, HEIC/HEIF 사진을 선택해 주세요.')
+        # iPhone JPEGs with auxiliary pictures can be identified as MPO. Only the
+        # primary still is normalized; auxiliary frames and metadata are discarded.
+        if image.format == 'MPO':
+            image.seek(0)
         if image.width * image.height > MAX_PIXELS:
             raise ServiceError('사진은 5,000만 화소 이하로 선택해 주세요.')
         image.draft('RGB', (1600, 1600))

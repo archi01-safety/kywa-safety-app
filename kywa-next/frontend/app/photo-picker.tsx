@@ -23,15 +23,15 @@ export function PhotoPicker({value,limit,disabled,onUpload,onChange}:Props){
       onDragOver={event=>{if(event.dataTransfer.types.includes("Files")){event.preventDefault();if(!disabled)setDragging(true);}}}
       onDragLeave={event=>{if(!event.currentTarget.contains(event.relatedTarget as Node))setDragging(false);}}
       onDrop={event=>{event.preventDefault();setDragging(false);replacement.current=undefined;if(!disabled)void receive(Array.from(event.dataTransfer.files));}}>
-      <input ref={input} className="sr-only" type="file" multiple={limit===2} accept=".jpg,.jpeg,.png,.webp,.heic,.heif,image/jpeg,image/png,image/webp,image/heic,image/heif" aria-label="현장 사진 선택" disabled={disabled}
-        onChange={event=>{const files=Array.from(event.target.files||[]);event.target.value="";void receive(files);}} />
+      <input ref={input} className="sr-only" type="file" multiple={limit===2} accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif" aria-label="현장 사진 선택" disabled={disabled}
+        onChange={event=>{const target=event.currentTarget,files=Array.from(target.files||[]);void receive(files).finally(()=>{target.value="";});}} />
       {value.length>0?<div className="photo-thumbnails">{value.map((photo,index)=><div className="photo-tile" key={photo.id}>
         <div className="photo-preview"><LoadingPhoto url={photo.url} alt={photo.processed?`제출할 사진 ${index+1} 미리보기`:`분석 전 사진 ${index+1} 미리보기`} />
           <button type="button" className="icon-button remove-photo" aria-label={`사진 ${index+1} 제거`} disabled={disabled} onClick={()=>onChange(value.filter((_,i)=>i!==index))}><X size={17}/></button></div>
         <div className="photo-tile-tools"><small>{index===0&&limit===2?"대표사진":`사진 ${index+1}`}</small><button type="button" className="text-button" disabled={disabled} onClick={()=>choose(index)}><RotateCcw size={13}/>교체</button>
           {value.length===2&&<button type="button" className="icon-button" disabled={disabled} aria-label={`사진 ${index+1}을 ${index===0?"뒤로":"대표사진으로"} 이동`} onClick={()=>reorder(index,index===0?1:-1)}>{index===0?<ArrowRight size={14}/>:<ArrowLeft size={14}/>}</button>}</div>
         {photo.processed&&<label className="checkbox-label photo-confirm"><input type="checkbox" disabled={disabled} checked={photo.confirmed} aria-label={`사진 ${index+1} 개인정보 확인`} onChange={event=>onChange(value.map((p,i)=>i===index?{...p,confirmed:event.target.checked}:p))}/><span>사진에 남은 얼굴·개인정보가 없는지 확인했습니다.</span></label>}
-      </div>)}</div>:<div className="upload-copy"><span className="upload-icon"><ImagePlus size={25} strokeWidth={1.5}/></span><strong>현장 사진을 추가해 주세요</strong><span>사진 선택 · 모바일 촬영 · 드래그 앤 드롭</span><small>JPG, PNG, WebP, HEIC · 각 20MB 이하 · 가로사진 권장</small></div>}
+      </div>)}</div>:<div className="upload-copy"><span className="upload-icon"><ImagePlus size={25} strokeWidth={1.5}/></span><strong>현장 사진을 추가해 주세요</strong><span>사진 선택 · 모바일 촬영 · 드래그 앤 드롭</span><small>JPG/JPEG, PNG, WebP, HEIC/HEIF · 각 20MB 이하 · 가로사진 권장</small></div>}
       {value.length<limit&&<button type="button" className={value.length?"button secondary":"upload-pill"} disabled={disabled} onClick={()=>choose()}><Plus size={14}/>{value.length?"사진 한 장 더 추가":"사진 추가"}</button>}
     </div>
     {error&&<p className="small upload-error" role="alert">{error}</p>}
