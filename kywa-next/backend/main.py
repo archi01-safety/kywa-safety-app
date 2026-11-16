@@ -21,7 +21,7 @@ from starlette._utils import get_route_path
 
 from .config import Settings, ROOT
 from .domain import (FACILITIES, DEPARTMENTS, CATEGORIES, POLICY, now, risk, digest,
-                     SubmitRequest, ActionRequest, StateRequest, ReportRequest, PolicyConfirmRequest, PlanRequest)
+                     SubmitRequest, ActionRequest, StateRequest, ReportRequest, PolicyConfirmRequest, PlanRequest, RotatePhotoRequest)
 from .repository import DemoRepository, SheetsRepository, DriveStore, RepositoryError
 from .services import Drafts, RateLimiter, AIService, ServiceError, prepare_image, kosha_search
 from . import reports
@@ -471,6 +471,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not org.enhanced:
             raise HTTPException(404)
         original = drafts.get(draft_owner(request), key)
+        if original.get('invalidated'):
+            raise HTTPException(409, '사진이 회전되거나 변경되었습니다. 현재 사진으로 다시 분석하세요.')
         if original['type'] != 'photo':
             raise HTTPException(422, '사진을 다시 선택해 주세요.')
         if original.get('processed_id'):
@@ -482,11 +484,42 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             from .photo_privacy import deidentify_photo
             with memory_lock:
                 data = deidentify_photo(ai, original['photo'])
-            processed_id = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data, 'deidentified': True, 'source_digest':original.get('source_digest',hashlib.sha256(original['photo']).hexdigest())})
+            processed_id = drafts.put(draft_owner(request), {'type': 'photo', 'photo': data, 'deidentified': True, 'base_photo':original.get('base_photo',original['photo']), 'rotation':original.get('rotation',0), 'source_digest':original.get('source_digest',hashlib.sha256(original['photo']).hexdigest())})
             original['processed_id'] = processed_id
             return {'id': processed_id, 'url': cfg.public_path(f'/api/drafts/{processed_id}/photo'), 'processed': True}
         finally:
             expensive.release()
+
+    @app.post('/api/photos/{key}/rotate')
+    def rotate_photo(request: Request, key: str, data: RotatePhotoRequest):
+        mutation(request)
+        owner = draft_owner(request)
+        original = drafts.get(owner, key)
+        if original['type'] != 'photo':
+            raise HTTPException(422, '회전할 사진을 다시 선택해 주세요.')
+        with drafts.lock:
+            receipt = original.get('rotation_receipts', {}).get(data.request_id)
+            if receipt:
+                if receipt['turn'] != data.quarter_turns:
+                    raise HTTPException(409, '같은 요청번호로 다른 방향을 적용할 수 없습니다.')
+                drafts.get(owner, receipt['id'])
+                return {'id':receipt['id'], 'url':cfg.public_path(f"/api/drafts/{receipt['id']}/photo"), 'processed':False}
+            if original.get('invalidated'):
+                raise HTTPException(409, '이미 변경된 사진입니다. 현재 미리보기에서 회전해 주세요.')
+            if not memory_lock.acquire(blocking=False):
+                raise HTTPException(429, '다른 사진을 처리 중입니다. 잠시 후 다시 시도하세요.')
+            try:
+                from .photo_rotation import rotate_still
+                base=original.get('base_photo',original['photo'])
+                turns=(original.get('rotation',0)+data.quarter_turns)%4
+                picture=rotate_still(base,turns)
+                target=drafts.put(owner,{'type':'photo','photo':picture,'base_photo':base,'rotation':turns,'source_digest':hashlib.sha256(picture).hexdigest()})
+                original.setdefault('rotation_receipts',{})[data.request_id]={'id':target,'turn':data.quarter_turns}
+                original['invalidated']=True
+                drafts.invalidate_photo(owner,key)
+                return {'id':target,'url':cfg.public_path(f'/api/drafts/{target}/photo'),'processed':False}
+            finally:
+                memory_lock.release()
 
     @app.get('/api/drafts/{key}/photo')
     def draft_photo(request: Request, key: str):
@@ -499,6 +532,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if not key:
             return None
         draft = drafts.get(draft_owner(request), key)
+        if draft.get('invalidated'):
+            raise HTTPException(409, '사진이 변경되었습니다. 현재 사진으로 다시 분석하세요.')
         if draft['type'] != 'photo':
             raise HTTPException(422, '사진 초안이 아닙니다.')
         if org.enhanced and not draft.get('deidentified'):
@@ -512,31 +547,53 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             return {'draft_id':key,'items':[],'questions':questions,'guide_keywords':[],
                     'photo_urls':photo_urls,'photo_url':photo_urls[0] if photo_urls else ''}
         if value['type']=='after':
-            return {'draft_id':key,'revision':value['revision'],**public_item(value['result']),
+            return {'draft_id':key,'revision':value['revision'],**public_item(value['result']),'questions':value.get('questions',[]),
                     'photo_url':cfg.public_path(f'/api/drafts/{key}/photo') if value.get('photo') else ''}
         items=[{**public_item(item),'law_references':references(item)} for item in value['items']]
-        return {'draft_id':key,'items':items,'questions':[],'guide_keywords':guide_keywords(items),
+        return {'draft_id':key,'items':items,'questions':value.get('questions',[]),'guide_keywords':guide_keywords(items),
                 'photo_urls':photo_urls,'photo_url':photo_urls[0] if photo_urls else ''}
 
     def finish_observations(value, answers=()):
-        observed,questions,items=resolve_facts(value['observations'],AssessmentPolicy.model_validate(value['policy_snapshot']),answers)
+        value.setdefault('observation_source',copy.deepcopy(value['observations']))
+        observed,questions,items=resolve_facts(value['observation_source'],AssessmentPolicy.model_validate(value['policy_snapshot']),answers,
+            optional=True,evidence_text=value.get('text',value.get('description','')))
         value['observations']=observed
-        if not questions:
-            if value['type']=='after_pending':
-                if len(items)!=1: raise ServiceError('재평가 대상 한 건을 확인하지 못했습니다.',code='ai_result')
-                value.update(type='after',result={**items[0],'rationale':'관찰 사실과 확인한 현장 조건을 기준으로 판정한 재평가 초안'})
-            else: value.update(type='initial',items=items)
+        value.setdefault('question_keys',[(q['index'],q['field']) for q in questions])
+        value['questions']=[q for q in questions if (q['index'],q['field']) in value['question_keys']]
+        items=[law_links.enrich(item) for item in items]
+        if value.get('record_id'):
+            if len(items)!=1: raise ServiceError('재평가 대상 한 건을 확인하지 못했습니다.',code='ai_result')
+            value.update(type='after',result={**items[0],'rationale':'관찰 사실과 확인한 현장 조건을 기준으로 판정한 재평가 초안'})
+        else: value.update(type='initial',items=items)
 
     @app.post('/api/analyses/{key}/confirm')
     def confirm_facts(request:Request,key:str,data:ConfirmFacts):
         mutation(request)
         value=drafts.get(draft_owner(request),key)
-        if value.get('type') not in ('initial_pending','after_pending'):
+        if value.get('invalidated'):
+            raise HTTPException(409,'사진이 변경되었습니다. 다시 분석하세요.')
+        body_hash=digest(data.model_dump())
+        if body_hash in value.get('confirmation_receipts',{}):
+            fresh_key=value['confirmation_receipts'][body_hash]
+            return analysis_reply(request,fresh_key,drafts.get(draft_owner(request),fresh_key))
+        if value.get('superseded') or 'observation_source' not in value:
             raise HTTPException(409,'현재 초안의 추가 확인 대상이 아닙니다. 다시 분석하세요.')
-        try: finish_observations(value,data.answers)
+        valid={tuple(pair) for pair in value['question_keys']}
+        if any((a.index,a.field) not in valid for a in data.answers):
+            raise HTTPException(422,'현재 선택 항목을 확인해 주세요.')
+        merged={(a['index'],a['field']):a for a in value.get('fact_answers',[])}
+        merged.update({(a.index,a.field):a.model_dump() for a in data.answers})
+        from .detailed_risk import FactAnswer
+        fresh=copy.deepcopy(value)
+        fresh.pop('confirmation_receipts',None)
+        fresh['fact_answers']=list(merged.values())
+        try: finish_observations(fresh,[FactAnswer(**a) for a in merged.values()])
         except ValueError:
             raise HTTPException(422,'현재 질문의 응답을 확인해 주세요.') from None
-        return analysis_reply(request,key,value)
+        fresh_key=drafts.put(draft_owner(request),fresh)
+        value['superseded']=fresh_key
+        value.setdefault('confirmation_receipts',{})[body_hash]=fresh_key
+        return analysis_reply(request,fresh_key,fresh)
 
     @app.post('/api/analyses')
     def analyze(request: Request, facility: str = Form(...), department: str = Form(''),
@@ -556,10 +613,11 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         try:
             value = {'type':'initial','facility':facility,'department':department,'description':description,
                      'photo':photo,'photos':photos,'photo_keys':keys,'policy_snapshot':org.policy.model_dump()}
-            if cfg.detailed_risk_enabled and not cfg.demo:
+            if cfg.detailed_risk_enabled and not cfg.demo and not cfg.setup:
+                from .risk_profiles import profile_version
                 signatures=[drafts.get(draft_owner(request),key)['source_digest'] for key in keys]
                 cache_key=digest([draft_owner(request),org.id,facility,department,description,signatures,
-                                  cfg.gemini_model,org.prompt_version,org.policy.model_dump(),FACT_VERSION])
+                                  cfg.gemini_model,org.prompt_version,org.policy.model_dump(),profile_version(org.policy)])
                 value.update(type='initial_pending',observations=observations_cache.resolve(cache_key,
                     lambda:ai.observe(facility,department,description,photos)))
                 if any(item['category'] not in CATEGORIES for item in value['observations']):
@@ -570,7 +628,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             items = ai.analyze(facility, department, description, photos if len(photos)>1 else photo)
             if any(item['category'] not in CATEGORIES for item in items):
                 raise PolicyError('기관 기준에 없는 위험 분류입니다. 다시 분석하세요.')
-            results = [{**item, **risk(item['p'], item['s'])} for item in items]
+            results = [law_links.enrich({**item, **risk(item['p'], item['s'])}) for item in items]
             value['items']=results
             key = drafts.put(draft_owner(request), value)
             return analysis_reply(request,key,value)
@@ -607,6 +665,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                     raise SyncError('row_deleted','제출 후 관리자가 삭제한 평가입니다. 새 평가가 필요하면 다시 분석해 주세요.')
                 return {'ids': [r['id'] for r in previous], 'replayed': True}
             draft = drafts.get(draft_owner(request), data.draft_id)
+            if draft.get('superseded') or draft.get('invalidated'):
+                raise HTTPException(409,'사진이나 현장 조건이 변경되었습니다. 최신 분석 결과를 사용하세요.')
             if draft['type'] != 'initial':
                 raise HTTPException(422)
             indexes = [x.index for x in data.items]
@@ -688,8 +748,11 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         guard_ai(request)
         try:
             policy = record_policy(record, org)
-            if cfg.detailed_risk_enabled and not cfg.demo:
-                observed=ai.observe_after(record,text,photo)
+            if cfg.detailed_risk_enabled and not cfg.demo and not cfg.setup:
+                from .risk_profiles import profile_version
+                photo_signature=drafts.get(draft_owner(request),photo_id).get('source_digest','') if photo_id else ''
+                cache_key=digest(['after',draft_owner(request),org.id,record['id'],record['revision'],text,photo_signature,cfg.gemini_model,org.prompt_version,profile_version(policy)])
+                observed=observations_cache.resolve(cache_key,lambda:ai.observe_after(record,text,photo))
                 value=dict(type='after_pending',record_id=record_id,revision=record['revision'],
                     text=text,photo=photo,observations=observed,policy_snapshot=policy.model_dump(),photo_keys=[photo_id] if photo_id else [])
                 finish_observations(value)
@@ -698,7 +761,7 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
             result = ai.reassess(record, text, photo)
             result.update(policy.risk(result['p'], result['s']))
             draft_id = drafts.put(draft_owner(request), dict(type='after', record_id=record_id,
-                                revision=record['revision'], text=text, photo=photo, result=result))
+                                revision=record['revision'], text=text, photo=photo, photo_keys=[photo_id] if photo_id else [], result=result))
             return {'draft_id': draft_id, 'revision': record['revision'], 'photo_url': cfg.public_path(f'/api/drafts/{draft_id}/photo') if photo else '', **result}
         finally:
             expensive.release()
@@ -716,6 +779,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
                     raise HTTPException(409, '같은 요청번호로 다른 내용을 저장할 수 없습니다.')
                 return {'item': public_record(record), 'replayed': True}
             draft = drafts.get(draft_owner(request), data.draft_id)
+            if draft.get('superseded') or draft.get('invalidated'):
+                raise HTTPException(409,'사진이나 현장 조건이 변경되었습니다. 최신 분석 결과를 사용하세요.')
             if draft['type'] != 'after' or draft['record_id'] != record_id:
                 raise HTTPException(422, '다른 평가의 초안입니다.')
             if record['revision'] != data.revision or draft['revision'] != data.revision or record['status'] == '완료':
@@ -793,7 +858,8 @@ def create_app(settings=None, repo=None, drive=None, ai=None):
         if len(text)>2000: raise HTTPException(422,'관련근거가 너무 깁니다.')
         if not limits.allow('laws:'+session(request),60,600):
             raise HTTPException(429,'법령 확인 요청이 많습니다. 잠시 후 다시 시도하세요.')
-        return {'items':law_links.resolve(text),'configured':bool(cfg.law_api_oc)}
+        resolved=law_links.resolve_text(text)
+        return {'items':resolved['items'],'text':resolved['text'],'configured':bool(cfg.law_api_oc)}
 
     @app.post('/api/reports')
     def report(request: Request, data: ReportRequest):

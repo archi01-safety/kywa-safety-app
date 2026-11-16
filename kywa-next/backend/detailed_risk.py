@@ -42,6 +42,12 @@ class Observation(StrictModel):
     condition: Literal['stable', 'degrading', 'repeated', 'unknown']
     consequence: Literal['minor', 'first_aid', 'lost_time', 'fatal', 'unknown']
     extent: Literal['very_limited', 'limited', 'moderate', 'extensive', 'critical', 'unknown']
+    hazard: Literal['general', 'fall_from_height', 'electric_shock', 'entanglement', 'fire_explosion', 'collapse', 'chemical', 'noise', 'ergonomic'] = 'general'
+    hazard_active: bool | None = None
+    exposure_percent: float | None = Field(default=None, ge=0, le=10000)
+    daily_hours: float | None = Field(default=None, ge=0, le=24)
+    noise_db: float | None = Field(default=None, ge=0, le=180)
+    ergonomic_effort: Literal['moderate', 'hard', 'very_hard', 'unknown'] = 'unknown'
 
 
 class Observations(StrictModel):
@@ -62,11 +68,11 @@ def allowed(field):
     return {key: value for key, _, value in FACTS[field][1]}
 
 
-def calculate(likelihood,severity,policy,minor=False):
+def calculate(likelihood,severity,policy,minor=False,*,minor_cap=None):
     if type(likelihood) is not int or not 1<=likelihood<=15 or type(severity) is not int or not 1<=severity<=20:
         raise ValueError('관찰 판정 범위를 확인하세요.')
     p,s=(likelihood+2)//3,(severity+4)//5
-    cap=4 if policy.version.lower().startswith('fowi') else 5 if policy.version.lower().startswith('khidi') else 6
+    cap=minor_cap if minor_cap is not None else 4 if policy.version.lower().startswith('fowi') else 5 if policy.version.lower().startswith('khidi') else 6
     # A minor-damage cap never applies to potentially fatal/major injuries.
     if minor and s<=2:
         while p*s>cap:p-=1
@@ -74,7 +80,10 @@ def calculate(likelihood,severity,policy,minor=False):
     return policy.risk(p,s),likelihood,severity
 
 
-def resolve(observations, policy, answers=()):
+def resolve(observations, policy, answers=(), *, optional=False, evidence_text=''):
+    if optional:
+        from .risk_profiles import resolve_optional
+        return resolve_optional(observations, policy, answers, evidence_text=evidence_text)
     values = deepcopy(observations)
     seen = set()
     for answer in answers:

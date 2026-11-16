@@ -123,4 +123,16 @@ extent: very_limited, limited, moderate, extensive, critical 순서로 피해 �
 자료에 없는 전제는 기존 프롬프트의 관행적 가정보다 이 관찰 규칙을 우선한다.
 경미한 손상이라는 단어만으로 사망·추락·감전 가능성을 지우지 않는다.
 안전조치의 존재와 실제 효과는 구분한다. 동일한 관찰에는 동일한 분류 값을 선택한다.
+hazard는 실제 사고 원인에 따라 general, fall_from_height, electric_shock, entanglement,
+fire_explosion, collapse, chemical, noise, ergonomic 중 하나로 지정한다.
+단순 바닥 걸림을 fall_from_height로 분류하지 않는다. 추락은 높은 곳에서 떨어지는 위험,
+electric_shock은 충전부/전기 에너지의 감전 위험, entanglement는 구동부 끼임 위험이다.
+위험이 실제 제거된 것이 확인되면 hazard_active=false, 여전히 존재하면 true,
+확인할 수 없으면 null로 표시한다. 보호구나 경고문만 있다는 이유로 제거되었다고 하지 않는다.
+exposure_percent(법적 노출기준 대비 %), daily_hours(하루 작업시간), noise_db(dB)는
+사용자 설명에 해당 수치와 단위가 명시된 경우에만 그 숫자를 추출하고, 없으면 null이다.
+사진의 인상으로 수치를 만들지 않는다. ergonomic_effort는 설명에서 확인되는 보통/힘듦/매우 힘듦을
+moderate/hard/very_hard로 옮기고, 명시되지 않으면 unknown이다.
+빈도는 단순 방문 횟수만이 아니라 위험원에 접촉하는 정도와 확인된 안전조치의 효과를 함께 관찰한다.
+경미한 부상과 비휴업/휴업/사망 가능성을 구분한다. 표현이 강하다는 이유만으로 피해를 과장하지 않는다.
 '''

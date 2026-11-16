@@ -19,7 +19,7 @@ export function AssessmentResults({ items, onChange, policy }: { policy: Policy;
         <td data-label="강도" className="evaluation-number">{item.s}</td>
         <td data-label="점수" className="evaluation-number"><strong>{item.score}</strong></td>
         <td data-label="등급"><span className={`badge tone-${item.tone ?? -1}`}>{item.grade}</span></td>
-        <td data-label="관련근거" className="evaluation-law"><LawReferences text={item.law} initial={item.law_references}/></td>
+        <td data-label="관련근거" className="evaluation-law"><LawReferences text={item.law} initial={item.law_references} fixed/></td>
         <td data-label="감소대책"><textarea aria-label="감소대책" rows={4} value={item.solution} maxLength={3000} onChange={e => update(index, { solution: e.target.value })} /><span className="print-value">{item.solution}</span></td>
       </tr>)}</tbody>
     </table>

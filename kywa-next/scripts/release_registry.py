@@ -22,11 +22,14 @@ def manifest(org,version,commit,state):
     config=json.loads(raw)
     prompts=git('show',source+':kywa-next/backend/prompts.py')
     profile=git('show',source+':kywa-next/backend/prompt_profiles/'+('cayf' if org=='ayf' else org)+'.txt',check=False)
+    risk_profile=git('show',source+f':kywa-next/backend/risk_profiles/{org}.json',check=False)
     return {'format':1,'organization':org,'version':version,'tag':f'{org}/{version}','source_commit':source,
         'state':state,'site':f'https://{org}-safety.onrender.com',
         'organization_config_sha256':hashlib.sha256(raw).hexdigest(),
         'policy_version':config['policy']['version'],'prompt_version':config['prompt_version'],
         'prompt_source_sha256':hashlib.sha256(prompts+profile).hexdigest(),
+        'detailed_risk_profile':json.loads(risk_profile)['version'] if risk_profile else None,
+        'detailed_risk_profile_sha256':hashlib.sha256(risk_profile).hexdigest() if risk_profile else None,
         'sheet_schema':('ayf-visible17-row-metadata-v2' if org=='ayf' else 'visible19-row-metadata-v2') if version=='v1.0.0' else ('ayf-visible18-photo2-v1' if org=='ayf' else 'visible20-photo2-v1'),
         'data_rollback':'preserve_newer_records; archive additional photos/plans before a schema downgrade',
         'deployment':None,'verification':{'runtime_baseline_evidence':'HANDOFF.md 2026-11-10' if version=='v1.0.0' else None}}
