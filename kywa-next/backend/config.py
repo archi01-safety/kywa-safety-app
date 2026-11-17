@@ -4,14 +4,16 @@ import re
 from urllib.parse import urlparse
 from functools import lru_cache, cached_property
 from pathlib import Path
+from .ax_config import configure_ax_environment, settings_env_file
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT = Path(__file__).resolve().parent.parent
+configure_ax_environment(ROOT)
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=os.environ.get('APP_ENV_FILE') or ROOT / '.env', extra='ignore')
+    model_config = SettingsConfigDict(env_file=settings_env_file(ROOT), extra='ignore')
     organization_id: str = 'kywa'
     organization_config_dir: str = ''
     app_env: str = 'demo'

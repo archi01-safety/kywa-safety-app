@@ -1,107 +1,92 @@
-# AX 플랫폼 등록 안내
+# AX 플랫폼 등록·업데이트 안내
 
-2026-11-13 갱신. 복수 사진·조치예정·법령 연결·세션·단답형 정렬 개선과 인수인계서를 포함하는 ZIP이다. 실제 Render 배포 상태는 HANDOFF.md를 따르며 AX 서버 설정은 변경하지 않았다. 이 안내는 앱 소스·등록 ZIP에 관한 것으로 Apache/systemd/AX 관리 서버를 설치하거나 수정하는 스크립트를 포함하지 않는다. 검증 결과는 AX-VERIFICATION.ko.md를 함께 확인한다.
+2026-11-17. 이미 등록된 **KYWA AI 위험성평가 시스템(test ver.)**, https://ax.kywa.or.kr/apps/kywa-safety/ 대상이다. 기존8개 Render 운영 소스·설정·데이터는 변경하지 않는다. 검증 범위는 [AX-VERIFICATION.ko.md](AX-VERIFICATION.ko.md)를 따른다.
 
-## 앱 유형과 실행 구조
+## 등록 파일과 실행 설정
 
-- **Python / FastAPI 웹앱**으로 등록한다. Streamlit 앱이나 정적 사이트로 등록하면 분석·저장이 동작하지 않는다.
-- Next.js 화면은 미리 빌드한 정적 파일이고 Python이 API와 화면을 같은 포트로 제공한다. 운영 중 Next.js 개발/서버 프로세스는 필요하지 않다.
-- Python **3.12**, Node.js **22**. Node는 화면 빌드와 실행 중 HWPX 생성에 필요하다. Python 의존성은 `backend/requirements.lock`, 화면 의존성은 `frontend/package-lock.json`에 고정되어 있다.
-- Linux에서 libvips와 HEVC 디코더가 포함된 libheif, 한글 글꼴(NanumGothic 또는 기존 보고서 코드가 인식하는 글꼴)이 필요하다. 준비된 Docker 이미지는 Debian 환경이다. Rocky Linux의 패키지 이름·저장소·SELinux 정책은 실제 AX 환경에서 확인해야 하며 임의로 변경하지 않는다.
-- 실행 계정은 일반 사용자다. `sudo`/root가 필요한 앱 동작은 없다. 의존성 설치·화면 빌드는 읽기 전용 격리 실행 **이전** 준비 단계에서 수행한다.
+`artifacts/kywa-safety-ax.zip`을 기존 앱의 **소스관리**에서 등록한다. ZIP 최상위에는 `app.py`, `requirements.txt`, `AX-BUILD.json`, `backend/`, `frontend/out/`이 바로 있다. 상위 폴더를 추가하지 않는다. 썸네일·설명은 앱 상세관리에서 별도로 저장한다.
 
-## ZIP 최상위와 실행 명령
-
-`kywa-safety-ax.zip`은 한 단계 상위 폴더 없이 다음 파일이 바로 들어 있다.
-
-```text
-app.py
-AX-BUILD.json
-AX-DEPLOYMENT.ko.md
-backend/                # API, 기관별 정책, 문단형 HWPX 생성기와 라이선스
-frontend/out/           # 등록 경로로 빌드한 화면
-frontend/app/           # 수정·재빌드를 위한 전체 화면 소스
-frontend/package*.json
-frontend/scripts/
-scripts/
-Dockerfile
-.env.example            # 비밀값 없는 참고 파일
-```
-
-권장 실행 명령(앱 폴더를 작업 디렉터리로 선택):
-
-```sh
-/path/to/python3.12 app.py
-```
-
-AX가 주입한 `PORT`를 그대로 사용한다. 환경변수 미지정 시 로컬 기본값은 8000이며 8503·8505 등 특정 할당 포트를 고정하지 않는다. 기본 바인딩은 `127.0.0.1`, Docker 내부는 명시적으로 `HOST=0.0.0.0`이다. 앱 프로세스 실행과 systemd 실행에서 같은 명령을 사용한다. 포트·사용자·서비스 등록은 AX의 기존 관리 절차를 사용한다.
-
-기존 Uvicorn 실행 명령을 사용하는 경우에도 환경변수 `APP_BASE_PATH`가 적용되지만, 빌드 경로 검증과 접근 로그 제한이 적용된 `app.py` 진입점을 권장한다. 초안·임시 사진·보고서 작업과 Google 쓰기 직렬화 때문에 **단일 워커**를 유지한다. PIN 세션은 토큰 해시와 절대 만료 시각을 숨김 관리에 보관해 서버 재시작 후 복원한다. 작성 중 임시 작업의 재시작 복원과는 별개다.
-
-## 경로와 빌드
-
-ZIP에 들어 있는 빌드의 경로는 `AX-BUILD.json`의 `base_path` 값이다. 제공 예시 슬러그는 `kywa-safety`, 경로는 `/apps/kywa-safety`다. **AX에 이 슬러그가 등록됐다는 뜻은 아니다.** 등록한 실제 슬러그가 다르면 아래와 같이 다시 빌드하고 ZIP을 만든다.
-
-```sh
-export APP_BASE_PATH=/apps/actual-slug
-export NEXT_TELEMETRY_DISABLED=1
-cd frontend
-npm ci
-npm run build
-cd ..
-python scripts/package_ax.py
-```
-
-Python 의존성 설치: `python -m pip install -r backend/requirements.lock`. 검증 의존성은 운영 실행에 불필요하다.
-
-서버에도 같은 `APP_BASE_PATH`를 설정한다. 시작 시 `frontend/out/build-config.json`과 비교하여 잘못된 경로의 화면 배포를 차단한다. 원래 Render/root 배포는 빈 값으로 빌드한다. 현재 디자인·메뉴는 유지하고 주소는 `/apps/actual-slug/#inspect`, `#actions`, `#reports`를 사용한다.
-
-[Next.js basePath는 빌드 시 포함되므로 슬러그 변경 시 재빌드가 필요하다.](https://nextjs.org/docs/pages/api-reference/config/next-config-js/basePath) FastAPI의 `root_path`는 [프록시 하위 경로 방식](https://fastapi.tiangolo.com/advanced/behind-a-proxy/)을 사용한다. 프록시가 접두 경로를 제거하거나 유지하는 두 요청 형태를 검사한다. 앱은 `X-Forwarded-Prefix`를 신뢰해 경로를 임의 변경하지 않는다. WebSocket·SSE는 사용하지 않고 일반 HTTP로 보고서 작업 상태를 조회한다.
-
-## 등록 시 환경변수
-
-아래 이름이 AX에서 **자동 주입된다고 가정하지 않는다.** AX 등록 화면의 환경변수 기능 또는 플랫폼이 승인한 외부 환경파일에 설정한다. `.env`나 인증 JSON을 등록 ZIP/GitHub에 넣지 않는다.
-
-| 변수 | AX 설정 |
+| 항목 | 설정 |
 |---|---|
-| `PORT` | AX가 할당하는 8500~8599 중 실제 값 |
-| `HOST` | 일반 프로세스는 `127.0.0.1`; 플랫폼 네트워크 구조상 필요한 주소만 지정 |
-| `APP_BASE_URL` | `https://ax.kywa.or.kr` **경로 없이** |
-| `APP_BASE_PATH` | `/apps/실제-슬러그` (끝 `/` 없이, 빌드와 동일) |
-| `APP_DATA_DIR` | 앱 계정만 쓸 수 있는 앱별 **절대 경로**, 소스 밖 예: `/var/lib/ax-apps/actual-slug` |
-| `APP_UPLOAD_DIR` | 선택. 기본은 `APP_DATA_DIR/tmp`; multipart 임시 업로드 영역 |
-| `APP_LOG_DIR` | 선택. 폴더 권한 점검만 수행하며 개인정보가 담긴 파일 로그를 만들지 않음. 표준 오류는 AX/journald에서 수집 |
-| `APP_ENV_FILE` | 선택. 플랫폼이 허용하는 소스 밖 비공개 환경파일의 절대 경로 |
-| `FORWARDED_ALLOW_IPS` | 기본 `127.0.0.1`. 실제 신뢰 프록시 IP만 지정, `*`는 거부 |
-| `REQUIRE_FRONTEND` | `app.py`는 기본 true. 빌드와 실행 경로 일치 검사 |
-| `ORGANIZATION_ID` | kywa/fowi/knps/knf/kohi/khidi/cayf/ayf 중 해당 기관 |
-| `APP_ENV` | 초기 독립 시험은 demo, 실제 연동은 development 또는 production |
-| `SESSION_SECRET` | 32자 이상 앱별 비밀 난수; 다른 AX 앱과 공유하지 않음 |
-| `AUTH_MODE`, `ADMIN_PIN_HASH` | 현재 PIN 방식이면 pin 및 기존 승인된 해시 |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | 지정 서비스 계정의 JSON 전체, 서버 비밀설정 |
-| `GEMINI_API_KEY`, `GEMINI_MODEL`, `KOSHA_API_KEY` | 현재 승인된 서버 API 설정 |
-| `SPREADSHEET_ID`, `SHEET_NAME`, `DRIVE_FOLDER_ID`, `HISTORY_SHEET_NAME` | 해당 기관의 준비된 저장소. 설정 파일 기본값도 유지 |
-| `ALLOW_LEGACY_WRITES` | 운영 저장소는 백업·준비 확인 후 true. 임의 시험 쓰기 방지 유지 |
-| `REPORT_NODE` | Node가 PATH에 없을 때 Node22 실행파일 절대 경로 |
+| 앱 유형 / 슬러그 | Python / FastAPI / `kywa-safety` 유지 |
+| 실행 파일 / ASGI | `app.py` / `app:app`. AX의 `python -m uvicorn app:app` import 지원 |
+| 직접 실행 | 앱 폴더에서 `python app.py` |
+| Python | AX용 잠금 파일은 **3.11 이상** 대응. Render는 기존3.12 잠금 파일 유지 |
+| 설치 | `python -m pip install -r requirements.txt` → `backend/requirements-ax.lock` |
+| 포트 / 바인딩 | **AX가 배정한 PORT** / 기본127.0.0.1. Render의10000을 복사하지 않음 |
+| 프로세스 수 | **단일 worker/instance**, 임시 사진·초안·보고서 작업은 프로세스 귀속 |
+| 공개 주소 | `APP_BASE_URL=https://ax.kywa.or.kr`, 경로 제외 |
+| 접두 경로 | `APP_BASE_PATH=/apps/kywa-safety`, 정적 빌드와 일치 |
+| 실제 연동 | `APP_ENV=production`, `AUTH_MODE=pin`, `ORGANIZATION_ID=kywa` |
+| 외부 설정 파일 | 기본 `/var/lib/ax-apps/kywa-safety/ax.env`, 소스 폴더 **밖** |
+| 데이터 폴더 | `APP_DATA_DIR=/var/lib/ax-apps/kywa-safety`, 앱 실행 계정에 쓰기 허용 |
 
-Google 계정 로그인 방식을 선택하면 기존 `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `ACCESS_ACCOUNTS_JSON`도 필요하고 OAuth 승인 리디렉션 URI는 `https://ax.kywa.or.kr/apps/실제-슬러그/api/auth/google/callback`이다. PIN 방식에는 OAuth 리디렉션 등록이 필요하지 않다. 기존 Google 편집 권한과 API 사용 정책을 유지한다.
+Node22는 HWPX 생성 시 필요하다. PATH에 없으면 `REPORT_NODE`로 절대 경로를 지정한다. Linux HEIC/HEIF에는 libvips·libheif/HEVC 디코더, PDF에는 코드가 지원하는 한글 글꼴이 필요하다. AX의 Python3.11은 실제 등록 소스의 운영 안내에서 확인했으나 이번 PC에는3.11/Linux 환경이 없으므로 새 패키지의 해당 환경 검사는 서버에서 수행한다. [NumPy2.4.6은 Python3.11 이상](https://pypi.org/project/numpy/2.4.6/), [2.5.3은3.12 이상](https://pypi.org/project/numpy/2.5.3/)이어서 AX 잠금 파일만 조건부 버전을 사용한다.
 
-## 쓰기 위치·재배포·중지·재시작
+## 최초1회: 비공개 연동 설정 설치
 
-- `APP_DATA_DIR`는 배포 버전 폴더와 분리해 유지하고 다른 기관과 공유하지 않는다. 일반 사용자에게 해당 폴더의 쓰기 권한이 필요하다. 설정한 폴더의 실제 쓰기 가능 여부를 시작 시 검사한다.
-- 실제 운영 평가·사진은 기존 Google 시트/Drive에 저장한다. demo 파일·사진은 지정된 데이터 폴더 안에 저장한다. `DEMO_DATA_PATH`를 별도로 설정하면 그 값이 우선하므로 AX에서는 생략하거나 같은 외부 데이터 영역에 둔다.
-- 업로드 원본은 multipart 임시파일/메모리에서 처리하며 사용자가 준 파일명을 저장 경로로 사용하지 않는다. 얼굴 처리 후 확정된 사진만 기존 저장 절차로 전달한다.
-- 소스 디렉터리에는 실행 중 파일을 쓰지 않으며 Python bytecode 생성을 끈다. 로그는 요청 본문·이름·키를 기록하지 않으며 Uvicorn 접근 로그를 끈다.
-- 앱을 멈출 때는 AX 중지 기능의 정상 종료(SIGTERM)를 사용한다. 생성 중인 문서가 있으면 종료가 지연될 수 있으므로 실행 관리자의 종료 대기 정책은 운영자가 확인한다. 재시작 시 임시 초안·PIN 세션·미다운로드 보고서 작업은 사라져 재로그인·재생성이 필요하다. 저장된 Google 기록과 외부 데이터 디렉터리는 유지된다.
-- AX로 운영을 전환하기 전 기존 Render와 같은 운영 시트에 **동시에 두 신규 앱 인스턴스가 쓰지 않도록** 전환 일정을 정한다. Streamlit 동시 행 추가 지원과 별개로 신규 앱 간 동시 관리 쓰기는 이번 호환 검사 범위가 아니다. 이번 작업은 기존 Render를 중지하거나 이전하지 않았다.
+**AX 소스 업로드만으로 Render의 환경변수는 복사되지 않는다.** 현재 앱 상세관리/소스관리에는 비밀 환경변수 입력 기능이 확인되지 않았다. 서버 운영자가 승인된 비공개 경로에 설정을 한 번 설치해야 한다. 공개 소스에 키를 넣거나 브라우저용 설정 API로 대신하지 않는다.
 
-## 등록 후 점검
+준비된 로컬 파일은 작업 공간의 **`secret/ax-kywa.env`**다. Google 서비스 계정 JSON·기존 KYWA 저장소·AI/KOSHA/법령 API·기존 KYWA PIN 해시와 AX 전용 세션 키를 포함한다. 이 파일은 공개 GitHub·등록 ZIP·AX 소스관리·메일 본문에 올리지 않는다. 승인된 비공개 수단으로 서버 운영자에게 전달한다.
 
-1. `AX-BUILD.json`과 실제 슬러그, 공개 origin, 할당 포트, 데이터 권한을 대조한다.
-2. `/apps/슬러그/healthz`에서 `{"status":"ok"}` 응답을 확인한다. 정상 작동 확인용이며 절전 방지 호출을 추가하지 않는다.
-3. 홈·직접 `#reports` 접속·새로고침·로고 초기화·로고/CSS/JS 로딩을 확인한다.
-4. 별도 시험 저장소에서 사진→블러→분석→제출→재조회·조치·세 보고서 다운로드를 확인한다. demo 성공을 실제 Google/AI 연동 성공으로 처리하지 않는다.
-5. 로그인·시간 연장·만료, 다른 AX 앱과 쿠키 분리, 관리자 사진 접근을 확인한다.
-6. AX의 중지·재시작·재배포에서 포트가 유지되고 저장된 데이터가 보존되는지 확인한다.
+서버 운영자 작업:
 
-외부 통신은 Google API/OAuth, AI API, data.go.kr 및 기존 Google Fonts를 사용한다. 폰트 통신이 차단되면 기존 CSS의 시스템 글꼴로 대체된다. AX 방화벽·프록시 업로드 한도·응답 타임아웃·인증서·서비스 승인 설정은 플랫폼 운영자가 확인해야 하며 이 패키지는 변경하지 않는다.
+1. 파일을 `/var/lib/ax-apps/kywa-safety/ax.env`에 설치한다. 앱 실행 계정만 읽게 하고(예:0600), 데이터 폴더에는 앱 쓰기 권한을 준다. 기존 파일이 있으면 백업·대조하고 덮어쓰지 않는다.
+2. ZIP의 `AX-BUILD.json`이 이 경로를 가리키므로 **별도 서비스 환경변수 추가 없이 자동으로 읽는다**. 다른 승인 경로는 `APP_ENV_FILE`에 외부 파일 절대 경로를 지정한다.
+3. 플랫폼 환경변수가 파일보다 우선한다. 예전 `APP_ENV=demo`가 서비스에 명시되어 있으면 제거하거나 `production`으로 바꾼다. AX 할당 PORT는 유지한다.
+4. 앱의 서버 환경에서 아래 점검을 실행한다. 키·응답 원문은 공유하지 않고 안전한 결과 JSON만 남긴다.
+
+```sh
+python scripts/check_ax_integrations.py --config /var/lib/ax-apps/kywa-safety/ax.env
+```
+
+점검은 Google 탭/헤더 조회와 편집·폴더 업로드 **권한**, AI 최소 응답, KOSHA 검색, 법령 검증을 수행한다. AI 소량 호출 비용이 발생할 수 있다. 평가·사진을 저장하거나 권한을 바꾸지 않으며 실제 업로드 성공을 대신하지 않는다. PC에서 실행한 결과는 AX 서버 출발 검증으로 기록하지 않는다.
+
+## 설정값과 업데이트 유지 계약
+
+샘플은 `deploy/ax.production.env.example`이다. 실제값은 외부 파일/플랫폼 비밀설정에만 둔다.
+
+| 용도 | 변수 |
+|---|---|
+| Google 서버 인증 | `GOOGLE_SERVICE_ACCOUNT_JSON` |
+| KYWA 저장 대상 | `SPREADSHEET_ID`, `SHEET_NAME`, `DRIVE_FOLDER_ID`, `HISTORY_SHEET_NAME` |
+| AI | `GEMINI_API_KEY`, `GEMINI_MODEL` |
+| KOSHA / 법제처 | `KOSHA_API_KEY`, `LAW_API_OC` |
+| 관리자 인증 | `AUTH_MODE=pin`, `ADMIN_PIN_HASH`, AX 전용 `SESSION_SECRET` |
+| 기존 저장소 사용 | `ALLOW_LEGACY_WRITES=true`, 확인된 KYWA 저장소에만 적용 |
+| 내부 세부 판정 | `DETAILED_RISK_ENABLED=true`, 기존 기관 기준 유지 |
+| 선택 설정 | `APP_UPLOAD_DIR`, `APP_LOG_DIR`, `REPORT_NODE`, 명시한 프록시 IP의 `FORWARDED_ALLOW_IPS` |
+
+- ZIP 교체 때 **외부 ax.env·데이터 폴더·플랫폼 환경변수를 보존**한다. 코드는 설정을 읽기만 하며 키·PIN·세션 키를 재생성하거나 파일을 덮어쓰지 않는다.
+- AX marker가 있는 ZIP은 비밀설정 누락 시 운영 시작을 거부한다. 오래된 소스 폴더의 `.env`를 읽어 체험 모드로 조용히 전환하지 않는다. 합성 시험만 명시적 `APP_ENV=demo`를 사용한다.
+- 서버 이전·키 만료·외부 API 정책 변경까지 소스 업데이트가 자동으로 해결하지는 않는다. 경로/정책 변경은 운영자가 조정한다.
+- 예전 파일이 남는 부분 병합에서도 `AX-BUILD.json`, `app.py`, 백엔드·정적 화면·AX 잠금 파일은 **같은 ZIP**을 사용한다. 변경 전 기존 소스와 외부 설정을 비공개 백업한다.
+- PIN 세션은 숨김 관리에서 만료 전 재시작 복원을 지원한다. 임시 사진·분석 초안·보고서 작업은 재시작 시 다시 해야 한다.
+
+## 법령 API의 AX 주소 승인
+
+이번 PC의 실제 호출에서 Google·AI·KOSHA는 통과했다. 법령 API는 기존 KYWA Render 주소로 확인됐지만 **AX 주소를 사용한 요청에서는 원문 검증이 실패**했다. AX 주소의 공동활용 추가 신청/승인과 AX 서버 재점검이 필요하다. 같은 OC를 유지하고 Render 주소를 가장해 요청하지 않는다.
+
+같은 계정으로 국가법령정보 공동활용 추가 신청을 진행한다. 시스템 URL은 `https://ax.kywa.or.kr/apps/kywa-safety/`, 활용 목적은 `사진·설명 기반 위험성평가 결과의 관련 법령·조항 확인 및 원문 연결`이다. 인터넷·모바일, 법령 목록·본문/조문의 XML/JSON 등 필요한 항목을 확인한다. 최종 동의·신청은 명의자가 수행한다. [LAW-API-SETUP.ko.md](LAW-API-SETUP.ko.md)의 절차를 따른다. 승인 전/장애 시 기존 법령 검색 링크로 대체하며, 미확인 조항을 공식 검증으로 표시하지 않는다.
+
+## 등록·실제 동작 확인 순서
+
+1. 외부 설정 설치와 AX 법령 신청을 준비한다. 기존 Render는 중지/변경하지 않는다.
+2. AX → **앱등록 및 관리 → 해당 test ver. 앱 → 소스관리**에서 새 `kywa-safety-ax.zip`으로 교체한다. FastAPI/슬러그/할당 포트는 유지하고 AX의 기존 배포 절차로 재시작한다. 이번 작업에서 소스 등록·배포 버튼은 대신 누르지 않았다.
+3. `/apps/kywa-safety/healthz`, 첫 화면의 **운영 환경**, 관리자 로그인/연장, `/api/bootstrap`의 기관·모드를 확인한다. 인증값이 응답에 포함되지 않아야 한다.
+4. 서버 연동 점검 후 별도 시험 저장소에서 사진→블러→분석→제출→재조회→조치→Excel/PDF/HWPX를 확인한다. 현재 비공개 설정은 **기존 KYWA 운영 저장소**를 가리키므로 업무 검증 전 시험 대상·정리 방법을 정한다. 이번 PC 점검에서는 업무 행/사진을 추가하지 않았다.
+5. 썸네일 `artwork/kywa-safety-thumbnail-v1.png`은4:3, 브라우저 아이콘 `frontend/public/kywa-safety-icon-v1*.png/.ico`는 정사각형이다. 2026-11-17 설명80자와 썸네일을 AX 상세관리에서 저장했다. 브라우저 아이콘은 새 소스 배포 후 KYWA bootstrap 완료 시 적용되며 다른 기관 아이콘은 바꾸지 않는다.
+
+AX와 Render가 같은 시트/Drive를 사용하면 기록은 함께 보인다. **두 신규 앱이 같은 평가를 동시에 관리·수정하는 것은 검증 범위가 아니므로** 시험/전환 시 관리자 작업을 조정한다. 이 패키지는 Apache·systemd·보안정책·포트·방화벽·업로드 한도·SSL을 변경하지 않는다.
+
+## 다음 업데이트의 빌드·패키징
+
+```sh
+python scripts/build_ax_requirements.py
+cd frontend
+APP_BASE_PATH=/apps/kywa-safety npm run build -- --webpack
+cd ..
+python scripts/package_ax.py --frontend frontend/out
+```
+
+Render는 APP_BASE_PATH를 비워 별도로 빌드한다. 다른 AX 슬러그는 같은 경로로 재빌드하고 `package_ax.py --base-path /apps/실제슬러그`를 지정한다. Render 화면을 AX ZIP에 넣으면 패키저가 거부한다. 의존성 변경 시 AX3.11 호환성을 재검사한다. 소스/AX ZIP·매니페스트·검증·인수인계서를 함께 갱신하고 Actions는 활성화하지 않는다.

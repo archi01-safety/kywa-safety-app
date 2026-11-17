@@ -1,5 +1,15 @@
 # KYWA 개발·운영 인수인계
 
+## 2026-11-17 — AX 업데이트 시 연동 설정 유지·B안 아이콘/메타데이터
+
+기존 AX test ver. 주소는 https://ax.kywa.or.kr/apps/kywa-safety/ 이며 현재 체험 모드다. 사용자가 기존 앱 소스관리에서 ZIP을 교체하기로 했으므로 소스 업로드/배포는 실행하지 않았다. AX 상세관리에는 사용자 선택 B안4:3 썸네일과80자 기능 설명을 실제 저장했다. 브라우저 정사각형 아이콘은 KYWA bootstrap에만 연결해 새 소스/AX ZIP에 포함했고 다른 기관 로고는 바꾸지 않았다.
+
+AX marker가 있는 배포는 production/PIN/실제 AX 접두 경로를 기본값으로 쓰고, 소스 밖 `/var/lib/ax-apps/kywa-safety/ax.env` 또는 APP_ENV_FILE을 읽는다. 플랫폼 환경변수가 우선한다. 외부 설정·세션 키를 업데이트 때 덮어쓰지 않으며 오래된 release .env로 체험 모드가 되는 동작을 차단했다. AX FastAPI 실행의 app:app을 지원한다. root requirements.txt는3.11용 파생 잠금 파일을 사용하고 Render의3.12 잠금 파일/Dockerfile은 그대로다.
+
+실제값이 든 `secret/ax-kywa.env`를 **이 PC 비공개 위치에만** 준비했다. Google/AI/KOSHA 실응답·권한은 PC에서 확인했으며 운영 행/사진은 쓰지 않았다. AX 주소의 법령 검증은 실패해 같은 OC의 주소 추가 신청/재확인이 필요하다. AX 관리 UI에 비밀설정 기능이 없어 서버 운영자가 외부 파일을 최초1회 설치해야 한다. 서버 설정/AX 업무 검증을 완료로 표현하지 않는다. 정확한 설정·순서는 AX-DEPLOYMENT.ko.md, 검사 범위는 AX-VERIFICATION.ko.md를 따른다.
+
+백엔드498개/29모듈·프런트20개·TypeScript/root/AX 빌드 통과. Python3.11은 공식54개 패키지 메타데이터 대조이며 실제3.11/Linux/Docker 실행은 이번 PC에서 미검증이다. 기존8개 Render의 v1.3.0/bacadc9와 Google 데이터·환경변수는 유지했다. Actions는 켜지 않았다. 소스/AX ZIP·매니페스트·현재 컨텍스트·재개 안내를 갱신한다.
+
 ## 2026-11-16 — 작업 컨텍스트·재개 안내 정리 (운영 변경 없음)
 
 [PROJECT-CONTEXT.ko.md](PROJECT-CONTEXT.ko.md)에 현재8개기관/실제v1.3.0소스, 기관별 예외·점수표·색상, 아키텍처/코드 위치, 저장/사진/법령/보고서 계약, 검증 한계, 복구·비공개 자료·새PC 재개 방법과 주요 진행 경과를 정리했다. 날짜별 이력을 모두 읽기 전에 이 문서의 현재 상태와 관련 절을 먼저 읽는다. [RESUME-PROMPT.ko.md](RESUME-PROMPT.ko.md)는 새 대화에 복사할 짧은 시작문이다.

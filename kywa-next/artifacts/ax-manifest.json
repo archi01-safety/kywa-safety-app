@@ -6,8 +6,8 @@
   },
   {
     "path": ".env.example",
-    "bytes": 2116,
-    "sha256": "650dbfbfa3ea8ffe8b4484b8fcac0339f356dddb921cd481cd8f61031e8197e8"
+    "bytes": 2301,
+    "sha256": "2fe4ff81922618dd7c7e380be6809fcf6b6c90262580dc202140b1fcf66d6ad3"
   },
   {
     "path": ".gitignore",
@@ -21,23 +21,28 @@
   },
   {
     "path": "AGENTS.md",
-    "bytes": 3848,
-    "sha256": "5224d962f031936bb49b79c8e17f84f0f53e23f5ca58f0639959f9e193326923"
+    "bytes": 4349,
+    "sha256": "d2fafe773bb68159b70372a9f084b068637a14a8a24252224eeca99c75529827"
+  },
+  {
+    "path": "ARTWORK.ko.md",
+    "bytes": 2243,
+    "sha256": "a676864ed74b8f8802d94f40e73050b8d9d3985cfe44cbd5bbff7f0249bc8d77"
   },
   {
     "path": "AX-BUILD.json",
-    "bytes": 151,
-    "sha256": "3462352ec3d741a0ce85232f1c49e00fd2d0ad1592ffa9d31a82ae2801683e40"
+    "bytes": 883,
+    "sha256": "e3c382b7ae804324669a4279b667118505e7c733df89e8be0575ab775a79d9a6"
   },
   {
     "path": "AX-DEPLOYMENT.ko.md",
-    "bytes": 10384,
-    "sha256": "5e912a67d61091644dff5b1fc2cec04cbdfb1ce3c9034f22de38b8cde91f9769"
+    "bytes": 9711,
+    "sha256": "9e331df16eb7023a396a220526aea6a9164a8e06f75a93d46b49b8add5d05f23"
   },
   {
     "path": "AX-VERIFICATION.ko.md",
-    "bytes": 9494,
-    "sha256": "d344dbdf78c5aa1f75f09c997f3d725ac1b8c561f787125ae982a11adedcb796"
+    "bytes": 12510,
+    "sha256": "0ba1f123487df68ed8670b74c6701ddb6cc584a560341586cfd04d1d1488f429"
   },
   {
     "path": "AYF-FACILITY-MIGRATION.ko.md",
@@ -46,8 +51,8 @@
   },
   {
     "path": "CHANGELOG.md",
-    "bytes": 21657,
-    "sha256": "8c281d904b3c07a3c867b58bfc19a4022faaca7ba745512c376fc680b36ade42"
+    "bytes": 22874,
+    "sha256": "550996e75c1e1dae39961e9f7ce86634be841e4ba127fbf0ff7cde5cbfc998f1"
   },
   {
     "path": "DEPLOYMENT-NOTES.md",
@@ -66,8 +71,8 @@
   },
   {
     "path": "HANDOFF.md",
-    "bytes": 49058,
-    "sha256": "1c8382795ba96a7bc92200d126a24f0e69b7e7d45ad374b0e433b464cc14febf"
+    "bytes": 51165,
+    "sha256": "1bb562b5327de65d5f6778400bf2085111ce23ba682829538322acfa6c81b4f1"
   },
   {
     "path": "JPEG-UPLOAD.ko.md",
@@ -116,18 +121,18 @@
   },
   {
     "path": "PROJECT-CONTEXT.ko.md",
-    "bytes": 43009,
-    "sha256": "8864b1290011b11e50e42f7e48d1740129de59c4618133f9e73886351fd7d9e7"
+    "bytes": 43901,
+    "sha256": "bbba21cbc4f12977e516610f065ed5f2039af897ecae633f7857194cd5786ae3"
   },
   {
     "path": "README.md",
-    "bytes": 6061,
-    "sha256": "347cc46a71700dcecee67ef20c992302978f2aee0d8d83edd5c80ddde804b385"
+    "bytes": 6446,
+    "sha256": "baa09d755ea36fc80f8c8c268eea71fe98f47a33368bd0f5f032c4cecdd03847"
   },
   {
     "path": "RESUME-PROMPT.ko.md",
-    "bytes": 2778,
-    "sha256": "15da9f5ef5203726b5f5244debf865b82a87eebb5df2725dabdfa05651bf59f0"
+    "bytes": 3116,
+    "sha256": "b09896aed64f603b25129b2a569709af480357097ccb742d399800a19e182ebf"
   },
   {
     "path": "SETUP-GUIDE.ko.md",
@@ -136,8 +141,8 @@
   },
   {
     "path": "SETUP.md",
-    "bytes": 8060,
-    "sha256": "a4575b71c0ece2f9e4c28f50db480fed7b7a1ee9119d6a9b1ab4ff2653be3d54"
+    "bytes": 8776,
+    "sha256": "d2d6bfb48f1b0bcef15e8ef879d33b8deba78af5fb52d731f400bede09cdf399"
   },
   {
     "path": "SHEET-EDITING.ko.md",
@@ -146,8 +151,23 @@
   },
   {
     "path": "app.py",
-    "bytes": 537,
-    "sha256": "c1ef40bf726a0ff11587fbfe55d2bdbf50b439f4dc8e3fa5c82d7d078bc89740"
+    "bytes": 1055,
+    "sha256": "a5d4f3126986635d9b35b0578e5cfc12567d2fa0504bd52ed52138170eb4fd9a"
+  },
+  {
+    "path": "artifacts/ax-integration-verification.json",
+    "bytes": 1771,
+    "sha256": "1a76455d4392b899abbd5327761dd3549eec5885ab66868f9f609a4f23fe8d76"
+  },
+  {
+    "path": "artwork/kywa-safety-icon-v1.png",
+    "bytes": 1499585,
+    "sha256": "ec951c47f71611d15dd6f5588f54ee0955f7089c808b10c2349b8bf7ae520941"
+  },
+  {
+    "path": "artwork/kywa-safety-thumbnail-v1.png",
+    "bytes": 1210659,
+    "sha256": "fcc0b3ad872f569b94031cb7f8424e3bf20e7e488c592d963a3c897e92693a8b"
   },
   {
     "path": "backend/__init__.py",
@@ -190,6 +210,16 @@
     "sha256": "fd42f81ca6024947fe7fe5bd0bed0e44f70aa77f519d3d4c88995b9bd497a44f"
   },
   {
+    "path": "backend/ax_config.py",
+    "bytes": 2969,
+    "sha256": "878f9ab1895234cecf8fe89b75500ad8e86fb2f39c5f5b6daeb2b67788e98031"
+  },
+  {
+    "path": "backend/ax_integrations.py",
+    "bytes": 4095,
+    "sha256": "ab305c77313623645af70b1c6677099879a97adc370de9e4b1ddb771211a2154"
+  },
+  {
     "path": "backend/branding.py",
     "bytes": 2103,
     "sha256": "e870c8b3d3af310d8dd6e01d7196fa37dedd5808a43e26a827d6c92f93c5e35f"
@@ -216,8 +246,8 @@
   },
   {
     "path": "backend/config.py",
-    "bytes": 9862,
-    "sha256": "ce9d95845891d4eebe2878878f90f3c77d4f3446d8297e4ba1a6ac4b9f02e401"
+    "bytes": 9938,
+    "sha256": "889a13bd105ae67b23805e3798b74240ab09417ee98e924f68f73731f3b619c6"
   },
   {
     "path": "backend/detailed_risk.py",
@@ -450,6 +480,11 @@
     "sha256": "843c055d685f604b13ebdf3bc259ef8da27604791e6d1e6e0d24ada1091d7f78"
   },
   {
+    "path": "backend/requirements-ax.lock",
+    "bytes": 4213,
+    "sha256": "8b8f54f6f6d70ab5275e9e208ce771305a3dfc5db76e79c7ed9df66d81e00e15"
+  },
+  {
     "path": "backend/requirements-dev.txt",
     "bytes": 81,
     "sha256": "e4db1b44785f67da32ca21dd7d4370cf5d5e98639445e0b1b2a19a3b5cac387e"
@@ -563,6 +598,11 @@
     "path": "backend/tests/test_ai_diagnostics.py",
     "bytes": 2521,
     "sha256": "1ea7ade667177f9ffa425fdb986c57304893bf6df707834be382704592fa53d1"
+  },
+  {
+    "path": "backend/tests/test_ax_integrations.py",
+    "bytes": 7577,
+    "sha256": "74de756eb80a0d276b9c69b7f7a5464b0a13748b5449cd0ca88d989a8e346d7e"
   },
   {
     "path": "backend/tests/test_ax_runtime.py",
@@ -710,6 +750,11 @@
     "sha256": "d5355f390ac6c073f577f03923974bc73aba9592b2d6b9ae31a28b41baf609a4"
   },
   {
+    "path": "deploy/ax.production.env.example",
+    "bytes": 1060,
+    "sha256": "dc8f5d5c8532305e525df7610bfe1f6887c6925e318cfdd47f360c1ff4819a84"
+  },
+  {
     "path": "deploy/organizations.render.yml",
     "bytes": 10397,
     "sha256": "dfd48fb671660ece6335263e7bd3727ec97517af680161a80ec7668fee341b81"
@@ -771,8 +816,8 @@
   },
   {
     "path": "frontend/app/page.tsx",
-    "bytes": 61047,
-    "sha256": "8567dd156451052d0646ff6ac5796207f3b5f2fe5f4b0634c193c976bd35a378"
+    "bytes": 61821,
+    "sha256": "f755df87a8128bd0a2ec475602e4c1e7b98a6a6d329e55fe5a0becd77193e24d"
   },
   {
     "path": "frontend/app/photo-picker.tsx",
@@ -862,35 +907,35 @@
   {
     "path": "frontend/out/404.html",
     "bytes": 7257,
-    "sha256": "c22a2425d22d5f4ba09d24eb8867c275fc5daf2bdd3dc1948d413d938afd66b7"
+    "sha256": "a90edfebd976be19d422bb16d1307b569758f6491f8a8b70455fe7c67a917eb6"
   },
   {
     "path": "frontend/out/404/index.html",
     "bytes": 7257,
-    "sha256": "c22a2425d22d5f4ba09d24eb8867c275fc5daf2bdd3dc1948d413d938afd66b7"
+    "sha256": "a90edfebd976be19d422bb16d1307b569758f6491f8a8b70455fe7c67a917eb6"
   },
   {
     "path": "frontend/out/__next.__PAGE__.txt",
     "bytes": 3648,
-    "sha256": "ba6300bd505653ee5716c056f1f41611c759efa9df945de2a3bd70ccc30cb9ad"
+    "sha256": "5f07c8e0a98c17648fde351a2714b175fedced2e16bc60023e28887071e2058b"
   },
   {
     "path": "frontend/out/__next._full.txt",
     "bytes": 3919,
-    "sha256": "a3278d186dc9285faeda31a9885d5c2b998d7b7e4ed2074b7893453d1d843e93"
+    "sha256": "a6d2ea0ad5a05155a37495dd541d6922ba1dc641883dd45b995b2172733da1d1"
   },
   {
     "path": "frontend/out/__next._tree.txt",
     "bytes": 266,
-    "sha256": "a0a8fbe845e7e55a6425984bba62c3ef0a232dc0917eda2d5057bf5c67f455d1"
+    "sha256": "c3917cb891b453cf72e148276bf54c8c5d5598071c0982ed8ec4849367607ac8"
   },
   {
-    "path": "frontend/out/_next/static/ICFTs0F6Cc0f1xQSI9n3V/_buildManifest.js",
+    "path": "frontend/out/_next/static/5zOZ5UROvCPybxTkTNlyT/_buildManifest.js",
     "bytes": 440,
     "sha256": "735100de5b4d0775a309ea72b2859f679aa4da5efee09ef54bddcf7e928aaa1c"
   },
   {
-    "path": "frontend/out/_next/static/ICFTs0F6Cc0f1xQSI9n3V/_ssgManifest.js",
+    "path": "frontend/out/_next/static/5zOZ5UROvCPybxTkTNlyT/_ssgManifest.js",
     "bytes": 80,
     "sha256": "678f6ce2cb80b1fe72fc67e7412be6e2ab6ada083111b64f7c40d35e3cba5e00"
   },
@@ -930,9 +975,9 @@
     "sha256": "45bd6e3de07241909f95e71a0409a22d099a9bf4ce0c27e5ea78a6dbb7fbd6b5"
   },
   {
-    "path": "frontend/out/_next/static/chunks/app/page-45c6ab1e2b74ca85.js",
-    "bytes": 81713,
-    "sha256": "9175b621cd55def4ab32f4b4d36dc655b4bc02da3e2b7971e4cb7d31ef2df5f2"
+    "path": "frontend/out/_next/static/chunks/app/page-87a0ed92c6bacdd3.js",
+    "bytes": 82183,
+    "sha256": "c666636a24f31d6a2b6179897a86a86092a09bff58e31b57ffaf33099d975d74"
   },
   {
     "path": "frontend/out/_next/static/chunks/fa7adff7-31154f6fe9ce68ff.js",
@@ -997,27 +1042,27 @@
   {
     "path": "frontend/out/_not-found/__next._full.txt",
     "bytes": 4073,
-    "sha256": "7b2776ffd9482bb6e047d33e7756e07876b11cbaba03ea002b55c0f4a9118edb"
+    "sha256": "5ac767aeb2f7105dfcd8d870510ea70353f631580fbf1e32f519cb67c82b2621"
   },
   {
     "path": "frontend/out/_not-found/__next._not-found/__PAGE__.txt",
     "bytes": 3541,
-    "sha256": "c35f5322247b579da76ab7221e6206b56a7aff0c31856c11dad7137679a8e4a9"
+    "sha256": "d1ac714a9c441983ca00d7fdd4701cad9cd4334a139898c7673fc83089e83b6c"
   },
   {
     "path": "frontend/out/_not-found/__next._tree.txt",
     "bytes": 343,
-    "sha256": "928545caacad3b2f2d834cea34c3744f50f96b73bb59566acc0c8d84e9488c67"
+    "sha256": "207b08c35e646ee579882574f8ea71b3c9627b7d41aa693da18ec06d5b8a6153"
   },
   {
     "path": "frontend/out/_not-found/index.html",
     "bytes": 7257,
-    "sha256": "c22a2425d22d5f4ba09d24eb8867c275fc5daf2bdd3dc1948d413d938afd66b7"
+    "sha256": "a90edfebd976be19d422bb16d1307b569758f6491f8a8b70455fe7c67a917eb6"
   },
   {
     "path": "frontend/out/_not-found/index.txt",
     "bytes": 4073,
-    "sha256": "7b2776ffd9482bb6e047d33e7756e07876b11cbaba03ea002b55c0f4a9118edb"
+    "sha256": "5ac767aeb2f7105dfcd8d870510ea70353f631580fbf1e32f519cb67c82b2621"
   },
   {
     "path": "frontend/out/build-config.json",
@@ -1027,12 +1072,32 @@
   {
     "path": "frontend/out/index.html",
     "bytes": 12027,
-    "sha256": "fcf66a268b444cdb74f0a775543f45dbf5df4b5f02c7ef5a51d44e1724a4fbd2"
+    "sha256": "e9aa69294f9751fc113bbdc446145cf54cde0cb192074b4c396a8da5e940dc53"
   },
   {
     "path": "frontend/out/index.txt",
     "bytes": 3919,
-    "sha256": "a3278d186dc9285faeda31a9885d5c2b998d7b7e4ed2074b7893453d1d843e93"
+    "sha256": "a6d2ea0ad5a05155a37495dd541d6922ba1dc641883dd45b995b2172733da1d1"
+  },
+  {
+    "path": "frontend/out/kywa-safety-icon-v1-180.png",
+    "bytes": 27802,
+    "sha256": "8792fc6bc32ae964e83ee983b1b65fcb4ef3668cb51fff7145bac5117174f13b"
+  },
+  {
+    "path": "frontend/out/kywa-safety-icon-v1-32.png",
+    "bytes": 1790,
+    "sha256": "ecb451a41780fa39e6d4cd5bab2d19efc38d51f04b5bca0babed95ee2300f1b7"
+  },
+  {
+    "path": "frontend/out/kywa-safety-icon-v1-512.png",
+    "bytes": 220790,
+    "sha256": "7db3770eed10c0359989643aa5281aa5adad3ce6a970997c9eee80209fa1a8ae"
+  },
+  {
+    "path": "frontend/out/kywa-safety-icon-v1.ico",
+    "bytes": 59387,
+    "sha256": "8f2a387af2900e3e9232952e9c8eb0c4399875ed777ed0964b1a0ce306ede3d8"
   },
   {
     "path": "frontend/out/kywa_logo.png",
@@ -1053,6 +1118,26 @@
     "path": "frontend/playwright.config.ts",
     "bytes": 1229,
     "sha256": "fe906231b6cb28cae234f3cd931eb54db07e1e79cc73ffb7a7b250cf174d4640"
+  },
+  {
+    "path": "frontend/public/kywa-safety-icon-v1-180.png",
+    "bytes": 27802,
+    "sha256": "8792fc6bc32ae964e83ee983b1b65fcb4ef3668cb51fff7145bac5117174f13b"
+  },
+  {
+    "path": "frontend/public/kywa-safety-icon-v1-32.png",
+    "bytes": 1790,
+    "sha256": "ecb451a41780fa39e6d4cd5bab2d19efc38d51f04b5bca0babed95ee2300f1b7"
+  },
+  {
+    "path": "frontend/public/kywa-safety-icon-v1-512.png",
+    "bytes": 220790,
+    "sha256": "7db3770eed10c0359989643aa5281aa5adad3ce6a970997c9eee80209fa1a8ae"
+  },
+  {
+    "path": "frontend/public/kywa-safety-icon-v1.ico",
+    "bytes": 59387,
+    "sha256": "8f2a387af2900e3e9232952e9c8eb0c4399875ed777ed0964b1a0ce306ede3d8"
   },
   {
     "path": "frontend/public/kywa_logo.png",
@@ -1396,8 +1481,8 @@
   },
   {
     "path": "requirements.txt",
-    "bytes": 98,
-    "sha256": "470ccb5a42e6c4e4f97ea3ebe59f1aceafecf63f174c6e0a83d53a584b52cb75"
+    "bytes": 101,
+    "sha256": "d218e648b7d58ebfcaa99d8d74eed548ac50057a6407dad14174c26ab79dc57e"
   },
   {
     "path": "scripts/ayf_test_record.py",
@@ -1415,6 +1500,11 @@
     "sha256": "5b040beb0a63c67c9e75c950eb80042d1608e89a977e8028426a9c465fcb6745"
   },
   {
+    "path": "scripts/build_ax_requirements.py",
+    "bytes": 1229,
+    "sha256": "a3451f82041ec1e441d88dde0b6407dccbcc0480d4106f3cc9c714cfcb00eedd"
+  },
+  {
     "path": "scripts/build_hwpx_source.py",
     "bytes": 1098,
     "sha256": "513b943060585e7ae4c8b81654cfd78b2fe4b68781e879791f48ef780ea0ba12"
@@ -1425,19 +1515,24 @@
     "sha256": "5c929433f67b8d6b1114b4f965ff72a379108505137d6c1e455f199c1a9025b7"
   },
   {
+    "path": "scripts/check_ax_integrations.py",
+    "bytes": 1979,
+    "sha256": "d25cfecc6282710ed0f15d094f4adbf4844b4ab0046fbf3b7975b5be96ee2eeb"
+  },
+  {
     "path": "scripts/load_check.py",
     "bytes": 2096,
     "sha256": "f60dabc64f34b85b2510bc8fea4f0a2e7b32a80ee2cce671be65b195a085e6e6"
   },
   {
     "path": "scripts/package_ax.py",
-    "bytes": 2539,
-    "sha256": "7c7a5e72fa68fbdb49f6b5ceb1cc264635285a9b146a36b9646f83f5c5028dd5"
+    "bytes": 4337,
+    "sha256": "9f8b4c94a2f6f7528b0336c5a91d402f4640bac71ea7a7fb7c224be8599043f5"
   },
   {
     "path": "scripts/package_source.py",
-    "bytes": 2531,
-    "sha256": "bb9ef655c6bd4f26f41810af937d788c533a725399517bddd8ca2e42c741aa30"
+    "bytes": 2639,
+    "sha256": "734efdaf56a327ae2fa7bb6e153cdbe117353f300650a4b7fb477046650f5aa5"
   },
   {
     "path": "scripts/release_registry.py",

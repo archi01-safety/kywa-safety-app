@@ -59,6 +59,21 @@ export default function Home() {
   }, [org, premium]);
   const grades = org?.policy.grades.map(g => g.name) || [];
   useEffect(() => { if (org) document.title = `${org.short_name} 안전관리 | AI 위험성평가`; }, [org?.short_name]);
+  useEffect(() => {
+    if (org?.id !== "kywa") return;
+    // Institution is supplied at runtime; partner services keep their own identity.
+    const icons = [
+      { rel: "icon", type: "image/x-icon", href: appPath("/kywa-safety-icon-v1.ico") },
+      { rel: "icon", type: "image/png", sizes: "32x32", href: appPath("/kywa-safety-icon-v1-32.png") },
+      { rel: "apple-touch-icon", sizes: "180x180", href: appPath("/kywa-safety-icon-v1-180.png") },
+    ].map(attributes => {
+      const link = document.createElement("link");
+      Object.entries(attributes).forEach(([key, value]) => link.setAttribute(key, value));
+      document.head.appendChild(link);
+      return link;
+    });
+    return () => icons.forEach(link => link.remove());
+  }, [org?.id]);
   const [submitterName, setSubmitterName] = useState("");
   const [nameComposing, setNameComposing] = useState(false);
   const maskedName = submissionName(submitterName, org?.submitter_name.mode || "disabled");

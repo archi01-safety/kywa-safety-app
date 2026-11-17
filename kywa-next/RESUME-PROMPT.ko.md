@@ -20,6 +20,9 @@ bacadc94e3f6bf4b87428552c1fac080e2680935입니다.
 더 최신 기록이 있으면 PROJECT-CONTEXT/HANDOFF와 기관별 releases JSON을 우선 확인하세요.
 
 Next.js는 정적 화면, app.py는 FastAPI 실행 진입점입니다. Vercel로 운영 이전하지 않았습니다.
+AX test ver.는 별도 등록돼 있습니다. AX-DEPLOYMENT/AX-VERIFICATION 최신 상태를 읽고,
+외부 ax.env와 플랫폼 환경변수를 ZIP 업데이트 때 보존하세요. 새 소스 등록은 사용자가 수행하며
+AX 서버 설정 설치·법령 주소 승인·서버 실연동 검증은 Render 완료와 구분하세요.
 일반 시트20열/AYF18열, AYF는 부서·성명 미수집입니다.
 내부 세부 판정은 기본 활성화이며 공개 점수는 기존 기관별1~20점입니다.
 담당자 검토표 회신은 활성화의 필수 조건이 아닙니다.

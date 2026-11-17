@@ -1,0 +1,30 @@
+{
+  "date": "2026-11-17",
+  "scope": "KYWA AX package and portal metadata; Render runtime unchanged",
+  "render_runtime": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+  "ax_url": "https://ax.kywa.or.kr/apps/kywa-safety/",
+  "configuration_contract": 1,
+  "private_configuration_in_package": false,
+  "extracted_package_checks": {"asgi_import": "passed", "prefix_health_page_icon": "passed", "external_profile_unchanged": "passed", "missing_real_settings_rejected": "passed", "source_ax_manifest_and_private_value_scan": "passed"},
+  "backend_tests": {"passed": 498, "modules": 29, "failures": 0, "isolated": true},
+  "frontend_unit_tests": {"passed": 20, "failures": 0},
+  "webpack_exports": {"root": "passed", "ax_prefix": "/apps/kywa-safety", "ax": "passed", "typescript": "passed"},
+  "python311_dependencies": {"packages": 54, "metadata_compatible": true, "conflicts": 0, "native_runtime_tested": false},
+  "live_checks_from_this_pc": {
+    "google": "passed: header read, sheet edit permission, Drive folder/upload permission",
+    "ai": "passed: minimal live response",
+    "kosha": "passed: live search",
+    "law_ax_referer": "not verified",
+    "law_existing_render_referer": "verified",
+    "assessment_or_photo_writes": false,
+    "ax_server_network_tested": false
+  },
+  "portal_metadata": {"description_saved": true, "description_characters": 80, "thumbnail_saved": true, "icon_choice": "B", "thumbnail_pixels": [1448,1086], "thumbnail_ratio": "4:3", "side_padding": "black"},
+  "pending": [
+    "Server operator installs private external configuration once",
+    "User replaces AX source ZIP and deploys",
+    "AX law API domain approval and verification",
+    "AX server dependency, network, write and report validation"
+  ],
+  "actions_reenabled": false
+}
