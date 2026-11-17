@@ -62,6 +62,7 @@ GitHub Actions는 사용자 요청으로 **중지**했습니다. 새 PC·검증�
 | v1.3 / 시트 직접 편집 | [법령·세부판정·회전](LEGAL-RISK-ROTATION-V1.3.ko.md), [시트 편집](SHEET-EDITING.ko.md) |
 | 기관별 설정·저장소 | [기관별 설정](ORGANIZATION-SETUP.ko.md), [지원기관 전환](PARTNER-ROLLOUT.ko.md) — 현재 스키마/상태는 최신 컨텍스트 우선 |
 | AX 설정·검증 한계 | [AX-DEPLOYMENT](AX-DEPLOYMENT.ko.md), [AX-VERIFICATION](AX-VERIFICATION.ko.md) |
+| KYWA 앱 아이콘·4:3 썸네일 | [ARTWORK](ARTWORK.ko.md), [승인 B안](artwork/kywa-safety-icon-v1.png), [AX 썸네일](artwork/kywa-safety-thumbnail-v1.png) |
 | 최신 소스 / AX 등록용 | [소스 ZIP](artifacts/kywa-safety-source.zip), [AX ZIP](artifacts/kywa-safety-ax.zip) |
 
-API 키·인증 JSON·PIN/해시·세션 키·운영 데이터/사진·업무 백업은 공개 저장소에 포함하지 않습니다. 실제 AX 서버 등록과 한글/기기별 검증의 한계는 컨텍스트/인수인계서에서 구분합니다. 예전 구축 절차와 Streamlit 병행 이력은 HANDOFF 및 Git 이력을 참고합니다.
+API 키·인증 JSON·PIN/해시·세션 키·운영 데이터/사진·업무 백업은 공개 저장소에 포함하지 않습니다. AX test ver.의 설명·썸네일은 저장했으나 새 소스 등록/실연동은 AX 외부 비공개 설정 최초 설치와 서버 검증이 필요합니다. ZIP 업데이트 때 설정을 보존하는 절차는 AX-DEPLOYMENT를 따릅니다. 한글/기기별 검증 한계는 컨텍스트/인수인계서에서 구분합니다. 예전 구축 절차와 Streamlit 병행 이력은 HANDOFF 및 Git 이력을 참고합니다.

@@ -1,5 +1,9 @@
 # 새 PC에서 작업 이어가기
 
+## 2026-11-17 AX 패키지·연동 설정 유지
+
+AX는 [AX-DEPLOYMENT.ko.md](AX-DEPLOYMENT.ko.md)의 실제 kywa-safety 경로/ASGI app:app을 따른다. AX root requirements.txt는 Python3.11 호환 파생 잠금 파일이며 기존 Render/Docker의 backend/requirements.lock은 변경하지 않는다. 비공개 설정은 소스 밖 ax.env 또는 APP_ENV_FILE에 최초1회 설치하고 이후 ZIP 교체 때 보존한다. 새PC에 이 비공개 파일이 Git으로 전달된다고 가정하지 않는다. B안 아이콘/4:3 썸네일은 ARTWORK.ko.md를 따른다. AX 설명/썸네일은 저장됐지만 새 소스 등록·AX 서버 실연동·법령 주소 승인 상태는 최신 HANDOFF를 확인한다.
+
 먼저 [PROJECT-CONTEXT.ko.md](PROJECT-CONTEXT.ko.md)의 현재 상태/경로와 [RESUME-PROMPT.ko.md](RESUME-PROMPT.ko.md)를 확인한다. 과거 이력 전체 대신 HANDOFF 최신 항목과 이번 작업 관련 절을 추가로 읽는다.
 
 ## 2026-11-16 v1.3 재개 기준

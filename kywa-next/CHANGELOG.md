@@ -1,5 +1,13 @@
 # 변경 이력
 
+## 2026-11-17 — AX 비공개 설정 유지·ASGI/3.11 호환·B안 아이콘
+
+- AX ZIP의 production/PIN/origin/prefix 기본값과 외부 ax.env/APP_ENV_FILE 재사용을 구현했다. 플랫폼 변수를 우선하고 오래된 release demo .env를 무시한다. 키/PIN/세션 키를 패키지에 넣거나 자동 교체하지 않는다.
+- app:app import와 Python3.11용 NumPy 조건부 AX 잠금 파일, 인증값/평가내용을 출력하지 않는 실연동 점검 CLI를 추가했다. 기존 Render의 잠금 파일/운영 설정/데이터는 유지했다.
+- 사용자 선택 B안의 정사각형 브라우저 아이콘을 KYWA에만 연결하고4:3 검은 여백 썸네일·80자 설명을 AX 상세관리에서 저장했다. 새 소스 등록은 사용자가 수행한다.
+- 백엔드498/29모듈·프런트20·TypeScript/root/AX 빌드와 외부 설정 보존을 검사했다. PC Google/AI/KOSHA 통과, AX 주소 법령 검증/서버 외부 설정 설치/서버 업무 검증은 미완료로 기록한다. 공식3.11 의존성 메타데이터와 실제3.11 실행은 구분한다.
+- AX 안내·현재 컨텍스트/재개·인수인계·소스/AX ZIP을 갱신하며 Actions는 중지 상태다.
+
 ## 2026-11-16 — 현재 컨텍스트·작업 재개 문서 정리
 
 - PROJECT-CONTEXT.ko.md와 RESUME-PROMPT.ko.md를 추가하고 README/AGENTS/SETUP/HANDOFF를 연결했다. 기관별 예외·현재 버전·핵심 코드·검증 한계·복구/새PC·자료 위치와 주요 이력을 통합했다.
