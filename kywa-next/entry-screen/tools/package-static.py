@@ -13,6 +13,10 @@ PUBLIC_FILES = {
     "_headers", "_redirects", "index.html", "style.css", "app.mjs",
     "controller.mjs", "config.json", "assets/icon.png",
 }
+NETLIFY_CONFIG = b"""[build]
+  command = "test -s site/index.html && test -s site/_redirects"
+  publish = "site"
+"""
 
 
 def package(organization):
@@ -26,12 +30,13 @@ def package(organization):
     if set(rows) != PUBLIC_FILES or len(build["files"]) != len(PUBLIC_FILES):
         raise ValueError("Unexpected public file list")
 
-    entries = {}
+    # Logged-in uploads run framework detection. Specify the prebuilt output explicitly.
+    entries = {"netlify.toml": NETLIFY_CONFIG}
     for name, row in sorted(rows.items()):
         data = (dist / organization / PurePosixPath(name)).read_bytes()
         if len(data) != row["bytes"] or hashlib.sha256(data).hexdigest() != row["sha256"]:
             raise ValueError(f"Rebuild before packaging: {name} changed")
-        entries[name] = data
+        entries[f"site/{name}"] = data
     artifacts = ROOT.parent / "artifacts"
     artifacts.mkdir(exist_ok=True)
     archive = artifacts / f"{organization}-entry-static.zip"
@@ -49,6 +54,7 @@ def package(organization):
         "archive": archive.name,
         "archiveBytes": archive.stat().st_size,
         "archiveSha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+        "publishDirectory": "site",
     }
     archive.with_suffix(".manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
