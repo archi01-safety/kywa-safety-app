@@ -2,7 +2,7 @@
 
 ## 2026-11-18 — KYWA Netlify 기동 안내 시험 (진행 중)
 
-최신 운영 브랜치44d8f7b에서 `pilot/kywa-entry`를 만들고 `entry-screen/`에 독립 정적 소개 화면을 구현했다. 기존 Render8개의 v1.3.0/bacadc9, 인증/Google/API·시트 구조·사진과 다른 기관은 유지한다. Netlify 팀axkywa의 `kywa-safety-start` 시험 프로젝트에만 연결하며 자세한 동작·실측·최종 배포 상태는 [NETLIFY-ENTRY-PILOT.ko.md](NETLIFY-ENTRY-PILOT.ko.md)를 따른다.
+최신 운영 브랜치44d8f7b에서 `pilot/kywa-entry`를 만들고 `entry-screen/`에 독립 정적 소개 화면을 구현했다. 기존 Render8개의 v1.3.0/bacadc9, 인증/Google/API·시트 구조·사진과 다른 기관은 유지한다. Netlify 팀axkywa의 `kywa-safety` 시험 프로젝트에만 연결하며 자세한 동작·실측·최종 배포 상태는 [NETLIFY-ENTRY-PILOT.ko.md](NETLIFY-ENTRY-PILOT.ko.md)를 따른다.
 
 준비 확인 주소 한 개만 기존 /healthz로 중계한다. 650ms 이내면 소개를 건너뛰고, 지연되면6장면을 재생하며 준비 확인 즉시 기존 주소로 replace 이동한다. 5초/2초/120초 제한, 백그라운드 정지·복귀 확인, 정적 미리보기와 재시도를 구현했다. 원본 PDF/MP4·실제 업무 자료·인증정보는 배포하지 않는다. 자연 절전3회와 실행 중10회 측정, 실제 중계·자동 이동, 잔여 크레딧·배포와 ZIP을 완료한 뒤 이 항목의 진행 상태를 갱신한다. Actions/절전 방지 호출은 추가하지 않는다.
 

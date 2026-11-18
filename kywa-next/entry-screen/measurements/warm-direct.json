@@ -1,0 +1,82 @@
+{
+  "target": "https://kywa-safety.onrender.com/healthz",
+  "at": "2026-11-18T14:52:51+09:00",
+  "samples": [
+    {
+      "trial": 1,
+      "seconds": 0.353,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 2,
+      "seconds": 0.095,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 3,
+      "seconds": 0.109,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 4,
+      "seconds": 0.091,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 5,
+      "seconds": 0.086,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 6,
+      "seconds": 0.088,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 7,
+      "seconds": 0.089,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 8,
+      "seconds": 0.083,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 9,
+      "seconds": 0.097,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 10,
+      "seconds": 0.084,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    }
+  ],
+  "count": 10,
+  "mean": 0.117,
+  "median": 0.09,
+  "maximum": 0.353,
+  "within650ms": 10,
+  "ai_google_calls": false
+}

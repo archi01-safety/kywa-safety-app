@@ -1,7 +1,6 @@
 {
-  "storySeconds": 20.906,
-  "measurementStatus": "provisional-two-confirmed-starts-one-timeout",
+  "storySeconds": 20.734,
+  "measurementStatus": "three-natural-starts-confirmed",
   "measuredDate": "2026-11-18",
-  "coldMeanSeconds": 22.906,
-  "confirmedSampleCount": 2
+  "coldMeanSeconds": 22.734
 }

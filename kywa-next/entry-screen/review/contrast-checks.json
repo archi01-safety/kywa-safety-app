@@ -1,0 +1,40 @@
+{
+  "scope": "Sampled primary reading text; not a full accessibility certification",
+  "pairs": {
+    "body": {
+      "foreground": "#f6f7fa",
+      "background": "#10141d",
+      "ratio": 17.2
+    },
+    "lead": {
+      "foreground": "#bbc6d5",
+      "background": "#10141d",
+      "ratio": 10.66
+    },
+    "accent_heading": {
+      "foreground": "#ff4a80",
+      "background": "#10141d",
+      "ratio": 5.74
+    },
+    "header_title": {
+      "foreground": "#243244",
+      "background": "#ffffff",
+      "ratio": 13.01
+    },
+    "header_status": {
+      "foreground": "#536176",
+      "background": "#ffffff",
+      "ratio": 6.29
+    },
+    "secondary": {
+      "foreground": "#8291a6",
+      "background": "#10141d",
+      "ratio": 5.75
+    },
+    "focus_ring": {
+      "foreground": "#69c6ff",
+      "background": "#10141d",
+      "ratio": 9.76
+    }
+  }
+}

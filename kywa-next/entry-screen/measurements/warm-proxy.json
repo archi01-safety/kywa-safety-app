@@ -1,0 +1,82 @@
+{
+  "target": "https://kywa-safety.netlify.app/__render/ready",
+  "at": "2026-11-18T14:52:51+09:00",
+  "samples": [
+    {
+      "trial": 1,
+      "seconds": 0.679,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 2,
+      "seconds": 0.101,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 3,
+      "seconds": 0.105,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 4,
+      "seconds": 0.112,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 5,
+      "seconds": 0.107,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 6,
+      "seconds": 0.103,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 7,
+      "seconds": 0.105,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 8,
+      "seconds": 0.097,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 9,
+      "seconds": 0.104,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    },
+    {
+      "trial": 10,
+      "seconds": 0.104,
+      "status": 200,
+      "ready": true,
+      "cache_control": "no-store"
+    }
+  ],
+  "count": 10,
+  "mean": 0.162,
+  "median": 0.1045,
+  "maximum": 0.679,
+  "within650ms": 9,
+  "ai_google_calls": false
+}

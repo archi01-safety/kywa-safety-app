@@ -2,7 +2,7 @@
 import argparse,datetime,json,statistics,time
 from pathlib import Path
 import httpx
-TARGETS={'direct':'https://kywa-safety.onrender.com/healthz','proxy':'https://kywa-safety-start.netlify.app/__render/ready'}
+TARGETS={'direct':'https://kywa-safety.onrender.com/healthz','proxy':'https://kywa-safety.netlify.app/__render/ready'}
 def main():
     p=argparse.ArgumentParser();p.add_argument('--target',choices=TARGETS,default='direct');p.add_argument('--output',type=Path,required=True);a=p.parse_args()
     samples=[]

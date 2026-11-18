@@ -8,7 +8,32 @@ const query = new URLSearchParams(location.search);
 const preview = query.get('preview') === '1';
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let duration = 60000, scene = 0, elapsed = 0, lastFrame = null, running = false, paused = reducedMotion.matches;
-let animationFrame = null, entrance = null;
+let animationFrame = null, entrances = [];
+const sceneWords = ['SAFETY', 'CAPTURE', 'REVIEW', 'ACTION', 'REPORT', 'TOGETHER'];
+
+function finishEntrances() {
+  for (const animation of entrances) { animation.finish(); animation.cancel(); }
+  entrances = [];
+}
+function enterScene() {
+  finishEntrances();
+  if (reducedMotion.matches || paused || document.hidden) return;
+  const element = scenes[scene], direction = scene % 2 ? 1 : -1;
+  const play = (target, keyframes, delay = 0, length = 650) => {
+    if (!target) return;
+    entrances.push(target.animate(keyframes, { duration: length, delay, fill: 'backwards', easing: 'cubic-bezier(.16,.85,.24,1)' }));
+  };
+  [...element.querySelector('.copy').children].forEach((child, index) => {
+    play(child, [{ opacity: 0, translate: `${direction * 38}px 12px` }, { opacity: 1, translate: '0 0' }], index * 85, 580);
+  });
+  play(element.querySelector('.art'), [{ opacity: 0, translate: `${-direction * 75}px 0`, scale: .90 }, { opacity: 1, translate: '0 0', scale: 1 }], 90, 800);
+  const details = [
+    ['.discovery', '.outcome'], ['.photo-front', '.input-note'], ['.focus-box', '.assessment-card'],
+    ['.action-record', '.reevaluate'], ['.sheet-excel', '.sheet-main', '.report-badge'], ['.privacy-photo', '.name-card', '.ready-note'],
+  ][scene];
+  details.forEach((selector, index) => play(element.querySelector(selector),
+    [{ opacity: 0, translate: `${(index % 2 ? 1 : -1) * 28}px 24px`, scale: .86 }, { opacity: 1, translate: '0 0', scale: 1 }], 240 + index * 170, 750));
+}
 
 const dots = titles.map((title, index) => {
   const button = document.createElement('button'); button.type = 'button';
@@ -19,6 +44,9 @@ const dots = titles.map((title, index) => {
 function sceneStart(index) { return weights.slice(0, index).reduce((a, b) => a + b, 0) * duration; }
 function selectScene(index, manual = false) {
   scene = Math.min(scenes.length - 1, Math.max(0, index));
+  $('story').classList.toggle('is-reversed', scene % 2 === 1);
+  $('story').dataset.scene = String(scene);
+  if ($('scene-word')) $('scene-word').textContent = sceneWords[scene];
   scenes.forEach((element, i) => {
     element.classList.toggle('is-active', i === scene); element.inert = i !== scene;
     element.setAttribute('aria-hidden', String(i !== scene));
@@ -27,12 +55,7 @@ function selectScene(index, manual = false) {
   $('scene-count').textContent = `${String(scene + 1).padStart(2, '0')} / 06`;
   $('previous').disabled = scene === 0; $('next').disabled = scene === scenes.length - 1;
   if (manual) { elapsed = sceneStart(scene); lastFrame = null; }
-  entrance?.cancel();
-  if (!reducedMotion.matches && !paused) {
-    const art = scenes[scene].querySelector('.art');
-    entrance = art.animate([{ opacity: 0, translate: '0 18px' }, { opacity: 1, translate: '0 0' }],
-      { duration: 600, easing: 'cubic-bezier(.2,.8,.2,1)' });
-  }
+  enterScene();
 }
 function tick(time) {
   animationFrame = null;
@@ -50,8 +73,8 @@ function updatePause() {
   $('pause').setAttribute('aria-pressed', String(paused));
   $('pause').setAttribute('aria-label', paused ? '소개 재생' : '소개 일시정지');
   $('pause').textContent = paused ? '▶' : 'Ⅱ';
-  if (paused || document.hidden) { entrance?.pause(); if (animationFrame) cancelAnimationFrame(animationFrame); animationFrame = null; lastFrame = null; }
-  else { entrance?.play(); schedule(); }
+  if (paused || document.hidden) { finishEntrances(); if (animationFrame) cancelAnimationFrame(animationFrame); animationFrame = null; lastFrame = null; }
+  else schedule();
 }
 function showStory() {
   $('checking').hidden = true; $('story').hidden = false; $('story-controls').hidden = false;
@@ -87,7 +110,7 @@ window.addEventListener('pageshow', (event) => { if (event.persisted && controll
 if (preview) {
   document.documentElement.dataset.state = 'preview'; $('connection-label').textContent = '소개 화면 미리보기';
   const requested = Number(query.get('scene'));
-  if (Number.isInteger(requested) && requested >= 1 && requested <= 6) { scene = requested - 1; paused = true; }
+  if (Number.isInteger(requested) && requested >= 1 && requested <= 6) { scene = requested - 1; elapsed = sceneStart(scene); paused = true; }
   showStory();
 } else { controller.start(); if (document.hidden) controller.suspend(); }
 

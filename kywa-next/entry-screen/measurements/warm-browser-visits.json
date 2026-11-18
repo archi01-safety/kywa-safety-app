@@ -1,0 +1,62 @@
+[
+  {
+    "trial": 1,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 2416
+  },
+  {
+    "trial": 2,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 1059
+  },
+  {
+    "trial": 3,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 1254
+  },
+  {
+    "trial": 4,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 1081
+  },
+  {
+    "trial": 5,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 806
+  },
+  {
+    "trial": 6,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 799
+  },
+  {
+    "trial": 7,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 784
+  },
+  {
+    "trial": 8,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 799
+  },
+  {
+    "trial": 9,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 785
+  },
+  {
+    "trial": 10,
+    "navigationConfirmed": true,
+    "destination": "https://kywa-safety.onrender.com/#inspect",
+    "toolElapsedMs": 779
+  }
+]

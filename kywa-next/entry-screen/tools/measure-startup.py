@@ -12,10 +12,12 @@ def main():
     parser.add_argument('--cooldown',type=int,default=970)
     parser.add_argument('--evidence',type=Path,help='Optional manually verified Render log evidence JSON')
     parser.add_argument('--resume',action='store_true')
+    parser.add_argument('--target',choices=['direct','proxy'],default='direct')
     args=parser.parse_args()
     args.output.parent.mkdir(parents=True,exist_ok=True)
-    state=json.loads(args.output.read_text(encoding='utf-8')) if args.resume and args.output.exists() else {'target':URL,'ai_google_calls':False,'forced_restart':False,'samples':[]}
-    if state['target']!=URL:raise ValueError('Measurement target mismatch')
+    target=URL if args.target=='direct' else 'https://kywa-safety.netlify.app/__render/ready'
+    state=json.loads(args.output.read_text(encoding='utf-8')) if args.resume and args.output.exists() else {'target':target,'ai_google_calls':False,'forced_restart':False,'samples':[]}
+    if state['target']!=target:raise ValueError('Measurement target mismatch')
     results=state['samples']
     def save(**updates):
         state.update(updates);args.output.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
@@ -38,7 +40,7 @@ def main():
             while time.monotonic()-start<120:
                 pstart=time.monotonic()
                 try:
-                    r=client.get(URL,params={'_entry_probe':str(time.time_ns())})
+                    r=client.get(target,params={'_entry_probe':str(time.time_ns())})
                     content=r.headers.get('content-type','')
                     is_json='application/json' in content
                     ready=r.status_code==200 and is_json and r.json()=={'status':'ok'}

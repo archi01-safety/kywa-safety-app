@@ -18,6 +18,18 @@ main{position:relative;flex:1;display:flex;align-items:center;min-height:600px}.
 /* Pausing or opening a fixed-scene preview must never hide its reading content. */
 .is-paused .scene.is-active .reveal{animation:none!important;opacity:1;transform:none}
 .is-paused .scene.is-active .art{animation:none!important;opacity:1;transform:none}
+/* The supplied logo has a white canvas; use one continuous white header. */
+.header{background:#fff;color:#1d2735;margin:-30px -56px 0;padding:20px 56px;min-height:92px;border-bottom:1px solid #dce2e9}
+.logo{background:transparent;border-radius:0;padding:5px 0}
+.header-title{border-color:#c9d1dc;color:#243244}
+.header-title span{color:#637085}
+.connection{color:#536176}
+.header .spinner{border-color:#b9c9db;border-top-color:#236b9e}
+html[data-state="delayed"] .header .spinner{border-color:#a46b17}
+@media(max-height:800px) and (min-width:951px){.header{margin-top:-20px}}
+@media(max-width:1100px){.header{margin:-25px -30px 0;padding:18px 30px}}
+@media(max-width:950px){.header{margin:-19px -22px 0;padding:13px 22px;min-height:76px}.header .logo{padding:3px 0}}
+@media(max-width:380px){.header{margin:-16px -16px 0;padding:12px 16px}}
 html[data-state="delayed"] .connection .spinner{animation:none;border-color:#f3c278}
 html[data-state="delayed"] main{flex-direction:column;justify-content:center}
 html[data-state="delayed"] .story{flex:1}
@@ -33,3 +45,59 @@ html[data-state="delayed"] .story{flex:1}
 @media(min-width:761px) and (max-width:950px){.logo{width:185px}.header-title{font-size:13px}.header-title span{font-size:9px}.connection{order:0;width:auto;margin-left:auto;font-size:11px}.copy{padding-top:35px}.art{margin-top:25px}}
 
 @media(min-width:761px) and (max-width:950px){.lead{font-size:15px}.small-note{font-size:12px}}
+
+/* Each story beat has a different direction and a short, purposeful entrance. */
+.scene{z-index:1}
+.scene:not(.is-active) .art *{animation-play-state:paused!important}
+.scene.is-active .reveal,.scene.is-active .art{animation:none!important;opacity:1;transform:none}
+.ambient-graphic{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:0}
+.ambient-graphic>span{position:absolute;right:0;top:12%;font-size:clamp(80px,11vw,175px);font-weight:900;letter-spacing:-.065em;color:#8eaccb;opacity:.055;line-height:1;transition:left .8s,right .8s}
+.ambient-graphic>svg{position:absolute;width:53%;height:95%;right:-1%;top:1%;overflow:visible;fill:none;stroke:#498fc0;stroke-width:1.1;opacity:.20}
+.ambient-graphic path:first-child{stroke:#dc3d73;stroke-dasharray:5 13;animation:signal-flow 18s linear infinite}
+.ambient-graphic path:last-child{stroke-dasharray:3 17;animation:signal-flow 24s linear infinite reverse}
+.ambient-orbit{position:absolute;right:3%;top:15%;width:440px;height:440px;border:1px solid #3c76a129;border-radius:50%;animation:orbit-breathe 9s ease-in-out infinite}
+.ambient-orbit.orbit-b{width:365px;height:365px;right:6%;top:21%;border-color:#db386c24;animation-delay:-4s}
+.signal-dot{position:absolute;right:5%;top:27%;width:7px;height:7px;border-radius:50%;background:#55b1ed;box-shadow:0 0 18px #2a8fd866;opacity:.7;animation:signal-drift 10s ease-in-out infinite}
+.signal-dot.dot-b{right:43%;top:73%;width:5px;height:5px;background:#ff5d8b;box-shadow:0 0 18px #f0145a66;animation-delay:-5s}
+.story.is-reversed .ambient-graphic>span{right:auto;left:0}
+.story.is-reversed .ambient-graphic>svg{right:auto;left:-1%;transform:scaleX(-1)}
+.story.is-reversed .ambient-orbit{right:auto;left:3%}
+.story.is-reversed .ambient-orbit.orbit-b{left:6%}
+.story.is-reversed .signal-dot{right:auto;left:5%}
+.story.is-reversed .signal-dot.dot-b{left:43%}
+.footer small{margin-left:auto}
+.is-paused .ambient-graphic *{animation-play-state:paused!important}
+@keyframes signal-flow{to{stroke-dashoffset:-360}}
+@keyframes orbit-breathe{50%{transform:scale(.91);opacity:.45}}
+@keyframes signal-drift{0%,100%{translate:0 0;opacity:.2}50%{translate:-45px 65px;opacity:.8}}
+.scene.is-active .picture-label>span{display:inline-block;animation:turn-hint 7s ease-in-out infinite;transform-origin:center}
+.scene.is-active .assessment-card .mock-button>span{display:inline-block;animation:send-hint 3.8s ease-in-out infinite}
+.scene.is-active .action-flow>span{animation:action-step 7.5s ease-in-out infinite;border-radius:4px;padding:5px 4px}
+.scene.is-active .action-flow>span:nth-of-type(2){animation-delay:.7s}
+.scene.is-active .action-flow>span:nth-of-type(3){animation-delay:1.4s}
+.scene.is-active .action-flow>span:nth-of-type(4){animation-delay:2.1s}
+.scene.is-active .report-charts .bars i{transform-origin:bottom;animation:chart-grow 5.5s ease-in-out infinite}
+.scene.is-active .report-charts .bars i:nth-child(2){animation-delay:.15s}
+.scene.is-active .report-charts .bars i:nth-child(3){animation-delay:.3s}
+.scene.is-active .report-charts .bars i:nth-child(4){animation-delay:.45s}
+.scene.is-active .name-card strong{display:inline-block;animation:name-emphasis 6s ease-in-out infinite}
+@keyframes turn-hint{0%,25%,65%,100%{rotate:0deg}40%,50%{rotate:90deg}}
+@keyframes send-hint{0%,65%,100%{translate:0 0}80%{translate:5px -3px}}
+@keyframes action-step{0%,50%,100%{background:transparent;color:#adc0d6}15%,30%{background:#2a8fd82b;color:#a4ddff}}
+@keyframes chart-grow{0%,15%,100%{scale:1 1}45%{scale:1 .64}70%{scale:1 1.04}}
+@keyframes name-emphasis{0%,25%,100%{scale:1;color:#ff6798}50%{scale:1.06;color:#ffb0cc}}
+@media(min-width:951px){
+  .scene[data-scene="1"],.scene[data-scene="3"],.scene[data-scene="5"]{grid-template-columns:1fr 1.04fr}
+  .scene[data-scene="1"] .copy,.scene[data-scene="3"] .copy,.scene[data-scene="5"] .copy{order:2;padding-left:35px}
+  .scene[data-scene="1"] .art,.scene[data-scene="3"] .art,.scene[data-scene="5"] .art{order:1}
+}
+@media(max-width:950px){
+  .story.is-reversed .scene.is-active .copy{text-align:right}
+  .story.is-reversed .feature-tags,.story.is-reversed .format-tags,.story.is-reversed .step-strip{justify-content:flex-end}
+  .ambient-graphic>span{top:36%;font-size:clamp(72px,17vw,130px)}
+  .ambient-graphic>svg{width:100%;height:65%;top:34%}
+  .ambient-orbit{top:43%;width:320px;height:320px}
+  .ambient-orbit.orbit-b{top:48%;width:270px;height:270px}
+  .signal-dot{top:47%}.signal-dot.dot-b{top:80%}
+}
+@media(prefers-reduced-motion:reduce){.ambient-graphic>span{transition:none}.signal-dot{display:none}}

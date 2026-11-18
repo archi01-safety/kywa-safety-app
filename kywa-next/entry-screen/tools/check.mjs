@@ -29,6 +29,7 @@ for (const match of html.matchAll(/(?:src|href)="([^"#][^"]*)"/g)) {
   assert(files.includes(resolve(site, match[1])), `Missing asset ${match[1]}`);
 }
 assert.equal((html.match(/data-scene="/g) || []).length, 6);
+assert(!/class="direct-link"/.test(html), 'The normal footer must not contain a direct-system shortcut');
 assert.equal(readFileSync(resolve(site, '_redirects'), 'utf8').trim(), '/__render/ready https://kywa-safety.onrender.com/healthz 200!');
 assert(bytes <= 500000, `Initial public files exceed 500KB: ${bytes}`);
 const config = JSON.parse(readFileSync(resolve(site, 'config.json'), 'utf8'));
