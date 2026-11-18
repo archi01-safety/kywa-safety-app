@@ -19,8 +19,8 @@
 | 공개 시트 | 일반 기관20열, AYF18열. 이번 v1.3에서 열·과거 점수·등급을 변경하지 않음 |
 | Actions | 두 저장소 모두 중지. 워크플로를 다시 만들거나 켜지 않음 |
 | 최신 작업 | pilot/kywa-entry의 KYWA Netlify 기동 안내 시험 배포 완료. https://kywa-safety.netlify.app/ ; ?preview=1은 소개만 보기. 기존 Render 운영 변경 없음 |
-| Netlify 시험 버전 | kywa-entry/v0.1.0 ; 실제 정적 소스7d40271, 배포6afd474a4c51f7b78b9ecfdb Published. 정상 기동3회평균22.734초/소개20.734초. 상세 NETLIFY-ENTRY-PILOT.ko.md |
-| Netlify 계정 한도 | 최종판은 게시 중. 후속 정식 배포는 크레딧 부족으로 일시중지, 다음 주기 표시2026-12-07. 후속 문서 커밋은GitHub에저장됐고호스팅배포만Skipped됨 |
+| Netlify 시험 버전 | `kywa-entry/v0.1.0`. 정적 소스 `7d40271`, 최신 배포 커밋 `4315a0d`, 배포 `6afd6303e4f193b41ef2906b` Published. 정상 기동 3회 평균 22.734초, 소개 20.734초. 상세는 NETLIFY-ENTRY-PILOT.ko.md |
+| Netlify 배포 상태 | 2026-11-18 팀 배포 제한이 해제돼 최신 시험 브랜치를 정식 재배포했다. 공개 자산 7개와 기존 Render로의 자동 이동을 재확인했다. |
 | Netlify 시험 구조 | entry-screen/site의 순수 정적 소개 + /__render/ready 한 경로만 Render /healthz 중계. 인증정보·업무 API·원본 PDF/MP4를 배포하지 않음 |
 | AX 상태 | 기존 test ver.는 체험 모드. 새 소스 등록은 사용자 수행. 서버 외부 설정 설치·AX 법령 주소 승인·서버 실연동 검증은 남음 |
 

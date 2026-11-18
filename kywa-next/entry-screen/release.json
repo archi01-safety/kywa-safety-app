@@ -8,9 +8,19 @@
   "netlifyTeam": "axkywa",
   "siteUrl": "https://kywa-safety.netlify.app/",
   "previewUrl": "https://kywa-safety.netlify.app/?preview=1",
-  "deploymentId": "6afd474a4c51f7b78b9ecfdb",
+  "deploymentId": "6afd6303e4f193b41ef2906b",
+  "deploymentCommit": "4315a0d7ebf8078293e008a9d4de1362b2f33ba9",
   "deploymentStatus": "Published",
-  "productionDeployCount": 2,
+  "productionDeployCount": 3,
+  "previousProductionDeploymentId": "6afd474a4c51f7b78b9ecfdb",
+  "redeploymentVerification": {
+    "dateKst": "2026-11-18",
+    "runtimeFilesChanged": false,
+    "readinessTestsPassed": 14,
+    "measurementTestsPassed": 4,
+    "publicAssetMatches": 7,
+    "browserRedirectVerified": true
+  },
   "staticArtifact": {
     "path": "artifacts/kywa-entry-static.zip",
     "bytes": 63526,

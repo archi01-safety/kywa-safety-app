@@ -1,5 +1,11 @@
 # KYWA 개발·운영 인수인계
 
+## 2026-11-18 — KYWA Netlify 최신 시험 브랜치 재배포
+
+Netlify 정식 배포 제한 해제 후 `pilot/kywa-entry`의 `4315a0d`를 배포했다. [배포 상세](https://app.netlify.com/projects/kywa-safety/deploys/6afd6303e4f193b41ef2906b)에서 Published를 확인했다. 직전 게시본 이후 변경은 문서와 검증 자료, ZIP 추가다. 정적 소스는 `7d40271`과 같아 태그 `kywa-entry/v0.1.0`과 정적 ZIP을 그대로 복구에 사용할 수 있다.
+
+정적 검사, 연결 동작 검사 14개와 측정 집계 검사 4개를 통과했다. [공개 안내 주소](https://kywa-safety.netlify.app/)의 자산 7개를 검증한 ZIP과 대조했고 기존 Render 앱으로 자동 이동했다. 이전 배포와 최신 배포의 구분은 [Netlify 인수인계](NETLIFY-ENTRY-PILOT.ko.md) 및 `entry-screen/release.json`을 참조한다.
+
 ## 2026-11-18 — KYWA Netlify 기동 안내 시험 배포 완료
 
 최신 운영 브랜치44d8f7b에서 `pilot/kywa-entry`를 만들고 `entry-screen/`에 독립 정적 소개 화면을 구현했다. 실제 주소는 https://kywa-safety.netlify.app/ 이며 https://kywa-safety.netlify.app/?preview=1 은 서버를 깨우지 않는 소개 재생이다. 프로젝트는 처음 kywa-safety-start에서 사용자 요청으로 kywa-safety로 변경했다. 기존 Render8개의 v1.3.0/bacadc9, 인증/Google/API·시트 구조·사진과 다른 기관은 유지한다. 상세는 [NETLIFY-ENTRY-PILOT.ko.md](NETLIFY-ENTRY-PILOT.ko.md)를 따른다.

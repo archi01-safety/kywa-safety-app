@@ -92,7 +92,7 @@ PC·모바일·태블릿 확인 화면은 [review](entry-screen/review/)에 보�
 
 Netlify는 같은 저장소의 **시험 브랜치만** 연결한다. 기존 Render 브랜치나 Blueprint를 변경하지 않는다. 인증 환경변수가 필요 없는 순수 정적 배포이며 Node는 배포 전 검사에만 사용한다. Netlify의 기본 POST 등 임의 경로를 광범위하게 Render로 넘기는 wildcard 규칙을 추가하지 않는다.
 
-정식 배포 전에 현재 무료 크레딧을 확인한다. 사용자 승인 범위는 최초 정식 1회와 필요한 보정 1회 이내이며, 이후 디자인 검토에는 로컬/정적 미리보기를 사용한다. 기존 `kywa-doc`, `kywa-safety-survey` 프로젝트는 수정하지 않는다.
+정식 배포 전에 팀에서 배포에 쓸 수 있는 크레딧을 확인한다. 최초 시험 배포는 최초 1회와 보정 1회로 제한했다. 디자인 검토에는 로컬 또는 정적 미리보기를 사용하고, 이후 정식 배포는 요청받은 버전만 게시한다.
 
 2026-11-18 배포 준비 중 잔여38.3크레딧/월300, 정식17회255크레딧을 관리 화면에서 확인했다. 정식 배포는 회당15크레딧이다([공식 요금 안내](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/billing-faq-for-credit-based-plans/)). `ignore-build.mjs`는 화면·배포 설정이 달라진 경우에만 Git 자동 배포를 계속하고, 인수인계·측정 증거 등 문서 변경은 취소한다([공식 ignore 규칙](https://docs.netlify.com/build/configure-builds/ignore-builds/)). 수동 배포 버튼이나 build hook은 별도이므로 반복 사용하지 않는다.
 
@@ -106,10 +106,16 @@ Netlify는 같은 저장소의 **시험 브랜치만** 연결한다. 기존 Rend
 - ZIP SHA256: `bb586c4df96c3637342924df154e21f29abf5d5b108899936ac48014aa20860f`.
 - [매니페스트](artifacts/kywa-entry-static.manifest.json)와 [릴리스 기록](entry-screen/release.json)에 배포와 소스를 연결한다. 문서 HEAD가 앞서가도 실제 정적 소스는 위 SHA다.
 - 재생성: `python entry-screen/tools/package-static.py --commit 7d4027175349badbda96b9f324774dd674315e93 --output artifacts/kywa-entry-static.zip`.
-- 정식 배포는 최초+보정2회, 총30크레딧이다. 보정 직전 잔여23크레딧을 확인했다. 이후 문서·측정/화면 증거 갱신은 ignore로 건너뛰며 추가 정식 배포를 하지 않는다.
+- 최초 시험 배포는 최초 1회와 보정 1회로 총 30크레딧을 사용했다. 보정 직전 잔여 23크레딧을 확인했다. 이후 문서와 측정·화면 증거만 바꾸는 커밋은 정식 배포에서 제외한다.
 
-### 완료 후 확인한 계정 한도
+### 최초 시험 배포 후 확인한 계정 한도
 
 최종 소스7d40271은 정상 Published이며 페이지는 계속 열린다. 이후 문서 커밋6b1aea0의 배포 시도6afd4a16ad6c11124dc79d93는 `Skipped due to account credit usage exceeded`로 시작 전에 중단됐다. 추가 정식 배포에 쓸 수 있는 크레딧이 부족해 운영용 크레딧만 남은 상태이며 다음 사용 주기 전까지 새 정식 배포가 일시 중지됐다는 Netlify 배너를 확인했다. 크레딧 만료/다음 주기 표시는2026-12-07이다. 유료 전환이나 결제정보 변경은 하지 않았다.
 
-문서 변경을 제외하는 ignore 명령은 로컬에서 종료코드0을 검증했다. 이번 후속 배포가 실제 Netlify에서 제외된 직접 원인은 계정 한도이며 ignore 실행 결과로 표현하지 않는다. 추가 정식 배포는 없고 현재 게시 소스는7d40271이다. GitHub 문서·ZIP·태그는 정상 저장돼 있다. 계정 한도에서 복구 Publish도 제한되면 기존 Render 주소를 계속 안내하며 데이터나 인증정보를 복구할 필요는 없다.
+문서 변경을 제외하는 ignore 명령은 로컬에서 종료 코드 0을 검증했다. 당시 후속 배포가 Netlify에서 제외된 직접 원인은 계정 한도였다. GitHub 문서·ZIP·태그는 정상 저장했다. 계정 한도로 Publish 복구도 제한되면 기존 Render 주소를 계속 안내한다.
+
+### 2026-11-18 — 최신 시험 브랜치 정식 재배포
+
+팀의 정식 배포 제한이 풀린 뒤 사용자 요청으로 `pilot/kywa-entry`의 최신 커밋 `4315a0d7ebf8078293e008a9d4de1362b2f33ba9`을 정식 배포했다. [Netlify 배포 `6afd6303e4f193b41ef2906b`](https://app.netlify.com/projects/kywa-safety/deploys/6afd6303e4f193b41ef2906b)의 Published 상태를 확인했다. 이전 게시 커밋 이후의 변경은 문서와 검증 자료, ZIP 추가였다. 배포된 정적 소스의 내용은 `7d40271`과 같으며 `kywa-entry/v0.1.0` 태그와 정적 ZIP으로 복구할 수 있다.
+
+정적 파일 검사와 연결 동작 검사 14개, 측정 집계 검사 4개를 통과했다. 배포 뒤 공개 자산 7개가 정적 ZIP과 일치했고, 공개 주소를 열어 기존 Render `/#inspect`로 자동 이동하는 것을 확인했다. 재배포 기록은 [릴리스 기록](entry-screen/release.json)에 반영하고, 문서 갱신 커밋에는 `[skip netlify]`를 붙인다.
