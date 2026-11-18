@@ -10,6 +10,8 @@
 
 최종 소스 `7d4027175349badbda96b9f324774dd674315e93`와 Netlify 배포 `6afd474a4c51f7b78b9ecfdb`의 Published를 확인했다. 정식 배포는 최초1회+보정1회, 총2회이며 Production Public/Deploy Preview Private다. 새 프로젝트의 Netlify 추가 배지도 해제했다. 배포7개 자산을 정적 ZIP과 대조했다(HTML의 Netlify 설명 주석만 비교 시 제외). 준비 확인200/JSON/no-store/쿠키 없음과 미지원POST405도 확인했다. `artifacts/kywa-entry-static.zip`은63,526바이트이며 매니페스트·`entry-screen/release.json`·`kywa-entry/v0.1.0` 태그로 소스와 복구를 연결한다. 후속 문서만 변경하면 Netlify ignore로 재배포를 건너뛴다. 기존 Render/AX ZIP과 기관별 v1.3.0 태그는 유지하며 Actions/절전 방지 호출은 추가하지 않았다.
 
+완료 후 Netlify 팀의 추가 정식 배포가 크레딧 한도로 일시 중지된 배너를 확인했다. 최종7d40271은 계속 게시되고, 문서 커밋6b1aea0의 배포는 계정 한도에서시작전Skipped됐다. ignore 명령은 로컬 검증이며 실제 제외 사유와 구분한다. GitHub 문서/정적ZIP/태그 저장은 완료다. 다음 크레딧 주기 표시는2026-12-07이며 결제/요금제는 변경하지 않았다.
+
 ## 2026-11-17 — AX 업데이트 시 연동 설정 유지·B안 아이콘/메타데이터
 
 기존 AX test ver. 주소는 https://ax.kywa.or.kr/apps/kywa-safety/ 이며 현재 체험 모드다. 사용자가 기존 앱 소스관리에서 ZIP을 교체하기로 했으므로 소스 업로드/배포는 실행하지 않았다. AX 상세관리에는 사용자 선택 B안4:3 썸네일과80자 기능 설명을 실제 저장했다. 브라우저 정사각형 아이콘은 KYWA bootstrap에만 연결해 새 소스/AX ZIP에 포함했고 다른 기관 로고는 바꾸지 않았다.

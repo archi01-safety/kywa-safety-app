@@ -107,3 +107,9 @@ Netlify는 같은 저장소의 **시험 브랜치만** 연결한다. 기존 Rend
 - [매니페스트](artifacts/kywa-entry-static.manifest.json)와 [릴리스 기록](entry-screen/release.json)에 배포와 소스를 연결한다. 문서 HEAD가 앞서가도 실제 정적 소스는 위 SHA다.
 - 재생성: `python entry-screen/tools/package-static.py --commit 7d4027175349badbda96b9f324774dd674315e93 --output artifacts/kywa-entry-static.zip`.
 - 정식 배포는 최초+보정2회, 총30크레딧이다. 보정 직전 잔여23크레딧을 확인했다. 이후 문서·측정/화면 증거 갱신은 ignore로 건너뛰며 추가 정식 배포를 하지 않는다.
+
+### 완료 후 확인한 계정 한도
+
+최종 소스7d40271은 정상 Published이며 페이지는 계속 열린다. 이후 문서 커밋6b1aea0의 배포 시도6afd4a16ad6c11124dc79d93는 `Skipped due to account credit usage exceeded`로 시작 전에 중단됐다. 추가 정식 배포에 쓸 수 있는 크레딧이 부족해 운영용 크레딧만 남은 상태이며 다음 사용 주기 전까지 새 정식 배포가 일시 중지됐다는 Netlify 배너를 확인했다. 크레딧 만료/다음 주기 표시는2026-12-07이다. 유료 전환이나 결제정보 변경은 하지 않았다.
+
+문서 변경을 제외하는 ignore 명령은 로컬에서 종료코드0을 검증했다. 이번 후속 배포가 실제 Netlify에서 제외된 직접 원인은 계정 한도이며 ignore 실행 결과로 표현하지 않는다. 추가 정식 게시판은 없고 현재 게시 소스는7d40271이다. GitHub 문서·ZIP·태그는 정상 저장돼 있다. 계정 한도에서 복구 Publish도 제한되면 기존 Render 주소를 계속 안내하며 데이터나 인증정보를 복구할 필요는 없다.

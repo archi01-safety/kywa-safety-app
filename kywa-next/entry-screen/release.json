@@ -35,5 +35,13 @@
   "githubActionsAdded": false,
   "scheduledKeepAliveAdded": false,
   "secretValuesIncluded": false,
-  "physicalMobileDeviceVerified": false
+  "physicalMobileDeviceVerified": false,
+  "postReleaseDocumentationDeployment": {
+    "commit": "6b1aea00cbbd3c45ca6f191a8d06632316efa84e",
+    "id": "6afd4a16ad6c11124dc79d93",
+    "status": "Skipped",
+    "reason": "account credit usage exceeded",
+    "publishedRuntimeUnchanged": true
+  },
+  "documentationIgnoreLocalCheckPassed": true
 }
