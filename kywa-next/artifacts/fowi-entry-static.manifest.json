@@ -1,0 +1,53 @@
+{
+  "organization": "fowi",
+  "renderUrl": "https://fowi-safety.onrender.com/#inspect",
+  "storySeconds": 20.734,
+  "publicBytes": 59277,
+  "files": [
+    {
+      "path": "_headers",
+      "bytes": 386,
+      "sha256": "57fc330fc396a5bdd78bcf39fd9b0e11495799641c7dcf3db64f0ddd072d20f3"
+    },
+    {
+      "path": "_redirects",
+      "bytes": 62,
+      "sha256": "3169edd3e298265ef4022831851ae3d4e5ebcb2575b174025613102454686b3f"
+    },
+    {
+      "path": "app.mjs",
+      "bytes": 7246,
+      "sha256": "ce8a2df4dab33df6f8418d107ef6850d2d18fde557070e2f2057ea77972f7fb1"
+    },
+    {
+      "path": "assets/icon.png",
+      "bytes": 1790,
+      "sha256": "ecb451a41780fa39e6d4cd5bab2d19efc38d51f04b5bca0babed95ee2300f1b7"
+    },
+    {
+      "path": "config.json",
+      "bytes": 24,
+      "sha256": "bcdcf512707c34d9835856d58a344bf67eef307dd72620915eb141d2d6479fc3"
+    },
+    {
+      "path": "controller.mjs",
+      "bytes": 3953,
+      "sha256": "b711657d7a10e80c0b2bc23f3da8772bc3540989cb98391fac79022a5ea0a723"
+    },
+    {
+      "path": "index.html",
+      "bytes": 14463,
+      "sha256": "4677151b55d8b373f5cd5db0cf5e1a036272d9246c89e412bb476a5e4d50040c"
+    },
+    {
+      "path": "style.css",
+      "bytes": 31353,
+      "sha256": "77b9c369673242a46bc9147558959825f47f892f2ee1635fe950aaab078cec48"
+    }
+  ],
+  "sourceCommit": "abf6680d492585ec2b1b1a4afd194d5873fe533c",
+  "archive": "fowi-entry-static.zip",
+  "archiveBytes": 20303,
+  "archiveSha256": "c435c6d2b9644a8575be0bcf5f5f3f8e233dce74d426027a66dac7075a9d393c",
+  "publishDirectory": "site"
+}

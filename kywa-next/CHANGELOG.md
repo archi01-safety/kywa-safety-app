@@ -1,5 +1,10 @@
 # 변경 이력
 
+## 2026-11-18 — FoWI Netlify 안내 시범 배포
+
+- 기존 KYWA 안내의 여섯 장면, 좌우 교차와 연결 동작을 기관별 정적 템플릿으로 구성했다. FoWI 공동 기관명과 녹색·하늘색을 적용했다.
+- `fowi-safety.netlify.app`에 수동 게시했다. 실제 FoWI Render 이동과 기관별 빌드·색상·모바일 표시를 검사했다. 이후 기관은 시범 검토 후 적용한다.
+
 ## 2026-11-17 — AX 비공개 설정 유지·ASGI/3.11 호환·B안 아이콘
 
 - AX ZIP의 production/PIN/origin/prefix 기본값과 외부 ax.env/APP_ENV_FILE 재사용을 구현했다. 플랫폼 변수를 우선하고 오래된 release demo .env를 무시한다. 키/PIN/세션 키를 패키지에 넣거나 자동 교체하지 않는다.

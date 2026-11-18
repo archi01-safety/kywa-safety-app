@@ -1,0 +1,59 @@
+{
+  "checkedAtKst": "2026-11-18T18:25:07+09:00",
+  "deploymentId": "6afd6ddc7a8f9db5a980215e",
+  "sourceCommit": "abf6680d492585ec2b1b1a4afd194d5873fe533c",
+  "assets": [
+    {
+      "path": "app.mjs",
+      "status": 200,
+      "matchesPackage": true,
+      "netlifyCommentRemoved": false,
+      "contentSecurityPolicy": true
+    },
+    {
+      "path": "assets/icon.png",
+      "status": 200,
+      "matchesPackage": true,
+      "netlifyCommentRemoved": false,
+      "contentSecurityPolicy": true
+    },
+    {
+      "path": "config.json",
+      "status": 200,
+      "matchesPackage": true,
+      "netlifyCommentRemoved": false,
+      "contentSecurityPolicy": true
+    },
+    {
+      "path": "controller.mjs",
+      "status": 200,
+      "matchesPackage": true,
+      "netlifyCommentRemoved": false,
+      "contentSecurityPolicy": true
+    },
+    {
+      "path": "index.html",
+      "status": 200,
+      "matchesPackage": true,
+      "netlifyCommentRemoved": false,
+      "contentSecurityPolicy": true
+    },
+    {
+      "path": "style.css",
+      "status": 200,
+      "matchesPackage": true,
+      "netlifyCommentRemoved": false,
+      "contentSecurityPolicy": true
+    }
+  ],
+  "readiness": {
+    "status": 200,
+    "json": {
+      "status": "ok"
+    },
+    "cacheControl": "no-store",
+    "setsCookie": false
+  },
+  "browserExpectedDestination": "https://fowi-safety.onrender.com/#inspect",
+  "browserDestinationVerified": true
+}

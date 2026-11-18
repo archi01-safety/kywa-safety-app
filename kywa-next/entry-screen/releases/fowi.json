@@ -1,0 +1,30 @@
+{
+  "version": "fowi-entry/v0.1.0",
+  "organization": "fowi",
+  "branch": "pilot/partner-entry",
+  "sourceCommit": "abf6680d492585ec2b1b1a4afd194d5873fe533c",
+  "kywaTemplateCommit": "7d4027175349badbda96b9f324774dd674315e93",
+  "project": "fowi-safety",
+  "team": "axkywa",
+  "projectId": "8773f534-a45b-480d-b0e0-39a88ad880c8",
+  "deploymentId": "6afd6ddc7a8f9db5a980215e",
+  "status": "Published",
+  "deploymentMethod": "manual Netlify upload",
+  "successfulProductionDeploys": 1,
+  "siteUrl": "https://fowi-safety.netlify.app/",
+  "previewUrl": "https://fowi-safety.netlify.app/?preview=1",
+  "renderUrl": "https://fowi-safety.onrender.com/#inspect",
+  "package": {
+    "path": "artifacts/fowi-entry-static.zip",
+    "bytes": 20303,
+    "sha256": "c435c6d2b9644a8575be0bcf5f5f3f8e233dce74d426027a66dac7075a9d393c"
+  },
+  "verification": {
+    "dateKst": "2026-11-18",
+    "nodeTests": 19,
+    "layoutCases": 30,
+    "publishedAssetMatches": 6,
+    "browserRedirectVerified": true,
+    "mockTimeoutAndRetryVerified": true
+  }
+}
