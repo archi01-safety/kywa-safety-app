@@ -11,9 +11,12 @@ def main():
     parser.add_argument('--samples',type=int,default=3)
     parser.add_argument('--cooldown',type=int,default=970)
     parser.add_argument('--evidence',type=Path,help='Optional manually verified Render log evidence JSON')
+    parser.add_argument('--resume',action='store_true')
     args=parser.parse_args()
     args.output.parent.mkdir(parents=True,exist_ok=True)
-    results=[];state={'target':URL,'ai_google_calls':False,'forced_restart':False,'samples':results}
+    state=json.loads(args.output.read_text(encoding='utf-8')) if args.resume and args.output.exists() else {'target':URL,'ai_google_calls':False,'forced_restart':False,'samples':[]}
+    if state['target']!=URL:raise ValueError('Measurement target mismatch')
+    results=state['samples']
     def save(**updates):
         state.update(updates);args.output.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
     def now():return datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9))).isoformat(timespec='seconds')
@@ -25,7 +28,10 @@ def main():
             if result['kind']=='unconfirmed' and result['trial'] in verified:
                 result['kind']='cold';result['confirmation']='Render shutdown/startup logs independently verified'
     with httpx.Client(timeout=5,follow_redirects=False,headers={'User-Agent':'Mozilla/5.0 KYWA-Entry-Measurement/1.0','Cache-Control':'no-cache'}) as client:
-        trial=0
+        trial=max((r['trial'] for r in results),default=0);reconcile()
+        if args.resume and state.get('phase')=='natural_idle_wait':
+            pending=datetime.datetime.fromisoformat(state['next_probe_at']).timestamp()
+            while time.time()<pending:time.sleep(min(30,max(.1,pending-time.time())))
         while sum(r['kind']=='cold' for r in results)<args.samples and trial<args.samples+3:
             trial+=1;start=time.monotonic();probes=[];ready=False
             save(phase='probing',trial=trial,started_at=now(),deadline_seconds=120)
@@ -42,8 +48,8 @@ def main():
                         found=re.search(r'<title[^>]*>(.*?)</title>',r.text,re.I|re.S)
                         title=found.group(1).strip()[:100] if found else ''
                     probes.append({'status':r.status_code,'type':content,'title':title,'ready':ready,'elapsed':round(time.monotonic()-start,3)})
-                except (httpx.HTTPError,ValueError):
-                    probes.append({'status':'timeout_or_network','ready':False,'elapsed':round(time.monotonic()-start,3)})
+                except (httpx.HTTPError,ValueError) as error:
+                    probes.append({'status':'timeout_or_network','error_class':type(error).__name__,'ready':False,'elapsed':round(time.monotonic()-start,3)})
                 if ready:break
                 save(last_probe=probes[-1]);time.sleep(2)
             elapsed=time.monotonic()-start

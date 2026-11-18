@@ -17,6 +17,7 @@ main{position:relative;flex:1;display:flex;align-items:center;min-height:600px}.
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.scene.is-active .reveal,.scene.is-active .art{opacity:1!important;transform:none!important}.scan-line{display:none}.spinner{border-color:#88b9df;opacity:.7}}
 /* Pausing or opening a fixed-scene preview must never hide its reading content. */
 .is-paused .scene.is-active .reveal{animation:none!important;opacity:1;transform:none}
+.is-paused .scene.is-active .art{animation:none!important;opacity:1;transform:none}
 html[data-state="delayed"] .connection .spinner{animation:none;border-color:#f3c278}
 html[data-state="delayed"] main{flex-direction:column;justify-content:center}
 html[data-state="delayed"] .story{flex:1}
