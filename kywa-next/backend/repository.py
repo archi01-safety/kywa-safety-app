@@ -1,0 +1,394 @@
+"""Single-writer repositories. Google updates and audit rows share one atomic batch.
+
+Use ONE uvicorn worker/Render instance. Append-only Streamlit submissions may run concurrently.
+Migrated KYWA sheets support row deletion and direct edits through native row identities.
+Other institutions retain legacy storage. Simultaneous edits to one cell are not transactional.
+"""
+import copy
+import io
+import json
+import os
+import threading
+import hashlib
+import time
+from concurrent.futures import Future
+from contextlib import contextmanager
+from pathlib import Path
+
+from .domain import HEADERS, HISTORY_HEADERS, now, risk, sheet_row, POLICY
+from .sheet_schema import Layout, SheetSchemaError, MANAGED
+
+
+class RepositoryError(Exception):
+    pass
+
+
+class DemoRepository:
+    def __init__(self, path, org=None):
+        self.path = Path(path)
+        self.lock = threading.RLock()
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        if not self.path.exists():
+            examples = [('중앙', '본관 2층 테라스', '시설 안전', '난간 고정부 흔들림으로 추락 위험', '고정부 보강 후 흔들림 점검', 3, 4),
+                        ('평창', '생활관 계단', '보행 안전', '계단 논슬립 마모로 미끄러질 위험', '논슬립 교체 및 통행 안내', 3, 2),
+                        ('우주', '기계실 출입구', '전기적 요인', '전선 피복 손상으로 감전 위험', '전원 차단 후 손상 전선 교체', 4, 4),
+                        ('본원', '사무실 복도', '보행 안전', '이동 통로 적치물로 넘어짐 위험', '적치물 제거 및 통로 표시', 2, 2)]
+            records = []
+            for i, (fac, loc, cat, scene, solution, p, s) in enumerate(examples):
+                before = dict(category=cat, location=loc, scenario=scene, solution=solution,
+                              law='샘플 데이터 · 현장 근거 확인 필요', **risk(p, s))
+                after = dict(**risk(1, 2), text='샘플 조치내용: 적치물 정리 및 통로 확보', photo_id='',
+                             actor='demo-admin@kywa.local', created_at=now(), policy=POLICY) if i == 3 else None
+                records.append(dict(id=f'demo-{i+1}', created_at=now(), facility=fac,
+                                    department='협력부(국립청소년시설)', before=before, after=after,
+                                    photo_id='', policy=POLICY, status='완료' if after else '접수', revision=1))
+            if org and org.id != 'kywa':
+                records = []
+            self._write({'records': records, 'events': []})
+
+    def _read(self):
+        return json.loads(self.path.read_text(encoding='utf-8'))
+
+    def _write(self, data):
+        temp = self.path.with_suffix('.tmp')
+        temp.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
+        for attempt in range(5):
+            try:
+                os.replace(temp,self.path)
+                break
+            except PermissionError as error:
+                if os.name!='nt' or getattr(error,'winerror',0) not in (5,32) or attempt==4:raise
+                time.sleep(.02*2**attempt)
+
+    def records(self):
+        with self.lock:
+            if getattr(self,'_row_sync_enabled',False):
+                from .sheet_sync import Store
+                return Store(self).sync()[0]
+            return copy.deepcopy(self._read()['records'])
+
+    def events(self, record_id=None):
+        with self.lock:
+            return [e for e in self._read()['events'] if record_id is None or e['record_id'] == record_id]
+
+    def apply(self, records, events):
+        with self.lock:
+            data = self._read()
+            by_id = {r['id']: r for r in data['records']}
+            by_id.update({r['id']: r for r in records})
+            data['records'] = list(by_id.values())
+            data['events'].extend(events)
+            self._write(data)
+
+
+def google_credentials(settings):
+    from google.oauth2 import service_account
+    info = json.loads(settings.google_service_account_json)
+    info['private_key'] = info['private_key'].replace('\\n', '\n')
+    credentials = service_account.Credentials.from_service_account_info(
+        info, scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive'])
+    return credentials.with_subject(settings.google_delegate_email) if settings.google_delegate_email else credentials
+
+
+_clients = threading.local()
+
+
+def google_client(settings, service, version):
+    from googleapiclient.discovery import build
+    from google_auth_httplib2 import AuthorizedHttp
+    import httplib2
+    from .storage_metrics import request_builder
+    ca = os.environ.get('SSL_CERT_FILE') or None
+    reuse = settings.organization.enhanced
+    # Never share httplib2 transports between threads or credential configurations.
+    key = (service, version, hashlib.sha256(settings.google_service_account_json.encode()).hexdigest(),
+           settings.google_delegate_email, ca)
+    cache = getattr(_clients, 'services', {})
+    if reuse and key in cache:
+        return cache[key]
+    client = build(service, version, http=AuthorizedHttp(google_credentials(settings),
+        http=httplib2.Http(timeout=25, ca_certs=ca)), cache_discovery=False,
+        **({'requestBuilder': request_builder} if reuse else {}))
+    if reuse:
+        if len(cache) >= 8: cache.clear()
+        cache[key] = client
+        _clients.services = cache
+    return client
+
+
+def quoted(name):
+    return "'" + name.replace("'", "''") + "'"
+
+
+def cells(values):
+    # stringValue prevents formula execution for user/AI text starting with =, +, - or @.
+    return {'values': [{'userEnteredValue': {'numberValue': v} if type(v) in (int, float)
+                        else {'stringValue': str(v)}} for v in values]}
+
+
+class SheetsRepository:
+    def __init__(self, settings):
+        self.settings = settings
+        self.lock = threading.RLock()
+        self._operation_store = None
+        self._in_operation = False
+        self._listing_lock=threading.Lock()
+        self._listing_future=None
+
+    @contextmanager
+    def operation(self):
+        # One writer; reuse only within this lock-held request, never cache row values
+        # across requests. Each snapshot still reads current cells and native row IDs.
+        with self.lock:
+            self._in_operation = True
+            try:
+                yield
+            finally:
+                self._operation_store = None
+                self._in_operation = False
+
+    def _values(self, name, raw=False):
+        return google_client(self.settings, 'sheets', 'v4').spreadsheets().values().get(
+            spreadsheetId=self.settings.spreadsheet_id, range=quoted(name), **({'valueRenderOption':'UNFORMATTED_VALUE','dateTimeRenderOption':'SERIAL_NUMBER'} if raw else {})).execute().get('values', [])
+
+    def _rows(self):
+        rows = self._values(self.settings.sheet_name)
+        if not rows:
+            raise RepositoryError('기관 평가 탭이 비어 있습니다. migrate로 준비하세요.')
+        Layout(rows[0], self.settings.organization)
+        from .visible_layout import is_visible
+        if self.settings.organization.enhanced and is_visible(rows[0], self.settings.organization):
+            rows=self._values(self.settings.sheet_name,raw=True)
+        return rows
+
+    def _compact_rows(self, rows):
+        from .visible_layout import is_visible, VisibleLayout, CANONICAL_HEADER
+        if is_visible(rows[0], self.settings.organization):
+            layout = VisibleLayout(rows[0], self.settings.organization)
+            return [CANONICAL_HEADER] + [layout.canonical(r) for r in rows[1:]]
+        return rows
+
+    def _is_compact(self, header):
+        from .visible_layout import is_visible
+        from .compact_storage import PREVIOUS
+        return is_visible(header, self.settings.organization) or (self.settings.organization.id == 'kywa' and header == PREVIOUS)
+
+    def _decoded(self, rows):
+        from .compact_storage import compact, decode
+        if self.settings.organization.enhanced and self._is_compact(rows[0]):
+            return decode(self, self._compact_rows(rows))
+        layout = Layout(rows[0], self.settings.organization)
+        identity = self.settings.spreadsheet_id + ':' + self.settings.sheet_name
+        records = [layout.decode(row, index, identity) for index,row in enumerate(rows[1:],1)
+                   if any(str(v).strip() for v in row)]
+        if len({r['id'] for r in records}) != len(records):
+            raise RepositoryError('중복된 평가 ID가 있습니다. 원본을 확인하세요.')
+        return records
+
+    def records(self):
+        with self.lock:
+            rows = self._rows()
+            from .compact_storage import compact, decode, recover
+            if self.settings.organization.enhanced and self._is_compact(rows[0]):
+                from .compact_storage import metadata
+                from .sheet_sync import enabled, Store
+                if enabled(metadata(self)):
+                    self._row_sync_enabled=True
+                    return Store(self).sync()[0]
+                canonical_rows = self._compact_rows(rows)
+                return decode(self, canonical_rows, recover(self, canonical_rows))
+            return self._decoded(rows)
+
+    def sync_store(self):
+        if not self.settings.organization.enhanced: return None
+        from .compact_storage import metadata, VISIBLE
+        from .sheet_sync import enabled, Store
+        def create():
+            if self._in_operation:
+                if self._operation_store is None: self._operation_store = Store(self)
+                return self._operation_store
+            return Store(self)
+        if getattr(self,'_row_sync_enabled',False): return create()
+        if self._is_compact(self._rows()[0]) and enabled(metadata(self)):
+            self._row_sync_enabled=True
+            return create()
+        return None
+
+    def snapshot(self):
+        with self.lock:
+            store=self.sync_store()
+            return store.sync() if store else (self.records(), [])
+
+    def listing_snapshot(self):
+        # Join only an active read. A completed result is never cached across requests.
+        with self._listing_lock:
+            pending=self._listing_future
+            if pending is None or pending.done():
+                pending=self._listing_future=Future();creator=True
+            else:creator=False
+        if not creator:return copy.deepcopy(pending.result(timeout=45))
+        try:
+            result=self._listing_snapshot()
+            pending.set_result(copy.deepcopy(result))
+            return result
+        except BaseException as error:
+            pending.set_exception(error)
+            raise
+
+    def _listing_snapshot(self):
+        """Use the same reconciliation rules with a request-local Google response."""
+        from .sheet_sync import GoogleRows, Store
+        with self.lock:
+            if self.settings.organization.enhanced:
+                gateway = GoogleRows.for_listing(self)
+                if gateway is not None:
+                    self._row_sync_enabled = True
+                    return Store(self, gateway).sync()
+            return self.snapshot()
+
+    def receipt(self, operation):
+        with self.lock:
+            store=self.sync_store()
+            if store: return store.recover_append(operation)
+            return [r for r in self.records() if r.get('operation_id')==operation]
+
+    def confirm_policy(self, key, revision, operation, actor):
+        with self.lock:
+            store=self.sync_store()
+            if not store: raise RepositoryError('시트 직접 수정 기능이 준비되지 않았습니다.')
+            return store.confirm(key, revision, operation, actor)
+
+    def deleted_record(self, key):
+        if not getattr(self,'_row_sync_enabled',False): return None
+        from .compact_storage import metadata
+        value=metadata(self).get(('record',key),(None,{}))[1]
+        return value.get('record') if value.get('deleted') else None
+
+    def events(self, record_id=None):
+        rows = self._values(self.settings.history_sheet_name)
+        if not rows or rows[0][:7] != HISTORY_HEADERS:
+            raise RepositoryError('조치이력 시트 초기화가 필요합니다.')
+        events = [json.loads(row[6]) for row in rows[1:] if len(row) >= 7 and row[6]]
+        return [e for e in events if record_id is None or e['record_id'] == record_id]
+
+    def apply(self, records, events):
+        with self.lock:
+            from .compact_storage import compact, apply as compact_apply
+            if self.settings.organization.enhanced and (getattr(self,'_row_sync_enabled',False) or self._is_compact(self._rows()[0])):
+                store=self.sync_store()
+                if store:
+                    if all('_sheet_row' not in r for r in records): return store.append(records)
+                    if any('_sheet_row' not in r for r in records): raise RepositoryError('신규 저장과 기존 수정을 분리해 주세요.')
+                    return store.update(records, events)
+                if self.settings.organization.id != 'kywa':
+                    raise RepositoryError('행 식별정보 이관을 완료한 후 제출하세요.')
+                return compact_apply(self, records, events)
+            svc = google_client(self.settings, 'sheets', 'v4').spreadsheets()
+            meta = svc.get(spreadsheetId=self.settings.spreadsheet_id, fields='sheets.properties').execute()
+            ids = {s['properties']['title']: s['properties']['sheetId'] for s in meta['sheets']}
+            if self.settings.sheet_name not in ids or (events and self.settings.history_sheet_name not in ids):
+                raise RepositoryError('평가·조치이력 탭 준비가 필요합니다.')
+            rows = self._rows()
+            layout = Layout(rows[0], self.settings.organization)
+            layout.require_writable()
+            current = {r['id']:r for r in self._decoded(rows)}
+            requests, new_rows = [], []
+            for record in records:
+                previous = current.get(record['id'])
+                if '_sheet_row' in record:
+                    if (not previous or previous['_sheet_row'] != record['_sheet_row'] or
+                        previous['_sheet_hash'] != record.get('_sheet_hash') or
+                        previous['revision'] != record.get('_sheet_revision')):
+                        raise RepositoryError('원본 행이 변경되었습니다. 목록을 새로고침한 뒤 다시 시도하세요.')
+                    encoded = layout.encoded(record)
+                    # Update only management cells. Original timestamps, names, formulas and links stay intact.
+                    for key in MANAGED:
+                        requests.append({'updateCells': {'start': {'sheetId': ids[self.settings.sheet_name],
+                            'rowIndex':previous['_sheet_row'], 'columnIndex':layout.columns[key]},
+                            'rows':[cells([encoded[key]])], 'fields':'userEnteredValue'}})
+                elif previous:
+                    raise RepositoryError('이미 존재하는 평가 ID입니다. 저장 결과를 먼저 확인하세요.')
+                else:
+                    new_rows.append(cells(layout.new_row(record)))
+            if new_rows:
+                requests.append({'appendCells': {'sheetId':ids[self.settings.sheet_name],
+                                                'rows':new_rows, 'fields':'userEnteredValue'}})
+            if events:
+                history = self._values(self.settings.history_sheet_name)
+                if not history or history[0][:7] != HISTORY_HEADERS:
+                    raise RepositoryError('조치이력 시트 헤더를 확인하세요.')
+                event_rows = [cells([e['id'],e['record_id'],e['at'],e['actor'],e['kind'],
+                                    e.get('text',''),json.dumps(e,ensure_ascii=False)]) for e in events]
+                requests.append({'appendCells': {'sheetId':ids[self.settings.history_sheet_name],
+                                                'rows':event_rows, 'fields':'userEnteredValue'}})
+            if requests:
+                svc.batchUpdate(spreadsheetId=self.settings.spreadsheet_id, body={'requests':requests}).execute()
+
+
+class DriveStore:
+    def __init__(self, settings):
+        self.settings = settings
+        self.demo_dir = Path(settings.demo_data_path).parent / 'photos'
+
+    def put_photo(self, data, key, facility, created_at, after=False):
+        """KYWA: display names are independent of durable institution/request identity."""
+        from .filenames import photo_filename, korea_time
+        empty = {'id': '', 'view_url': '', 'created_at': created_at}
+        if not data: return empty
+        if self.settings.demo:
+            return {**empty, 'id': self.put(data, key)}
+        from googleapiclient.http import MediaIoBaseUpload
+        api = google_client(self.settings, 'drive', 'v3').files()
+        folder, org = self.settings.drive_folder_id, self.settings.organization_id
+        q = f"'{folder}' in parents and trashed=false and appProperties has {{ key='kywaOperation' and value='{key}' }} and appProperties has {{ key='safetyOrganization' and value='{org}' }}"
+        fields = 'id,name,webViewLink,appProperties'
+        found = api.list(q=q, fields=f'files({fields})', supportsAllDrives=True, includeItemsFromAllDrives=True).execute().get('files', [])
+        if found:
+            result = found[0]
+        else:
+            result = api.create(body={'name':photo_filename(facility,created_at,after),'parents':[folder],
+                'appProperties':{'kywaOperation':key,'safetyOrganization':org,'safetySubmittedAt':created_at}},
+                media_body=MediaIoBaseUpload(io.BytesIO(data),mimetype='image/jpeg',resumable=False),
+                fields=fields,supportsAllDrives=True).execute()
+        stored_at = result.get('appProperties',{}).get('safetySubmittedAt',created_at)
+        stored_at = korea_time(stored_at).isoformat(timespec='seconds')
+        link = result.get('webViewLink')
+        if not link:
+            result.update(api.get(fileId=result['id'],fields='webViewLink',supportsAllDrives=True).execute())
+            link = result.get('webViewLink')
+        if not link:
+            raise RepositoryError('사진 링크를 확인하지 못했습니다. 같은 요청으로 다시 전송하세요.')
+        return {'id':result['id'],'view_url':link,'created_at':stored_at}
+
+    def put(self, data: bytes, key: str):
+        if not data:
+            return ''
+        if self.settings.demo:
+            self.demo_dir.mkdir(parents=True, exist_ok=True)
+            path = self.demo_dir / (key + '.jpg')
+            path.write_bytes(data)
+            return key
+        from googleapiclient.http import MediaIoBaseUpload
+        svc = google_client(self.settings, 'drive', 'v3')
+        folder = self.settings.drive_folder_id
+        organization = self.settings.organization_id
+        q = f"'{folder}' in parents and trashed=false and appProperties has {{ key='kywaOperation' and value='{key}' }} and appProperties has {{ key='safetyOrganization' and value='{organization}' }}"
+        found = svc.files().list(q=q, fields='files(id)', supportsAllDrives=True,
+                                 includeItemsFromAllDrives=True).execute().get('files', [])
+        if found:
+            return found[0]['id']
+        result = svc.files().create(body={'name': organization + '_' + key + '.jpg', 'parents': [folder],
+                                         'appProperties': {'kywaOperation': key, 'safetyOrganization': organization}},
+                                    media_body=MediaIoBaseUpload(io.BytesIO(data), mimetype='image/jpeg', resumable=False),
+                                    fields='id', supportsAllDrives=True).execute()
+        # No anyone/reader permission: storage remains private.
+        return result['id']
+
+    def get(self, file_id):
+        if not file_id:
+            return None
+        if self.settings.demo:
+            path = self.demo_dir / (file_id + '.jpg')
+            return path.read_bytes() if path.exists() else None
+        return google_client(self.settings, 'drive', 'v3').files().get_media(
+            fileId=file_id, supportsAllDrives=True).execute()

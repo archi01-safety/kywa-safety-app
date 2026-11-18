@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "organization": "ayf",
+  "version": "v1.1.0",
+  "tag": "ayf/v1.1.0",
+  "source_commit": "a0b4177ce33e75d51391a66b208d11be10fa37a0",
+  "state": "superseded_after_live",
+  "site": "https://ayf-safety.onrender.com",
+  "organization_config_sha256": "c8b78beb54c91fc66c3d93efc66496ef060b4c3cfdb95adafd83eb8dbee73144",
+  "policy_version": "AYF-2026-v1",
+  "prompt_version": "AYF-2026-11-02-v2",
+  "prompt_source_sha256": "9ce123b0ebdb6619db16361435cc324fdc4501ebb54106d27b5d00a0da6dc7f4",
+  "sheet_schema": "ayf-visible18-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbr9lml6e07s73b0b330",
+    "status": "previously Live",
+    "superseded_by": "v1.1.2"
+  },
+  "verification": {
+    "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43363581253",
+    "details": "HANDOFF.md 2026-11-13"
+  }
+}

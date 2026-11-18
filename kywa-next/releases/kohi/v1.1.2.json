@@ -1,0 +1,34 @@
+{
+  "format": 1,
+  "organization": "kohi",
+  "version": "v1.1.2",
+  "tag": "kohi/v1.1.2",
+  "source_commit": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+  "state": "deployed",
+  "site": "https://kohi-safety.onrender.com",
+  "organization_config_sha256": "f77cd543c7b61a2ac377bd7b42e05ee367feb1d63638ed689f35e823a79269d4",
+  "policy_version": "KOHI-2026-v1",
+  "prompt_version": "KOHI-2026-11-02-v2",
+  "prompt_source_sha256": "9ce123b0ebdb6619db16361435cc324fdc4501ebb54106d27b5d00a0da6dc7f4",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbrb498u01pc73anpbrg",
+    "status": "Live",
+    "checked_at": "2026-11-13T06:53:58.759833+00:00"
+  },
+  "verification": {
+    "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457",
+    "google_copy": true,
+    "production_original_values_preserved": true,
+    "row_identities_preserved": true,
+    "short_alignment_version": 1,
+    "records": 125,
+    "issues": 0,
+    "session_and_law_api": true,
+    "backup_sha256": "855e22d337a18e7b5f9ba6a6ba5b629b495b1be12b448b768db54e78557e348f",
+    "alignment_backup_sha256": "d007e576afb6c64ac89ef3ebbd2ad30bf241025579fa8d5d9e101334b88b6c09",
+    "private_evidence": "local-data/v11-production/kohi/",
+    "detailed_risk_enabled": false
+  }
+}

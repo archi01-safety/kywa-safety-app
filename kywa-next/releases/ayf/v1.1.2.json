@@ -1,0 +1,34 @@
+{
+  "format": 1,
+  "organization": "ayf",
+  "version": "v1.1.2",
+  "tag": "ayf/v1.1.2",
+  "source_commit": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+  "state": "deployed",
+  "site": "https://ayf-safety.onrender.com",
+  "organization_config_sha256": "c8b78beb54c91fc66c3d93efc66496ef060b4c3cfdb95adafd83eb8dbee73144",
+  "policy_version": "AYF-2026-v1",
+  "prompt_version": "AYF-2026-11-02-v2",
+  "prompt_source_sha256": "9ce123b0ebdb6619db16361435cc324fdc4501ebb54106d27b5d00a0da6dc7f4",
+  "sheet_schema": "ayf-visible18-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbrb00gae00c73f4opg0",
+    "status": "Live",
+    "checked_at": "2026-11-13T06:53:58.759833+00:00"
+  },
+  "verification": {
+    "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457",
+    "google_copy": true,
+    "production_original_values_preserved": true,
+    "row_identities_preserved": true,
+    "short_alignment_version": 1,
+    "records": 8,
+    "issues": 0,
+    "session_and_law_api": true,
+    "backup_sha256": "45bfc16a3ef51082960c0cd21b4114273f33a4d56f4b4b9a80a2e9857602bea1",
+    "alignment_backup_sha256": "10acb5025486933b4055da08afd3ddb371e26754769571f46bf7358c344746eb",
+    "private_evidence": "local-data/v11-production/ayf/",
+    "detailed_risk_enabled": false
+  }
+}

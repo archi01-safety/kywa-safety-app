@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "organization": "cayf",
+  "version": "v1.2.0",
+  "tag": "cayf/v1.2.0",
+  "source_commit": "aa30598da1d019b01742fa8ea378ef6d42feb8fd",
+  "state": "deployed",
+  "site": "https://cayf-safety.onrender.com",
+  "organization_config_sha256": "6200eaa2fb6bb816d087a78b95cdda6ddc32da60e9bd942ba296ad64f8f87f75",
+  "policy_version": "CAYF-2026-v1",
+  "prompt_version": "CAYF-2026-11-02-v2",
+  "prompt_source_sha256": "9ce123b0ebdb6619db16361435cc324fdc4501ebb54106d27b5d00a0da6dc7f4",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbrdcrtbedkc73d9mpbg",
+    "status": "Live",
+    "checked_at": "2026-11-13T09:23:07.598Z"
+  },
+  "verification": {
+    "reference": "artifacts/v1.2-verification.json",
+    "new_actions_ci": false,
+    "backend_tests": 337,
+    "frontend_unit_tests": 20,
+    "browser": "Local CUA synthetic data; independent panes, drafts, root/AX, compact partner headers",
+    "render_docker_build_and_live": true,
+    "postdeployment_business_tests": false,
+    "sheet_schema_unchanged": true,
+    "detailed_risk_enabled": false,
+    "actions_disabled_on_rollback": true
+  }
+}

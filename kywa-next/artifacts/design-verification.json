@@ -1,0 +1,43 @@
+{
+  "ci_run": 41568061328,
+  "commit": "939dbe4cdca9967766b6440610cd269100ee4f5b",
+  "status": "PASS",
+  "backend_tests": 268,
+  "frontend_unit_tests": 15,
+  "sizes": [
+    1440,
+    768,
+    390
+  ],
+  "screens": [
+    "inspect",
+    "actions",
+    "reports"
+  ],
+  "themes": [
+    "dark",
+    "light"
+  ],
+  "institutions": [
+    "kywa",
+    "fowi",
+    "knps",
+    "khidi",
+    "knf",
+    "kohi",
+    "cayf",
+    "ayf"
+  ],
+  "standard_geometry_preserved": true,
+  "risk_colors_preserved": true,
+  "root_docker": "PASS",
+  "ax_container": "PASS",
+  "production_deployment": "8/8 Live",
+  "post_deployment_tests": "omitted at user request",
+  "deployed_commit": "939dbe4cdca9967766b6440610cd269100ee4f5b",
+  "deployment_evidence": "render-deployments.json",
+  "visual_review": "Automated responsive/theme/browser assertions passed in CI; current CI screenshot artifact was not manually reviewed locally.",
+  "ayf_physical_columns": 17,
+  "ayf_department_and_name_collection": false,
+  "partner_pin_overrides": "User saved; exact configured hash checked privately; no credentials in artifacts"
+}

@@ -1,0 +1,82 @@
+# AX 호환 변경·검증 기록
+
+## 2026-11-17 실연동 설정 유지·실제 AX 메타데이터 등록
+
+- AX 기존 test ver.에 로그인해 앱 상세관리·소스관리·실행 구조를 확인했다. 현재 앱은 체험 모드다. 사용자 지시에 따라 **소스 ZIP 등록/배포는 사용자가 수행**한다. 다른 AX 앱과8개 Render 운영 설정은 변경하지 않았다.
+- 외부 비공개 ax.env 자동 발견/APP_ENV_FILE, 플랫폼 우선, 키/PIN/세션값 보존, AX production 기본값, 오래된 demo .env 무시, ASGI app:app import를 구현했다. 별도 두 release 폴더에서 같은 외부 파일을 재사용하고 값/파일 무변경을 검사했다. 인증정보는 ZIP에 넣지 않는다.
+- 백엔드 **498개/29모듈 격리, 실패0**, 프런트 단위 **20개**, TypeScript 포함root/AX webpack 빌드를 통과했다. 실제 AX ASGI import·접두 healthz/프록시·기존 사진/저장/출력 회귀를 포함한다. 검증 개요는 `artifacts/ax-integration-verification.json`이다.
+- 최종 ZIP을 새 폴더에 풀어 ASGI 실행·접두 healthz/화면/아이콘·명시적 합성 모드, 외부 설정 무변경과 실제 설정 누락 시 시작 거부를 확인했다. 소스/AX 매니페스트·CRC·실제 비밀값/OC 설정 대입 제외를 검사했다. 공개 지원 연락처/저장소 소유자와 같은 문자열인 OC는 일반 부분문자열이 아닌 실제 인증 대입/URL 매개변수로 검사한다.
+- AX Python3.11용 파생 잠금 파일은 공식 PyPI의54개 패키지 메타데이터/의존성 조건을 대조했다. **메타데이터 호환과 실제3.11/Linux 설치 성공은 구분**한다. 현재 PC는 Python3.12이며 Docker/3.11 런타임 검사는 수행하지 않았다. Render 잠금 파일/Dockerfile은 유지했다.
+- 이 PC에서 실제 Google 평가 탭/헤더·편집 권한·Drive 폴더/업로드 권한, AI 최소 응답, KOSHA 검색을 통과했다. **평가/사진 쓰기는 하지 않았다.** AX 주소 Referer의 법령 검증은 실패하고 같은 OC의 기존 Render 주소는 통과했다. AX 추가 주소 승인/서버 재검증은 남아 있다.
+- 사용자 선택 **B안** 정사각형 아이콘을 KYWA 전용으로 넣었다. AX 썸네일은1448×1086(4:3), 좌우 검은 여백이다. AX 상세관리에서 **대표 이미지 변경 완료**, 앱 설명80자 저장을 관찰했다. 원본/생성 사양은 ARTWORK.ko.md, 실제 등록 증빙은 로컬 outputs/kywa-ax-20261117/에 보관한다. 소스의 브라우저 아이콘은 새 패키지 배포 후 적용된다.
+
+**남음:** AX 서버 운영자의 소스 밖 비공개 설정 최초 설치, 사용자 소스 교체, AX 법령 주소 승인/확인, AX 출발 실제 API·쓰기·3종 출력 검증. 브라우저 관리 UI에는 비밀변수 설정 기능이 확인되지 않았다. 서버 SSH/환경 접근 권한이 있다고 추정하거나 키를 공개 소스에 넣어 대신하지 않는다. 상세 실행 순서는 AX-DEPLOYMENT.ko.md를 따른다.
+
+## 2026-11-16 v1.3 법령·세부 판정·사진 회전
+
+백엔드 483개(28개 모듈 격리 실행)·프런트 단위20개·TypeScript·root 및 /apps/kywa-safety webpack 정적 빌드를 통과했다. 8개 기관의 기준 JSON을 소스와 AX ZIP에 포함하고 비공개 인증·운영 백업·사례 Excel은 제외한다. AX 화면은 같은 회전·선택 질문 컴포넌트를 사용한다. 8개기관 합성3장 Excel/PDF/HWPX에서 제38조 최종 문구·공식 링크·회전 방향·내부 정보 제외를 검사했다. 기관별 독립 모델 반복288회와 합성 구도48회의 결과/한계는 artifacts/v1.3-verification.json을 따른다.
+
+이 릴리스에서 실제 AX 서버 등록, Linux Docker 로컬 실행, 한글2020 재조작, 실사 구도 대조는 수행하지 않았다. 과거 버전의 해당 검증과 구분한다. Render의 실제 Docker 빌드·Live 결과는 기관별 배포 이력으로 별도 기록한다. GitHub Actions는 중지 상태를 유지한다.
+
+## 2026-11-16 v1.2.1 JPEG 대표사진 보완
+
+0a1c236의 JPEG/MPO 대표사진 처리와 선택창 보완을 포함해 root/AX webpack·TypeScript 빌드를 통과했다. 사진 관련104개 회귀와 제공 원본의 로컬8개기관API/미리보기, 모바일 크기의 입력/교체를 확인했다. Render8개 Live와 합성MPO 사진 준비/미리보기는 별도 통과했다. AX ZIP은 /apps/kywa-safety 정적 화면을 포함하며 원본 사진·인증정보·Actions YAML은 포함하지 않는다. 실제 AX 등록 및 해당 플랫폼 외부 연동은 계속 미검증이다.
+
+## 2026-11-13 v1.2.0 소스·AX 패키지 갱신
+
+최신 작업 화면·헤더는 ACTION-WORKSPACE.ko.md를 따른다. 로컬 백엔드337개(26모듈 독립 실행), 프런트단위20개, root/AX TypeScript·webpack 빌드와 실제 브라우저를 통과했다. Actions는 사용자 요청으로 중지했고 아래 CI 링크는 과거 로그다. 로컬 Docker 미설치이므로 새 Docker 검증은 실제 Render8개 빌드/Live 성공으로 구분한다. 소스는 aa30598이며 AX 정적 경로는 /apps/kywa-safety다. 실제 AX 등록은 수행하지 않았다.
+
+## 2026-11-13 v1.1.2 갱신
+
+소스 329f2f8384c6c94f3cdbe360dfadfbb41b9c024a의 [CI](https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457) verify/ax가 성공했다. 백엔드337·프런트단위15·8개기관 PC/모바일과 root/AX, 비root·읽기전용·재시작 Docker를 통과했다. 최신 소스와 /apps/kywa-safety 정적 화면으로 ZIP을 재생성했다. 실제 AX 플랫폼 등록·AX 출발 외부 연동·한글2014·실제 모바일 진동·Google 시트 호버 미리보기는 계속 미검증이다. 실제 한글2020 문단·표·사진 편집/저장/재열기·공식 링크 열기·16건9쪽/30건16쪽 PDF 출력은 별도 통과했다. 아래 날짜가 이전인 검증 표는 당시 기록이다.
+
+2026-11-02. AX 운영 등록은 아직 수행하지 않았다. 실제 등록 방법은 AX-DEPLOYMENT.ko.md, 배포 ZIP의 경로와 해시는 artifacts/ax-package.json을 확인한다. 아래 상태는 이번 AX 호환 소스에 대한 것이며 완료된 7개 기관 Render 운영 검증과 구분한다.
+
+## 파일별 변경
+
+| 파일 | 기존 문제 | 수정 내용 | 영향 범위 |
+|---|---|---|---|
+| `backend/config.py` | 공개 origin만 있고 하위 경로·외부 쓰기 경로 미지정 | `APP_BASE_PATH` 및 데이터/임시/로그 절대 경로, 외부 환경파일 지원 | 서버 설정. 빈 경로는 기존 root 동작 |
+| `backend/main.py` | API 사진 URL·로그인 복귀 주소가 루트, 쿠키 이름 공통 | `root_path`, 접두 URL, 경로별 쿠키, 경로 제거 후 업로드 제한 검사 | API 주소/인증 경계. 평가·저장 업무 로직 유지 |
+| `backend/runtime.py`, `app.py` | 실행 명령에 바인딩 고정, 읽기 전용 소스 대비 부족 | PORT/HOST 분리, 비root 진입점, 외부 쓰기 확인, 임시 경로, 빌드 일치 확인 | 앱 실행만 변경, 플랫폼 설정 변경 없음 |
+| `frontend/next.config.ts`, `frontend/scripts/write-build-config.mjs`, `frontend/package.json` | 정적 빌드가 루트 경로 전제 | build-time basePath, 서버 대조용 빌드 정보 | 정적 CSS/JS 및 클라이언트 경로 |
+| `frontend/app/base-path.ts`, `frontend/app/page.tsx` | API·로고·홈·인증 링크가 루트 | 공통 경로 함수, AX 앱별 로그인 탭 알림 채널 | 기존 UI 크기·색상·흐름 유지 |
+| `Dockerfile` | 고정 명령, 경로 빌드 인자 없음 | 경로 빌드 인자, 공통 진입점, 명시적 컨테이너 바인딩 | 기존 root 빌드/Free 서비스 구조 유지 |
+| `backend/tests/test_ax_runtime.py` | 프록시·외부 쓰기·경로 쿠키 검사 없음 | 보존/제거 프록시, 업로드·저장·세 보고서·재시작·쿠키·설정 거부 검사 | 합성 자료만 사용 |
+| `frontend/tests/ax-prefix.spec.ts`, `frontend/playwright.config.ts` | 하위 경로 화면 검사 없음 | PC/모바일 업로드·분석·제출·로그인·Excel·새로고침·홈 검사 | CI 브라우저 검사 |
+| `scripts/verify_ax_container.py`, `deploy/ci.yml` | 비root·읽기 전용·재시작 확인 없음 | 단일 워커·할당 포트·읽기 전용 파일시스템·외부 볼륨·SIGTERM 검사 | CI의 임시 컨테이너에 한정 |
+| `scripts/package_ax.py`, `scripts/package_source.py` | AX 등록용 평탄 ZIP 없음 | 전체 소스 + 경로 빌드 + 매니페스트·해시, 비밀/캐시 제외 | 등록 산출물 |
+| `.env.example`, `AGENTS.md`, `HANDOFF.md`, `SETUP.md`, `CHANGELOG.md`, AX 안내 문서 | AX 재개·배포 방법 없음 | 환경·빌드·등록·검증·미검증 항목 기록 | 인수인계 |
+
+## 검사 상태
+
+| 검사 | 상태 | 근거/범위 |
+|---|---|---|
+| Windows 백엔드 전체 회귀 256개 | PASS | 2026-11-02 실행, AX 신규 검사 10개 포함 |
+| 프런트 단위검사 15개 | PASS | 성명 변환과 다운로드 파일명 |
+| `/apps/kywa-safety` 정적 빌드·TypeScript | PASS | Node22/Next16 정적 export 생성 |
+| 접두 경로 보존/제거 프록시의 API·사진·세 보고서 | PASS | TestClient, 합성 자료, 원본 성명 미전송·권한·CSRF 유지 |
+| PIN 세션 경로 분리·1시간 연장 | PASS | AX 쿠키가 root 앱에 전송되지 않음 |
+| 잘못된 경로·포트·전체 프록시 신뢰·화면 경로 불일치 거부 | PASS | 자동검사 |
+| Linux 의존성 설치·전체 회귀·기존 기관 PC/모바일 | PASS | CI 41415666818 verify 및 ax 모두 성공, root Docker 빌드 포함 |
+| AX 하위 경로 PC/모바일 전체 입력·다운로드 | PASS | CI 41415666818 ax 작업, 두 화면 캡처 확인 |
+| 비root·읽기 전용·SIGTERM·재시작 | PASS | CI ax 작업, UID10001·PORT8507·외부 볼륨·정상 종료 코드0·데이터/사진 보존 |
+| 등록 ZIP을 푼 뒤 직접 실행 | PASS | Windows PORT8508, 홈/정적 경로/API, 소스 변경 없음 |
+| 실제 AX Rocky/Apache/systemd 등록·재배포·승인 정책 | NOT TESTED | 실제 AX 서버 접근·등록 설정 미제공 |
+| AX 출발 Google/AI/KOSHA 실연동 | NOT TESTED | AX 네트워크·서버 비밀설정 필요. 기존 Render의 7개 기관 실연동은 별도 완료 |
+| 실제 Google 시트 호버 미리보기 | NOT TESTED | 기존 브라우저 사이트 접근 제한 유지 |
+
+검사를 실행한 뒤 실패한 경우 수정 후 재검사 결과를 기록한다. 환경이 없는 항목을 PASS로 처리하지 않는다. 이 작업에서는 AX 업로드 한도/프록시 타임아웃/서비스 계정/보안 정책을 임의 수정하지 않았다.
+
+초기 CI에서 Linux의 마이크로초 시계 차이로 세션 연장 검사의 동등 비교가 실패해 1초 허용 오차로 수정했다. 뒤이어 브라우저의 같은 문서 내 `#reports` 주소 변경을 화면에 반영하지 못하는 문제를 발견하여 `hashchange` 감지를 추가했고 AX 화면 검사를 통과했다. 숨기거나 건너뛴 실패 항목은 없다.
+
+## 최종 디자인 포함 재검증
+
+디자인 최종 커밋 `eee38a37f4bcd072f02d5c9d5ce5be19810c7704`의 CI 41420384220에서 백엔드 264개, 프런트 단위 15개, 8개 기관 PC/태블릿/모바일·다크/라이트 및 root/AX Docker를 통과했다. AX 비root·읽기 전용·외부 볼륨·정상 종료·재시작 검사도 다시 통과했다. AX 등록 ZIP에는 이 디자인과 최신 인수인계서를 포함한다. 실제 AX 등록과 외부 연동 미검증 범위는 위 표와 같다.
+
+
+## 2026-11-03 KYWA 보정·AYF 시설 중심 버전
+
+검증 커밋 `939dbe4cdca9967766b6440610cd269100ee4f5b`의 [CI 41568061328](https://github.com/archi01-safety/kywa-safety-app/actions/runs/41568061328) verify/ax 모두 통과. Linux 백엔드 268개, 프런트 단위 15개, 기관별 화면과 root/AX Docker·비root·읽기 전용·재시작 검사를 통과했다. 로컬 AX 정적 export도 `/apps/kywa-safety`로 재빌드했다. 새 ZIP은 `artifacts/kywa-safety-ax.zip`, 해시·크기·파일 개수는 `artifacts/ax-package.json`을 따른다. PIN 원문/해시와 비공개 백업은 포함하지 않는다.
+
+KYWA 흰 헤더/분석 버튼 복원 및 AYF 부서·성명 제거를 포함한다. Render 배포의 최종 결과는 HANDOFF.md에 별도로 기록한다. 실제 AX 등록은 수행하지 않았다.

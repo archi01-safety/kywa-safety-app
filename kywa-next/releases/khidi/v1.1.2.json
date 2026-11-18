@@ -1,0 +1,34 @@
+{
+  "format": 1,
+  "organization": "khidi",
+  "version": "v1.1.2",
+  "tag": "khidi/v1.1.2",
+  "source_commit": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+  "state": "deployed",
+  "site": "https://khidi-safety.onrender.com",
+  "organization_config_sha256": "774744524c02779f5eecaa23a28edd52d8b52fbe2f49a4e1310a272e854bc384",
+  "policy_version": "KHIDI-2026-v1",
+  "prompt_version": "KHIDI-2026-11-02-v2",
+  "prompt_source_sha256": "231ebfc93d6630ae49cf6e91dfa80179e79939d93bbd46295567ee8bb1739cd6",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbrb19c9v7es73c2h5fg",
+    "status": "Live",
+    "checked_at": "2026-11-13T06:53:58.759833+00:00"
+  },
+  "verification": {
+    "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457",
+    "google_copy": true,
+    "production_original_values_preserved": true,
+    "row_identities_preserved": true,
+    "short_alignment_version": 1,
+    "records": 98,
+    "issues": 0,
+    "session_and_law_api": true,
+    "backup_sha256": "6b51b03b140d8cee66d6e436f40a77e73c017fc001f3385f529c6c0999336bd8",
+    "alignment_backup_sha256": "9304b8642b2d24da2778a74dc42987186f0be879280dd0eb883e7cb475614346",
+    "private_evidence": "local-data/v11-production/khidi/",
+    "detailed_risk_enabled": false
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "format": 1,
+  "organization": "knf",
+  "version": "v1.2.1",
+  "tag": "knf/v1.2.1",
+  "source_commit": "0a1c236236dcd7a76b8f4c36ac6f88dea40d6b58",
+  "state": "deployed",
+  "site": "https://knf-safety.onrender.com",
+  "organization_config_sha256": "6fea61a929fb8e897e59d435763974b9b59d3a904fc9cfc59669edc48b8bf7b8",
+  "policy_version": "KNF-2026-v1",
+  "prompt_version": "KNF-2026-11-02-v2",
+  "prompt_source_sha256": "9ce123b0ebdb6619db16361435cc324fdc4501ebb54106d27b5d00a0da6dc7f4",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbt514e7bikc73d2fm0g",
+    "status": "Live",
+    "checked_at": "2026-11-16T00:41:36.034Z"
+  },
+  "verification": {
+    "reference": "JPEG-UPLOAD.ko.md",
+    "photo_regression_tests": 104,
+    "provided_original_local_api": true,
+    "synthetic_production_photo_prepare_and_preview": true,
+    "temporary_photos_reset": true,
+    "root_and_ax_builds": true,
+    "sheet_and_policy_unchanged": true,
+    "detailed_risk_enabled": false,
+    "new_actions_ci": false,
+    "original_deletion": "User will delete; not included in repository or packages"
+  }
+}

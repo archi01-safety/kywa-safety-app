@@ -1,0 +1,34 @@
+{
+  "format": 1,
+  "organization": "knf",
+  "version": "v1.1.2",
+  "tag": "knf/v1.1.2",
+  "source_commit": "329f2f8384c6c94f3cdbe360dfadfbb41b9c024a",
+  "state": "deployed",
+  "site": "https://knf-safety.onrender.com",
+  "organization_config_sha256": "6fea61a929fb8e897e59d435763974b9b59d3a904fc9cfc59669edc48b8bf7b8",
+  "policy_version": "KNF-2026-v1",
+  "prompt_version": "KNF-2026-11-02-v2",
+  "prompt_source_sha256": "9ce123b0ebdb6619db16361435cc324fdc4501ebb54106d27b5d00a0da6dc7f4",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbrb33gae00c73f50l1g",
+    "status": "Live",
+    "checked_at": "2026-11-13T06:53:58.759833+00:00"
+  },
+  "verification": {
+    "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/43378019457",
+    "google_copy": true,
+    "production_original_values_preserved": true,
+    "row_identities_preserved": true,
+    "short_alignment_version": 1,
+    "records": 13,
+    "issues": 0,
+    "session_and_law_api": true,
+    "backup_sha256": "f9e6e6037d0ad75610e1fb3e79236c98c825e9a3bfed1c38eeb03465aac56443",
+    "alignment_backup_sha256": "ee29722f7a7c13bb4c2a08008ad0e5843d44c8ba4f91c8ef8f738c92ec5e7084",
+    "private_evidence": "local-data/v11-production/knf/",
+    "detailed_risk_enabled": false
+  }
+}

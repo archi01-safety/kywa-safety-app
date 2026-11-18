@@ -1,0 +1,88 @@
+import json
+import re
+import socket
+from fastapi.testclient import TestClient
+from backend.tests.test_system import context,login
+from backend.main import create_app
+from backend.law_links import LawLinks,citations,safe_url
+
+
+def test_read_response_cannot_replace_later_login_cookie(context):
+    c,app,repo,cfg=context
+    old=c.cookies.get('kywa_session')
+    login(c);authenticated=c.cookies.get('kywa_session');assert authenticated!=old
+    # Simulate a request started before login whose response arrives afterwards.
+    late=c.get('/api/overview',headers={'Cookie':'kywa_session='+old})
+    assert late.status_code==200 and 'set-cookie' not in late.headers
+    assert c.cookies.get('kywa_session')==authenticated
+    assert c.get('/api/assessments').status_code==200
+    assert 'set-cookie' not in c.get('/api/auth/session').headers
+
+
+def test_timeout_has_safe_code_and_trace_number(context,monkeypatch):
+    c,app,repo,cfg=context;login(c)
+    def unavailable():raise TimeoutError('private record and test-secret must never be returned')
+    monkeypatch.setattr(repo,'records',unavailable)
+    with TestClient(app,raise_server_exceptions=False) as other:
+        other.cookies.update(c.cookies)
+        result=other.get('/api/assessments')
+    assert result.status_code==504,result.text
+    body=result.json();assert body['code']=='upstream_timeout' and body['retryable']
+    assert re.fullmatch('[a-f0-9]{16}',body['request_id'])
+    assert body['request_id']==result.headers['x-request-id']
+    assert 'private record' not in result.text and 'test-secret' not in result.text
+
+
+def test_law_fallback_multiple_citations_and_no_untrusted_urls():
+    text='산업안전보건기준에 관한 규칙 제3조(전도의 방지), 제4조(작업장의 청결); 산업안전보건법 제38조'
+    refs=LawLinks().resolve(text)
+    assert len(refs)==3 and all(not x['verified'] and safe_url(x['url']) for x in refs)
+    assert not safe_url('https://www.law.go.kr.evil.example/')
+    assert not safe_url('javascript:alert(1)')
+    assert not safe_url('https://www.law.go.kr/DRF/lawService.do?OC=private')
+    assert not safe_url('https://evil@www.law.go.kr/')
+    assert all('key' not in x for x in refs)
+
+
+def test_spaced_enforcement_decree_is_not_mistaken_for_the_parent_act():
+    refs=citations('산업안전보건법 시행령 제2조; 산업안전보건법 시행규칙 제3조; 산업안전보건법 제38조')
+    assert [r['name'] for r in refs]==['산업안전보건법 시행령','산업안전보건법 시행규칙','산업안전보건법']
+
+
+def test_law_api_verifies_title_article_and_effective_date_without_key_leak():
+    import httpx
+    seen=[]
+    def get(url,**kwargs):
+        seen.append((url,kwargs))
+        if 'lawSearch' in url:
+            data='<LawSearch><law><법령일련번호>12345</법령일련번호><현행연혁코드>현행</현행연혁코드><법령명한글>산업안전보건기준에 관한 규칙</법령명한글><시행일자>20260101</시행일자><공포번호>00450</공포번호><공포일자>20250901</공포일자></law></LawSearch>'
+        else:
+            data='<법령><기본정보><법령명_한글>산업안전보건기준에 관한 규칙</법령명_한글></기본정보><조문><조문단위><조문번호>3</조문번호><조문여부>조문</조문여부><조문제목>전도의 방지</조문제목><조문내용>사업주는 작업장 바닥 등을 안전하게 유지하여야 한다.</조문내용></조문단위></조문></법령>'
+        return httpx.Response(200,content=data.encode(),request=httpx.Request('GET',url))
+    service=LawLinks('test-private-oc',get,referer='https://ayf-safety.onrender.com')
+    verified=service.resolve('산업안전보건기준에 관한 규칙 제3조(전도의 방지)')
+    assert verified[0]['verified'] and verified[0]['effective_date']=='20260101'
+    assert seen[0][1]['params']['target']=='eflaw'
+    assert seen[1][1]['params']['JO']=='000300'
+    assert seen[0][1]['headers']['Referer']=='https://ayf-safety.onrender.com'
+    assert '(20260101,00450,20250901)' in verified[0]['url']
+    assert 'test-private-oc' not in json.dumps(verified)
+    assert service.resolve('산업안전보건기준에 관한 규칙 제3조(전도의 방지)')==verified and len(seen)==2
+    mismatch=service.resolve('산업안전보건기준에 관한 규칙 제3조(다른 제목)')
+    assert not mismatch[0]['verified']
+
+
+def test_report_law_enrichment_never_mutates_source_or_rechecks_duplicate_text():
+    from backend.law_links import verified_records
+    from backend.report_jobs import signature
+    from backend.organization import load_organization
+    from backend.tests.test_institutions import current_record
+    from types import SimpleNamespace
+    source=[current_record(load_organization('kywa')) for _ in range(2)]
+    before=signature(source);calls=[]
+    ref={'label':'산업안전보건법 제38조','verified':True,'effective_date':'20261027','url':'https://www.law.go.kr/법령/산업안전보건법/제38조'}
+    def resolve(text):calls.append(text);return [ref]
+    result=verified_records(source,SimpleNamespace(resolve=resolve))
+    assert len(calls)==1 and signature(source)==before
+    assert all('law_references' not in r['before'] for r in source)
+    assert all(r['before']['law_references'][0]['verified'] for r in result)

@@ -1,0 +1,325 @@
+{
+  "schema": 1,
+  "organization": "cayf",
+  "version": "cayf-facts-20261116-v3",
+  "policy_version": "CAYF-2026-v1",
+  "source_sha256": "3f29306ad631f1c8df19a33c43a25fe5bd875a5250fa64226e114c175dd0fa63",
+  "source": {
+    "policy_version": "CAYF-2026-v1",
+    "prompt_version": "CAYF-PROMPT-20261116-v3",
+    "frequency": [
+      {
+        "value": 1,
+        "description": "기준: 피해가 발생할 가능성이 매우 낮음"
+      },
+      {
+        "value": 2,
+        "description": "기준: 피해가 발생할 가능성이 낮음"
+      },
+      {
+        "value": 3,
+        "description": "기준: 부주의하면 피해가 발생할 가능성이 있음"
+      },
+      {
+        "value": 4,
+        "description": "기준: 피해가 발생할 가능성이 높음"
+      },
+      {
+        "value": 5,
+        "description": "기준: 피해가 발생할 가능성이 매우 높음"
+      }
+    ],
+    "severity": [
+      {
+        "value": 1,
+        "description": "경미한 부상"
+      },
+      {
+        "value": 2,
+        "description": "응급처치 이상/비휴업"
+      },
+      {
+        "value": 3,
+        "description": "중대한 부상/휴업 수반"
+      },
+      {
+        "value": 4,
+        "description": "사망 또는 영구 장애"
+      }
+    ]
+  },
+  "weights": {
+    "exposure": {
+      "rare": 0,
+      "monthly": 1,
+      "daily": 2,
+      "continuous": 3
+    },
+    "contact": {
+      "isolated": 0,
+      "unlikely": 1,
+      "possible": 3,
+      "likely": 4,
+      "direct": 5
+    },
+    "controls": {
+      "effective": 0,
+      "partial": 2,
+      "ineffective": 3,
+      "none": 4
+    },
+    "condition": {
+      "stable": 0,
+      "degrading": 1,
+      "repeated": 2
+    },
+    "consequence": {
+      "minor": 0,
+      "first_aid": 1,
+      "lost_time": 2,
+      "fatal": 3
+    },
+    "extent": {
+      "very_limited": 1,
+      "limited": 2,
+      "moderate": 3,
+      "extensive": 4,
+      "critical": 5
+    }
+  },
+  "defaults": {
+    "exposure": "daily",
+    "contact": "possible",
+    "controls": "ineffective",
+    "condition": "degrading",
+    "consequence": "lost_time",
+    "extent": "moderate"
+  },
+  "minor_cap": 6,
+  "quantitative_rules": false,
+  "question_labels": {
+    "exposure": "평소 얼마나 자주 이용하거나 작업하나요?",
+    "contact": "위험 부위에 직접 닿을 수 있나요?",
+    "controls": "위험을 막는 장치나 조치가 있나요?",
+    "condition": "위험한 상태가 계속되거나 반복되나요?",
+    "consequence": "사고가 나면 어느 정도 다칠 수 있나요?",
+    "extent": "예상되는 피해 범위는 어느 정도인가요?"
+  },
+  "likelihood_levels": [
+    {
+      "internal": 1,
+      "public": 1,
+      "position": "하단",
+      "basis": "기준: 피해가 발생할 가능성이 매우 낮음"
+    },
+    {
+      "internal": 2,
+      "public": 1,
+      "position": "중간",
+      "basis": "기준: 피해가 발생할 가능성이 매우 낮음"
+    },
+    {
+      "internal": 3,
+      "public": 1,
+      "position": "상단",
+      "basis": "기준: 피해가 발생할 가능성이 매우 낮음"
+    },
+    {
+      "internal": 4,
+      "public": 2,
+      "position": "하단",
+      "basis": "기준: 피해가 발생할 가능성이 낮음"
+    },
+    {
+      "internal": 5,
+      "public": 2,
+      "position": "중간",
+      "basis": "기준: 피해가 발생할 가능성이 낮음"
+    },
+    {
+      "internal": 6,
+      "public": 2,
+      "position": "상단",
+      "basis": "기준: 피해가 발생할 가능성이 낮음"
+    },
+    {
+      "internal": 7,
+      "public": 3,
+      "position": "하단",
+      "basis": "기준: 부주의하면 피해가 발생할 가능성이 있음"
+    },
+    {
+      "internal": 8,
+      "public": 3,
+      "position": "중간",
+      "basis": "기준: 부주의하면 피해가 발생할 가능성이 있음"
+    },
+    {
+      "internal": 9,
+      "public": 3,
+      "position": "상단",
+      "basis": "기준: 부주의하면 피해가 발생할 가능성이 있음"
+    },
+    {
+      "internal": 10,
+      "public": 4,
+      "position": "하단",
+      "basis": "기준: 피해가 발생할 가능성이 높음"
+    },
+    {
+      "internal": 11,
+      "public": 4,
+      "position": "중간",
+      "basis": "기준: 피해가 발생할 가능성이 높음"
+    },
+    {
+      "internal": 12,
+      "public": 4,
+      "position": "상단",
+      "basis": "기준: 피해가 발생할 가능성이 높음"
+    },
+    {
+      "internal": 13,
+      "public": 5,
+      "position": "하단",
+      "basis": "기준: 피해가 발생할 가능성이 매우 높음"
+    },
+    {
+      "internal": 14,
+      "public": 5,
+      "position": "중간",
+      "basis": "기준: 피해가 발생할 가능성이 매우 높음"
+    },
+    {
+      "internal": 15,
+      "public": 5,
+      "position": "상단",
+      "basis": "기준: 피해가 발생할 가능성이 매우 높음"
+    }
+  ],
+  "severity_levels": [
+    {
+      "internal": 1,
+      "public": 1,
+      "position": "매우 제한적",
+      "basis": "경미한 부상"
+    },
+    {
+      "internal": 2,
+      "public": 1,
+      "position": "제한적",
+      "basis": "경미한 부상"
+    },
+    {
+      "internal": 3,
+      "public": 1,
+      "position": "보통",
+      "basis": "경미한 부상"
+    },
+    {
+      "internal": 4,
+      "public": 1,
+      "position": "넓은 범위",
+      "basis": "경미한 부상"
+    },
+    {
+      "internal": 5,
+      "public": 1,
+      "position": "매우 넓은 범위",
+      "basis": "경미한 부상"
+    },
+    {
+      "internal": 6,
+      "public": 2,
+      "position": "매우 제한적",
+      "basis": "응급처치 이상/비휴업"
+    },
+    {
+      "internal": 7,
+      "public": 2,
+      "position": "제한적",
+      "basis": "응급처치 이상/비휴업"
+    },
+    {
+      "internal": 8,
+      "public": 2,
+      "position": "보통",
+      "basis": "응급처치 이상/비휴업"
+    },
+    {
+      "internal": 9,
+      "public": 2,
+      "position": "넓은 범위",
+      "basis": "응급처치 이상/비휴업"
+    },
+    {
+      "internal": 10,
+      "public": 2,
+      "position": "매우 넓은 범위",
+      "basis": "응급처치 이상/비휴업"
+    },
+    {
+      "internal": 11,
+      "public": 3,
+      "position": "매우 제한적",
+      "basis": "중대한 부상/휴업 수반"
+    },
+    {
+      "internal": 12,
+      "public": 3,
+      "position": "제한적",
+      "basis": "중대한 부상/휴업 수반"
+    },
+    {
+      "internal": 13,
+      "public": 3,
+      "position": "보통",
+      "basis": "중대한 부상/휴업 수반"
+    },
+    {
+      "internal": 14,
+      "public": 3,
+      "position": "넓은 범위",
+      "basis": "중대한 부상/휴업 수반"
+    },
+    {
+      "internal": 15,
+      "public": 3,
+      "position": "매우 넓은 범위",
+      "basis": "중대한 부상/휴업 수반"
+    },
+    {
+      "internal": 16,
+      "public": 4,
+      "position": "매우 제한적",
+      "basis": "사망 또는 영구 장애"
+    },
+    {
+      "internal": 17,
+      "public": 4,
+      "position": "제한적",
+      "basis": "사망 또는 영구 장애"
+    },
+    {
+      "internal": 18,
+      "public": 4,
+      "position": "보통",
+      "basis": "사망 또는 영구 장애"
+    },
+    {
+      "internal": 19,
+      "public": 4,
+      "position": "넓은 범위",
+      "basis": "사망 또는 영구 장애"
+    },
+    {
+      "internal": 20,
+      "public": 4,
+      "position": "매우 넓은 범위",
+      "basis": "사망 또는 영구 장애"
+    }
+  ],
+  "limitations": "Synthetic policy alignment and repeatability only; not expert accuracy certification.",
+  "algorithm_sha256": "07d2ace6862782cd8c1e9a847d2b4201f1582e426ec71019596b16ec0dd2db6d",
+  "profile_sha256": "5f959444a23cce339b91a8a23dbf15715ec7842a188a0673a5ebc0b109334418"
+}

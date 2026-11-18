@@ -1,0 +1,19 @@
+{
+  "format": 1,
+  "organization": "fowi",
+  "version": "v1.0.0",
+  "tag": "fowi/v1.0.0",
+  "source_commit": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
+  "state": "baseline_registered",
+  "site": "https://fowi-safety.onrender.com",
+  "organization_config_sha256": "388fcf31699cbb67a3bc04ac73fa80111725325647260de8190c7cc0ae05647c",
+  "policy_version": "FOWI-2026-v1",
+  "prompt_version": "FOWI-2026-11-02-v2",
+  "prompt_source_sha256": "d7c22cfe2c7c0675f5af97a4b0665f97c14b95702729582fa672a5ca3f2395c2",
+  "sheet_schema": "visible19-row-metadata-v2",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": null,
+  "verification": {
+    "runtime_baseline_evidence": "HANDOFF.md 2026-11-10"
+  }
+}
