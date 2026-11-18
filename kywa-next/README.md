@@ -4,6 +4,8 @@ Next.js 정적 화면과 Python/FastAPI를 기관별 독립 Render Docker 서비
 
 ## 작업을 이어갈 때
 
+KYWA의 별도 Netlify 기동 안내 시험은 `pilot/kywa-entry` 브랜치의 [NETLIFY-ENTRY-PILOT.ko.md](NETLIFY-ENTRY-PILOT.ko.md)를 따릅니다. 이 시험은 기존 Render 업무 시스템의 호스팅 이전이나 재배포가 아닙니다.
+
 1. [PROJECT-CONTEXT.ko.md](PROJECT-CONTEXT.ko.md)의 현재 상태와 이번 요청 관련 절을 읽습니다.
 2. [HANDOFF.md](HANDOFF.md) 맨 위에서 마지막 작업·실제 배포·미검증 항목을 확인합니다.
 3. [SETUP.md](SETUP.md)와 [CHANGELOG.md](CHANGELOG.md) 최근 항목을 필요한 만큼 확인합니다.

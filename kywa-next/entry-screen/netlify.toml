@@ -1,0 +1,9 @@
+[build]
+  command = "node tools/check.mjs"
+  publish = "site"
+  ignore = "node ./tools/ignore-build.mjs"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Only the static site is deployed. No functions, scheduled jobs, or secrets.

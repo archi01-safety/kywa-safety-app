@@ -1,5 +1,12 @@
 # 변경 이력
 
+## 2026-11-18 — KYWA 전용 Netlify 진입 안내 시험
+
+- pilot/kywa-entry에 독립 HTML/CSS/JS6장면과 일시정지·장면 선택·모션 감소·모바일 배치를 구현한다. 준비 응답 확인 전에는 이동하지 않고, 준비되면 소개 도중에도 기존 Render로 이동한다.
+- 쿠키/캐시 없는 /healthz 확인 한 경로, 650ms 소개 지연·5초 요청 제한·2초 재시도·120초 중단·백그라운드 정지/복귀를 적용한다.
+- 강제 재시작 없이 자연 기동3회·실행 중10회와 연결 모의·화면 검사를 기록한다. 최종 결과와 Netlify주소/ZIP/복구는 NETLIFY-ENTRY-PILOT.ko.md를 따른다.
+- 기존8개 Render 앱·환경·업무 데이터와 AX ZIP은 변경하지 않으며 Actions도 재활성화하지 않는다.
+
 ## 2026-11-17 — AX 비공개 설정 유지·ASGI/3.11 호환·B안 아이콘
 
 - AX ZIP의 production/PIN/origin/prefix 기본값과 외부 ax.env/APP_ENV_FILE 재사용을 구현했다. 플랫폼 변수를 우선하고 오래된 release demo .env를 무시한다. 키/PIN/세션 키를 패키지에 넣거나 자동 교체하지 않는다.
