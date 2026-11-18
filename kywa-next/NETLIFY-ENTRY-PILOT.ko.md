@@ -67,7 +67,7 @@ python entry-screen/tools/summarize-startup.py --samples local-data/entry/startu
 
 ## 검증·배포 결과
 
-진행 중. 연결 모의14개와 실측 집계 도구4개 검사 통과. 320/390/768/1280/1440px에서 각6장면, 총30개 조합의 가로 넘침·제목 잘림을 검사했다. 일시정지 문구 숨김, 태블릿 배치, 예시 SVG 비율, 브라우저 타이머 연결을 실제 화면 검사에서 발견·수정했다. 120초 연결 중단과 재시도·장면 선택·키보드 조작도 확인했다. 실제 iPhone/Android 기기와 OS 모션 감소 설정의 실물 검사는 별도이며 반응형 화면·CSS/JS·모의검사와 구분한다.
+구현·시험 배포 완료. 연결 모의14개와 실측 집계 도구4개 검사 통과. 320/390/768/1280/1440px에서 각6장면, 총30개 조합의 가로 넘침·제목 잘림을 검사했다. 일시정지 문구 숨김, 태블릿 배치, 예시 SVG 비율, 브라우저 타이머 연결을 실제 화면 검사에서 발견·수정했다. 120초 연결 중단과 재시도·장면 선택·키보드 조작도 확인했다. 실제 iPhone/Android 기기와 OS 모션 감소 설정의 실물 검사는 별도이며 반응형 화면·CSS/JS·모의검사와 구분한다.
 
 | 실행 중 확인 | 결과 |
 |---|---|
@@ -82,7 +82,7 @@ python entry-screen/tools/summarize-startup.py --samples local-data/entry/startu
 
 정상 완료3회의 평균은 미래 기동의 최대 시간이나 가용성 보장이 아니다. 120초 미응답도 숨기지 않고 별도 기록한다. 측정 원시 시도·서버 종료/시작 대조 시각·정상 실행10회·실제 브라우저 이동10회는 [measurements](entry-screen/measurements/)에 저장한다. 3번째 정상 기동에는 실제 Netlify 주소 방문을 함께 실행했고, 준비 확인 뒤 기존 Render로 자동 이동하는 것을 확인했다. 소개 표시·즉시 이동·소개 종료 후 대기·오류·백그라운드·늦은 응답은 모의 검사와 실제 로컬 브라우저 검사로도 대조했다.
 
-최초 정식 배포 `6afd3b86cf3c0b88a98329ac`, 소스 `f11b5b70deb36b5516f631f169beb05013e33123`의 Published를 확인했다. 당시의 잠정20.906초를 이번 정상3회 확정값20.734초로 교체하고 흰색 상단·좌우 교차·강화된 움직임·하단 링크 제거를 마지막 보정 배포에 함께 반영한다. 최종 배포 ID·소스 SHA는 Published 확인 후 추가한다. 실제 Netlify 프로젝트 ID는 `aaf53bcd-c271-45af-b802-7ef0c8c275ce`다.
+최초 정식 배포 `6afd3b86cf3c0b88a98329ac`, 소스 `f11b5b70deb36b5516f631f169beb05013e33123`의 Published를 확인했다. 당시의 잠정20.906초를 이번 정상3회 확정값20.734초로 교체하고 흰색 상단·좌우 교차·강화된 움직임·하단 링크 제거를 마지막 보정 배포에 함께 반영했다. 최종 소스 `7d4027175349badbda96b9f324774dd674315e93` / 배포 `6afd474a4c51f7b78b9ecfdb`의 Published를 확인했다. 배포된7개 공개 자산을 ZIP 원본과 대조했고 HTML의 Netlify 설명 주석만 비교에서 제외했다. 정상 준비 응답200/JSON/no-store/쿠키 없음과 미지원POST405도 확인했다. 실제 Netlify 프로젝트 ID는 `aaf53bcd-c271-45af-b802-7ef0c8c275ce`다.
 
 Netlify 기본 설정이 Production Private라 비로그인 중계가401로 응답하는 것을 확인했다. Production만 Public, Deploy Preview는 Private로 설정하고 익명 HTTP 요청10회와 실제 자동 이동10회를 확인했다. 추가 Powered by Netlify 배지는 이 프로젝트에서만 해제했다. 이 설정 변경은 기존 두 프로젝트·Render의 인증/환경에 영향을 주지 않는다.
 
@@ -97,3 +97,13 @@ Netlify는 같은 저장소의 **시험 브랜치만** 연결한다. 기존 Rend
 2026-11-18 배포 준비 중 잔여38.3크레딧/월300, 정식17회255크레딧을 관리 화면에서 확인했다. 정식 배포는 회당15크레딧이다([공식 요금 안내](https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/billing-faq-for-credit-based-plans/)). `ignore-build.mjs`는 화면·배포 설정이 달라진 경우에만 Git 자동 배포를 계속하고, 인수인계·측정 증거 등 문서 변경은 취소한다([공식 ignore 규칙](https://docs.netlify.com/build/configure-builds/ignore-builds/)). 수동 배포 버튼이나 build hook은 별도이므로 반복 사용하지 않는다.
 
 문제 발생 시 기존 Render 주소를 계속 안내한다. Netlify에서 이 프로젝트의 Deploys → 이전 검증 배포 → Publish deploy로 정적 안내만 복구할 수 있다. 첫 배포라 이전 배포가 없으면 Git의 시험 태그/확정 소스로 정적 ZIP을 다시 배포한다. 운영 시트·사진·앱 데이터 복원은 필요하지 않다.
+
+## 고정 소스·정적 ZIP
+
+- 독립 버전 태그: `kywa-entry/v0.1.0`; 기존 기관별 업무 버전 v1.3.0과 다르다.
+- 최종 정적 소스: `7d4027175349badbda96b9f324774dd674315e93`.
+- [정적 ZIP](artifacts/kywa-entry-static.zip):63,526바이트, 공개9개파일. 원본 PDF/MP4·인증정보·업무 기록·진단 로그를 포함하지 않는다.
+- ZIP SHA256: `bb586c4df96c3637342924df154e21f29abf5d5b108899936ac48014aa20860f`.
+- [매니페스트](artifacts/kywa-entry-static.manifest.json)와 [릴리스 기록](entry-screen/release.json)에 배포와 소스를 연결한다. 문서 HEAD가 앞서가도 실제 정적 소스는 위 SHA다.
+- 재생성: `python entry-screen/tools/package-static.py --commit 7d4027175349badbda96b9f324774dd674315e93 --output artifacts/kywa-entry-static.zip`.
+- 정식 배포는 최초+보정2회, 총30크레딧이다. 보정 직전 잔여23크레딧을 확인했다. 이후 문서·측정/화면 증거 갱신은 ignore로 건너뛰며 추가 정식 배포를 하지 않는다.

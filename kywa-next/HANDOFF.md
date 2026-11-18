@@ -1,10 +1,14 @@
 # KYWA 개발·운영 인수인계
 
-## 2026-11-18 — KYWA Netlify 기동 안내 시험 (진행 중)
+## 2026-11-18 — KYWA Netlify 기동 안내 시험 배포 완료
 
-최신 운영 브랜치44d8f7b에서 `pilot/kywa-entry`를 만들고 `entry-screen/`에 독립 정적 소개 화면을 구현했다. 기존 Render8개의 v1.3.0/bacadc9, 인증/Google/API·시트 구조·사진과 다른 기관은 유지한다. Netlify 팀axkywa의 `kywa-safety` 시험 프로젝트에만 연결하며 자세한 동작·실측·최종 배포 상태는 [NETLIFY-ENTRY-PILOT.ko.md](NETLIFY-ENTRY-PILOT.ko.md)를 따른다.
+최신 운영 브랜치44d8f7b에서 `pilot/kywa-entry`를 만들고 `entry-screen/`에 독립 정적 소개 화면을 구현했다. 실제 주소는 https://kywa-safety.netlify.app/ 이며 https://kywa-safety.netlify.app/?preview=1 은 서버를 깨우지 않는 소개 재생이다. 프로젝트는 처음 kywa-safety-start에서 사용자 요청으로 kywa-safety로 변경했다. 기존 Render8개의 v1.3.0/bacadc9, 인증/Google/API·시트 구조·사진과 다른 기관은 유지한다. 상세는 [NETLIFY-ENTRY-PILOT.ko.md](NETLIFY-ENTRY-PILOT.ko.md)를 따른다.
 
-준비 확인 주소 한 개만 기존 /healthz로 중계한다. 650ms 이내면 소개를 건너뛰고, 지연되면6장면을 재생하며 준비 확인 즉시 기존 주소로 replace 이동한다. 5초/2초/120초 제한, 백그라운드 정지·복귀 확인, 정적 미리보기와 재시도를 구현했다. 원본 PDF/MP4·실제 업무 자료·인증정보는 배포하지 않는다. 자연 절전3회와 실행 중10회 측정, 실제 중계·자동 이동, 잔여 크레딧·배포와 ZIP을 완료한 뒤 이 항목의 진행 상태를 갱신한다. Actions/절전 방지 호출은 추가하지 않는다.
+준비 확인 주소 한 개만 기존 /healthz로 중계한다. 650ms 이내면 소개를 건너뛰고, 지연되면6장면을 재생하며 준비 확인 즉시 기존 주소로 replace 이동한다. 5초/2초/120초 제한, 백그라운드 정지·복귀 확인, 정적 미리보기와 재시도를 적용했다. 상단은 흰색이며 장면은 좌우 교차·방향별 등장·기능별 움직임을 사용한다. 일반 하단 직접 접속 링크는 제거하고 연결 실패 때만 직접 접속을 제공한다. 원본 PDF/MP4·실제 업무 자료·인증정보는 배포하지 않는다.
+
+정상 자연 기동3회22.391/23.421/22.391초의 평균22.734초에서2초를 뺀20.734초로 확정했다. 120.204초미응답1회와 실행 중0.375초1회는 별도로 보존했다. Node14개/집계도구4개, 5크기×6장면30개, 실행 중 상태 확인각10회·브라우저 자동 이동10회, 추가 자연 기동 중 새 주소 자동 이동을 검사했다. 전체 업무화면 로딩 시간을 상태 응답 시간과 혼동하지 않는다. 실제 모바일 기기·OS 모션 감소 설정의 실물 검사는 별도다.
+
+최종 소스 `7d4027175349badbda96b9f324774dd674315e93`와 Netlify 배포 `6afd474a4c51f7b78b9ecfdb`의 Published를 확인했다. 정식 배포는 최초1회+보정1회, 총2회이며 Production Public/Deploy Preview Private다. 새 프로젝트의 Netlify 추가 배지도 해제했다. 배포7개 자산을 정적 ZIP과 대조했다(HTML의 Netlify 설명 주석만 비교 시 제외). 준비 확인200/JSON/no-store/쿠키 없음과 미지원POST405도 확인했다. `artifacts/kywa-entry-static.zip`은63,526바이트이며 매니페스트·`entry-screen/release.json`·`kywa-entry/v0.1.0` 태그로 소스와 복구를 연결한다. 후속 문서만 변경하면 Netlify ignore로 재배포를 건너뛴다. 기존 Render/AX ZIP과 기관별 v1.3.0 태그는 유지하며 Actions/절전 방지 호출은 추가하지 않았다.
 
 ## 2026-11-17 — AX 업데이트 시 연동 설정 유지·B안 아이콘/메타데이터
 

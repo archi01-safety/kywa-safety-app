@@ -1,0 +1,63 @@
+{
+  "sourceCommit": "7d4027175349badbda96b9f324774dd674315e93",
+  "assets": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "canonicalZipMatch": true,
+      "bytes": 14699,
+      "providerHtmlCommentRemovedForComparison": true
+    },
+    {
+      "path": "style.css",
+      "status": 200,
+      "canonicalZipMatch": true,
+      "bytes": 29523,
+      "providerHtmlCommentRemovedForComparison": false
+    },
+    {
+      "path": "app.mjs",
+      "status": 200,
+      "canonicalZipMatch": true,
+      "bytes": 7201,
+      "providerHtmlCommentRemovedForComparison": false
+    },
+    {
+      "path": "controller.mjs",
+      "status": 200,
+      "canonicalZipMatch": true,
+      "bytes": 4034,
+      "providerHtmlCommentRemovedForComparison": false
+    },
+    {
+      "path": "config.json",
+      "status": 200,
+      "canonicalZipMatch": true,
+      "bytes": 147,
+      "providerHtmlCommentRemovedForComparison": false
+    },
+    {
+      "path": "assets/icon.png",
+      "status": 200,
+      "canonicalZipMatch": true,
+      "bytes": 1790,
+      "providerHtmlCommentRemovedForComparison": false
+    },
+    {
+      "path": "assets/kywa-logo.png",
+      "status": 200,
+      "canonicalZipMatch": true,
+      "bytes": 46431,
+      "providerHtmlCommentRemovedForComparison": false
+    }
+  ],
+  "readiness": {
+    "status": 200,
+    "body": {
+      "status": "ok"
+    },
+    "cache_control": "no-store",
+    "has_set_cookie": false,
+    "unsupported_post_status": 405
+  }
+}

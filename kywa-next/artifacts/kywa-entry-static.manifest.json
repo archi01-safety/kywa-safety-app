@@ -1,0 +1,54 @@
+{
+  "artifact": "kywa-entry-static.zip",
+  "sha256": "bb586c4df96c3637342924df154e21f29abf5d5b108899936ac48014aa20860f",
+  "bytes": 63526,
+  "sourceCommit": "7d4027175349badbda96b9f324774dd674315e93",
+  "files": [
+    {
+      "path": "_headers",
+      "bytes": 386,
+      "sha256": "57fc330fc396a5bdd78bcf39fd9b0e11495799641c7dcf3db64f0ddd072d20f3"
+    },
+    {
+      "path": "_redirects",
+      "bytes": 62,
+      "sha256": "a12cc6b0d479735be47c32153b0ee1f730f9221dfba70e60d3548f85706f42b0"
+    },
+    {
+      "path": "app.mjs",
+      "bytes": 7201,
+      "sha256": "da20a21f0c553d921c665ce2d2d1d9aaafbd749afcd61ecb0cdaf357e71f29b3"
+    },
+    {
+      "path": "assets/icon.png",
+      "bytes": 1790,
+      "sha256": "ecb451a41780fa39e6d4cd5bab2d19efc38d51f04b5bca0babed95ee2300f1b7"
+    },
+    {
+      "path": "assets/kywa-logo.png",
+      "bytes": 46431,
+      "sha256": "32a7ddaf940668633a0f34dbe1238fb35a7205f8e608984298a4c6ecaf39cdbc"
+    },
+    {
+      "path": "config.json",
+      "bytes": 147,
+      "sha256": "27b8aaa3a9db1d4c4e980d9772da05626ff71ea520c9bf58cc2d14ba05968025"
+    },
+    {
+      "path": "controller.mjs",
+      "bytes": 4034,
+      "sha256": "048ea37ff25191ce09ab918677d8c7a32a8518835bf9bd74749124cb65e88f68"
+    },
+    {
+      "path": "index.html",
+      "bytes": 14373,
+      "sha256": "d9c928cb4c3a1bfa51ae6f016a205731518c7ae5cc46876e3676a395704294a0"
+    },
+    {
+      "path": "style.css",
+      "bytes": 29523,
+      "sha256": "ad75654007956a1578e52e1b54fe07e6155035660de1dad4078cc856a38b5555"
+    }
+  ],
+  "credentials_included": false
+}

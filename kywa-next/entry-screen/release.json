@@ -1,0 +1,39 @@
+{
+  "version": "kywa-entry/v0.1.0",
+  "branch": "pilot/kywa-entry",
+  "organization": "kywa",
+  "sourceCommit": "7d4027175349badbda96b9f324774dd674315e93",
+  "baseCommit": "44d8f7b326d363b1bc51ca617aa99e57c5ac50d1",
+  "netlifyProject": "kywa-safety",
+  "netlifyTeam": "axkywa",
+  "siteUrl": "https://kywa-safety.netlify.app/",
+  "previewUrl": "https://kywa-safety.netlify.app/?preview=1",
+  "deploymentId": "6afd474a4c51f7b78b9ecfdb",
+  "deploymentStatus": "Published",
+  "productionDeployCount": 2,
+  "staticArtifact": {
+    "path": "artifacts/kywa-entry-static.zip",
+    "bytes": 63526,
+    "sha256": "bb586c4df96c3637342924df154e21f29abf5d5b108899936ac48014aa20860f"
+  },
+  "storySeconds": 20.734,
+  "coldCompletedSamples": 3,
+  "coldTimeoutSamples": 1,
+  "warmExcludedSamples": 1,
+  "tests": {
+    "readiness": 14,
+    "measurementTools": 4,
+    "responsiveLayouts": 30,
+    "warmDirectProbes": 10,
+    "warmProxyProbes": 10,
+    "warmBrowserVisits": 10,
+    "publicAssetMatches": 7
+  },
+  "renderSourceCommitUnchanged": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+  "googleDataWrites": false,
+  "renderEnvironmentChanged": false,
+  "githubActionsAdded": false,
+  "scheduledKeepAliveAdded": false,
+  "secretValuesIncluded": false,
+  "physicalMobileDeviceVerified": false
+}
