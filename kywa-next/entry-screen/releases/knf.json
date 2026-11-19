@@ -1,0 +1,43 @@
+{
+  "version": "knf-entry/v0.1.0",
+  "organization": "knf",
+  "branch": "pilot/partner-entry",
+  "sourceCommit": "c2e5b6f312964e92d0f2297df64fa8bc0433a426",
+  "kywaTemplateCommit": "7d4027175349badbda96b9f324774dd674315e93",
+  "project": "knf-safety",
+  "team": "axkywa",
+  "projectId": "22e3fd04-b41f-43dc-add1-6fcc388b243e",
+  "deploymentId": "6afe4c1b088b2eb329842e3f",
+  "status": "Published",
+  "deploymentMethod": "manual Netlify upload",
+  "successfulProductionDeploys": 1,
+  "siteUrl": "https://knf-safety.netlify.app/",
+  "previewUrl": "https://knf-safety.netlify.app/?preview=1",
+  "renderUrl": "https://knf-safety.onrender.com/#inspect",
+  "package": {
+    "path": "artifacts/knf-entry-static.zip",
+    "bytes": 20293,
+    "sha256": "0ccbbffc6a31d49fcf99760d693c8d9ccf4a06703d6d34cbc69562c90b4f462f"
+  },
+  "verification": {
+    "dateKst": "2026-11-19",
+    "nodeTests": 19,
+    "layoutWidthsPx": [
+      390,
+      820,
+      1280
+    ],
+    "layoutScene": 2,
+    "publishedAssetMatches": 6,
+    "readiness": {
+      "status": 200,
+      "json": {
+        "status": "ok"
+      },
+      "cacheControl": "no-store",
+      "setsCookie": false
+    },
+    "browserRedirectVerified": true,
+    "browserEvidence": "entry-screen/review/partner-rollout-20261119-browser.json"
+  }
+}

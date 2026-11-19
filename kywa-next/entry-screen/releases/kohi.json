@@ -1,0 +1,43 @@
+{
+  "version": "kohi-entry/v0.1.0",
+  "organization": "kohi",
+  "branch": "pilot/partner-entry",
+  "sourceCommit": "c2e5b6f312964e92d0f2297df64fa8bc0433a426",
+  "kywaTemplateCommit": "7d4027175349badbda96b9f324774dd674315e93",
+  "project": "kohi-safety",
+  "team": "axkywa",
+  "projectId": "4ffcbb36-57d4-4669-ba9f-a7fcd480a71e",
+  "deploymentId": "6afe4c3055b347c93f3f6130",
+  "status": "Published",
+  "deploymentMethod": "manual Netlify upload",
+  "successfulProductionDeploys": 1,
+  "siteUrl": "https://kohi-safety.netlify.app/",
+  "previewUrl": "https://kohi-safety.netlify.app/?preview=1",
+  "renderUrl": "https://kohi-safety.onrender.com/#inspect",
+  "package": {
+    "path": "artifacts/kohi-entry-static.zip",
+    "bytes": 20312,
+    "sha256": "00ce26883d48f50b0b6e7049ca4147ccdbb95d3aafe0229b5dd883ecdfde0b52"
+  },
+  "verification": {
+    "dateKst": "2026-11-19",
+    "nodeTests": 19,
+    "layoutWidthsPx": [
+      390,
+      820,
+      1280
+    ],
+    "layoutScene": 2,
+    "publishedAssetMatches": 6,
+    "readiness": {
+      "status": 200,
+      "json": {
+        "status": "ok"
+      },
+      "cacheControl": "no-store",
+      "setsCookie": false
+    },
+    "browserRedirectVerified": true,
+    "browserEvidence": "entry-screen/review/partner-rollout-20261119-browser.json"
+  }
+}

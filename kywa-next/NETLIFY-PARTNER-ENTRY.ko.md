@@ -1,6 +1,6 @@
 # 기관별 Netlify 기동 안내
 
-한국산림복지진흥원(FoWI)을 첫 시범 기관으로 배포했다. 기존 업무는 [FoWI Render](https://fowi-safety.onrender.com/#inspect)에서 처리한다.
+한국산림복지진흥원(FoWI) 시범에 이어 2026-11-19에 AYF·KHIDI·KNPS·KNF·KOHI·CAYF의 안내 페이지를 게시했다. 7개 안내 페이지에서 각 기관의 기존 Render 업무 화면으로 연결한다.
 
 | 항목 | 값 |
 | --- | --- |
@@ -13,6 +13,19 @@
 | 정적 패키지 | [fowi-entry-static.zip](artifacts/fowi-entry-static.zip) · 20,303바이트 · [매니페스트](artifacts/fowi-entry-static.manifest.json) |
 
 이 브랜치는 공통 운영 소스 `44d8f7b`에서 시작해 KYWA 안내 소스 `7d40271`의 여섯 장면을 가져왔다. KYWA 안내는 독립 `pilot/kywa-entry`에서 관리한다.
+
+## 2026-11-19 게시 주소
+
+| 기관 | 안내 페이지 | Netlify 배포 | 복구 버전과 패키지 |
+| --- | --- | --- | --- |
+| 안양시청소년재단 (AYF) | [접속](https://ayf-safety.netlify.app/) · [미리보기](https://ayf-safety.netlify.app/?preview=1) | [Published](https://app.netlify.com/projects/ayf-safety/deploys/6afe4b6a8955c60c03b18e50) | [ayf-entry/v0.1.0](entry-screen/releases/ayf.json) · [ZIP](artifacts/ayf-entry-static.zip) |
+| 한국보건산업진흥원 (KHIDI) | [접속](https://khidi-safety.netlify.app/) · [미리보기](https://khidi-safety.netlify.app/?preview=1) | [Published](https://app.netlify.com/projects/khidi-safety/deploys/6afe4bad8763c83e3f102ab0) | [khidi-entry/v0.1.0](entry-screen/releases/khidi.json) · [ZIP](artifacts/khidi-entry-static.zip) |
+| 국립공원공단 (KNPS) | [접속](https://knps-safety.netlify.app/) · [미리보기](https://knps-safety.netlify.app/?preview=1) | [Published](https://app.netlify.com/projects/knps-safety/deploys/6afe4be971ea762024a20e39) | [knps-entry/v0.1.0](entry-screen/releases/knps.json) · [ZIP](artifacts/knps-entry-static.zip) |
+| 한전원자력연료 (KNF) | [접속](https://knf-safety.netlify.app/) · [미리보기](https://knf-safety.netlify.app/?preview=1) | [Published](https://app.netlify.com/projects/knf-safety/deploys/6afe4c1b088b2eb329842e3f) | [knf-entry/v0.1.0](entry-screen/releases/knf.json) · [ZIP](artifacts/knf-entry-static.zip) |
+| 한국보건복지인재원 (KOHI) | [접속](https://kohi-safety.netlify.app/) · [미리보기](https://kohi-safety.netlify.app/?preview=1) | [Published](https://app.netlify.com/projects/kohi-safety/deploys/6afe4c3055b347c93f3f6130) | [kohi-entry/v0.1.0](entry-screen/releases/kohi.json) · [ZIP](artifacts/kohi-entry-static.zip) |
+| 천안시청소년재단 (CAYF) | [접속](https://cayf-safety.netlify.app/) · [미리보기](https://cayf-safety.netlify.app/?preview=1) | [Published](https://app.netlify.com/projects/cayf-safety/deploys/6afe4c3dec900c3b85c8883f) | [cayf-entry/v0.1.0](entry-screen/releases/cayf.json) · [ZIP](artifacts/cayf-entry-static.zip) |
+
+6개 신규 게시의 패키지 기준 소스는 `c2e5b6f312964e92d0f2297df64fa8bc0433a426`이다. 최초 배포 전 사용 가능 크레딧은 940이었으며, 정식 게시 6회 기준 90크레딧이다.
 
 ## 화면과 연결
 
@@ -44,4 +57,5 @@ node entry-screen/tools/serve.mjs --org=fowi --port=8026 --mode=html
 - Node 검사 19개에서 기관별 주소, 브랜드, AYF 성명 안내, 준비 판정, 실패와 재시도를 확인했다.
 - 브라우저에서 다섯 화면 크기와 여섯 장면을 검사했다. [PC](entry-screen/review/fowi-desktop.jpg)와 [모바일](entry-screen/review/fowi-mobile.jpg)은 실제 게시 주소를 캡처했다.
 - 공개 파일 6개를 ZIP과 대조하고 정상 JSON 응답과 FoWI Render로의 브라우저 자동 이동을 확인했다. 상세 결과는 [배포 확인](entry-screen/review/fowi-public-checks.json)과 [릴리스 기록](entry-screen/releases/fowi.json)에 있다.
-- 시범 화면 승인 후 AYF·KHIDI·KNPS·KNF·KOHI·CAYF를 `<기관ID>-safety.netlify.app`에 같은 방식으로 한 곳씩 게시한다. 각 프로젝트 이름과 이동 대상, 해당 시점의 팀 크레딧을 확인한다.
+- 추가 6개 기관에서 실제 공개 파일을 ZIP과 6개씩 대조했다. 기관별 준비 상태 응답과 브라우저 자동 이동을 확인했다. 390·820·1280px 너비의 사진 장면에서 가로 넘침과 공동 기관명 겹침을 검사했다. AYF의 개인정보 장면은 성명 안내 없이 사진 확인을 안내한다. [브라우저 검증](entry-screen/review/partner-rollout-20261119-browser.json) · [AYF PC](entry-screen/review/ayf-desktop.jpg) · [CAYF 모바일](entry-screen/review/cayf-mobile.jpg)
+- 추가 6개 기관에는 KYWA 시범판의 20.734초 소개 구성을 공통 적용했다. 확인 기록은 정상 연결과 실제 자동 이동 1회씩의 결과이며, 기관별 자연 절전 기동 시간 통계는 포함하지 않는다.

@@ -1,0 +1,239 @@
+{
+  "dateKst": "2026-11-19",
+  "creditsAvailableBefore": 940,
+  "estimatedProductionDeployCredits": 90,
+  "deployments": {
+    "ayf": {
+      "projectId": "e6f7e754-a09a-41c0-a3ba-b400970bf628",
+      "deploymentId": "6afe4b6a8955c60c03b18e50",
+      "status": "Published",
+      "productionPublic": true,
+      "deployPreviewPrivate": true,
+      "redirect": {
+        "destination": "https://ayf-safety.onrender.com/#inspect",
+        "durationMs": 3962
+      }
+    },
+    "khidi": {
+      "projectId": "825889cc-19b2-4d6d-89d2-6e922dbf24a0",
+      "deploymentId": "6afe4bad8763c83e3f102ab0",
+      "status": "Published",
+      "productionPublic": true,
+      "deployPreviewPrivate": true,
+      "redirect": {
+        "destination": "https://khidi-safety.onrender.com/#inspect",
+        "durationMs": 2761
+      }
+    },
+    "knps": {
+      "projectId": "2f8a2cde-2e70-4eee-8b91-2d5d14effea9",
+      "deploymentId": "6afe4be971ea762024a20e39",
+      "status": "Published",
+      "productionPublic": true,
+      "deployPreviewPrivate": true,
+      "redirect": {
+        "destination": "https://knps-safety.onrender.com/#inspect",
+        "durationMs": 1628
+      }
+    },
+    "knf": {
+      "projectId": "22e3fd04-b41f-43dc-add1-6fcc388b243e",
+      "deploymentId": "6afe4c1b088b2eb329842e3f",
+      "status": "Published",
+      "productionPublic": true,
+      "deployPreviewPrivate": true,
+      "redirect": {
+        "destination": "https://knf-safety.onrender.com/#inspect",
+        "durationMs": 1150
+      }
+    },
+    "kohi": {
+      "projectId": "4ffcbb36-57d4-4669-ba9f-a7fcd480a71e",
+      "deploymentId": "6afe4c3055b347c93f3f6130",
+      "status": "Published",
+      "productionPublic": true,
+      "deployPreviewPrivate": true,
+      "redirect": {
+        "destination": "https://kohi-safety.onrender.com/#inspect",
+        "durationMs": 1422
+      }
+    },
+    "cayf": {
+      "projectId": "bc010b86-7c69-471a-9e60-f89390c0bb46",
+      "deploymentId": "6afe4c3dec900c3b85c8883f",
+      "status": "Published",
+      "productionPublic": true,
+      "deployPreviewPrivate": true,
+      "redirect": {
+        "destination": "https://cayf-safety.onrender.com/#inspect",
+        "durationMs": 1629
+      }
+    }
+  },
+  "layout": [
+    {
+      "organization": "ayf",
+      "brand": "안양시청소년재단\n×\n한국청소년활동진흥원",
+      "docWidth": 390,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 390
+    },
+    {
+      "organization": "khidi",
+      "brand": "한국보건산업진흥원\n×\n한국청소년활동진흥원",
+      "docWidth": 390,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 390
+    },
+    {
+      "organization": "knps",
+      "brand": "국립공원공단\n×\n한국청소년활동진흥원",
+      "docWidth": 390,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 390
+    },
+    {
+      "organization": "knf",
+      "brand": "한전원자력연료\n×\n한국청소년활동진흥원",
+      "docWidth": 390,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 390
+    },
+    {
+      "organization": "kohi",
+      "brand": "한국보건복지인재원\n×\n한국청소년활동진흥원",
+      "docWidth": 390,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 390
+    },
+    {
+      "organization": "cayf",
+      "brand": "천안시청소년재단\n×\n한국청소년활동진흥원",
+      "docWidth": 390,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 390
+    },
+    {
+      "organization": "ayf",
+      "brand": "안양시청소년재단\n×\n한국청소년활동진흥원",
+      "docWidth": 820,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 820
+    },
+    {
+      "organization": "khidi",
+      "brand": "한국보건산업진흥원\n×\n한국청소년활동진흥원",
+      "docWidth": 820,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 820
+    },
+    {
+      "organization": "knps",
+      "brand": "국립공원공단\n×\n한국청소년활동진흥원",
+      "docWidth": 820,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 820
+    },
+    {
+      "organization": "knf",
+      "brand": "한전원자력연료\n×\n한국청소년활동진흥원",
+      "docWidth": 820,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 820
+    },
+    {
+      "organization": "kohi",
+      "brand": "한국보건복지인재원\n×\n한국청소년활동진흥원",
+      "docWidth": 820,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 820
+    },
+    {
+      "organization": "cayf",
+      "brand": "천안시청소년재단\n×\n한국청소년활동진흥원",
+      "docWidth": 820,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 820
+    },
+    {
+      "organization": "ayf",
+      "brand": "안양시청소년재단\n×\n한국청소년활동진흥원",
+      "docWidth": 1280,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 1280
+    },
+    {
+      "organization": "khidi",
+      "brand": "한국보건산업진흥원\n×\n한국청소년활동진흥원",
+      "docWidth": 1280,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 1280
+    },
+    {
+      "organization": "knps",
+      "brand": "국립공원공단\n×\n한국청소년활동진흥원",
+      "docWidth": 1280,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 1280
+    },
+    {
+      "organization": "knf",
+      "brand": "한전원자력연료\n×\n한국청소년활동진흥원",
+      "docWidth": 1280,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 1280
+    },
+    {
+      "organization": "kohi",
+      "brand": "한국보건복지인재원\n×\n한국청소년활동진흥원",
+      "docWidth": 1280,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 1280
+    },
+    {
+      "organization": "cayf",
+      "brand": "천안시청소년재단\n×\n한국청소년활동진흥원",
+      "docWidth": 1280,
+      "headerOverlap": false,
+      "preview": "소개 화면 미리보기",
+      "title": "사진을 남기고,\n상황을 알려주세요.",
+      "width": 1280
+    }
+  ],
+  "ayfPrivacySceneChecked": true,
+  "previousSceneButtonChecked": true
+}

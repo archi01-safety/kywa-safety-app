@@ -1,0 +1,53 @@
+{
+  "organization": "khidi",
+  "renderUrl": "https://khidi-safety.onrender.com/#inspect",
+  "storySeconds": 20.734,
+  "publicBytes": 59287,
+  "files": [
+    {
+      "path": "_headers",
+      "bytes": 386,
+      "sha256": "57fc330fc396a5bdd78bcf39fd9b0e11495799641c7dcf3db64f0ddd072d20f3"
+    },
+    {
+      "path": "_redirects",
+      "bytes": 63,
+      "sha256": "30c5702169f97f961baf2fde18f70db743a6636fbfb7e50eb370d1cc831b3ea6"
+    },
+    {
+      "path": "app.mjs",
+      "bytes": 7246,
+      "sha256": "ce8a2df4dab33df6f8418d107ef6850d2d18fde557070e2f2057ea77972f7fb1"
+    },
+    {
+      "path": "assets/icon.png",
+      "bytes": 1790,
+      "sha256": "ecb451a41780fa39e6d4cd5bab2d19efc38d51f04b5bca0babed95ee2300f1b7"
+    },
+    {
+      "path": "config.json",
+      "bytes": 24,
+      "sha256": "bcdcf512707c34d9835856d58a344bf67eef307dd72620915eb141d2d6479fc3"
+    },
+    {
+      "path": "controller.mjs",
+      "bytes": 3953,
+      "sha256": "b711657d7a10e80c0b2bc23f3da8772bc3540989cb98391fac79022a5ea0a723"
+    },
+    {
+      "path": "index.html",
+      "bytes": 14472,
+      "sha256": "56ad2256b39019ac6665e93201a34e23a0d86f75b80041901c39d93424d4fa28"
+    },
+    {
+      "path": "style.css",
+      "bytes": 31353,
+      "sha256": "d755a7faac5579257f4273ce0fdd9b0dcbf6296e9e7fd9db84e4dc5a0da768ce"
+    }
+  ],
+  "sourceCommit": "c2e5b6f312964e92d0f2297df64fa8bc0433a426",
+  "archive": "khidi-entry-static.zip",
+  "archiveBytes": 20310,
+  "archiveSha256": "1cd9f7988220d0c04ff9b7f36f902c92a3e21d209a173292a8702481b7abeeb0",
+  "publishDirectory": "site"
+}

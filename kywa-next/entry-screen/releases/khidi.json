@@ -1,0 +1,43 @@
+{
+  "version": "khidi-entry/v0.1.0",
+  "organization": "khidi",
+  "branch": "pilot/partner-entry",
+  "sourceCommit": "c2e5b6f312964e92d0f2297df64fa8bc0433a426",
+  "kywaTemplateCommit": "7d4027175349badbda96b9f324774dd674315e93",
+  "project": "khidi-safety",
+  "team": "axkywa",
+  "projectId": "825889cc-19b2-4d6d-89d2-6e922dbf24a0",
+  "deploymentId": "6afe4bad8763c83e3f102ab0",
+  "status": "Published",
+  "deploymentMethod": "manual Netlify upload",
+  "successfulProductionDeploys": 1,
+  "siteUrl": "https://khidi-safety.netlify.app/",
+  "previewUrl": "https://khidi-safety.netlify.app/?preview=1",
+  "renderUrl": "https://khidi-safety.onrender.com/#inspect",
+  "package": {
+    "path": "artifacts/khidi-entry-static.zip",
+    "bytes": 20310,
+    "sha256": "1cd9f7988220d0c04ff9b7f36f902c92a3e21d209a173292a8702481b7abeeb0"
+  },
+  "verification": {
+    "dateKst": "2026-11-19",
+    "nodeTests": 19,
+    "layoutWidthsPx": [
+      390,
+      820,
+      1280
+    ],
+    "layoutScene": 2,
+    "publishedAssetMatches": 6,
+    "readiness": {
+      "status": 200,
+      "json": {
+        "status": "ok"
+      },
+      "cacheControl": "no-store",
+      "setsCookie": false
+    },
+    "browserRedirectVerified": true,
+    "browserEvidence": "entry-screen/review/partner-rollout-20261119-browser.json"
+  }
+}

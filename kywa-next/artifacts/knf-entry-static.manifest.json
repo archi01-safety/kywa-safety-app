@@ -1,0 +1,53 @@
+{
+  "organization": "knf",
+  "renderUrl": "https://knf-safety.onrender.com/#inspect",
+  "storySeconds": 20.734,
+  "publicBytes": 59249,
+  "files": [
+    {
+      "path": "_headers",
+      "bytes": 386,
+      "sha256": "57fc330fc396a5bdd78bcf39fd9b0e11495799641c7dcf3db64f0ddd072d20f3"
+    },
+    {
+      "path": "_redirects",
+      "bytes": 61,
+      "sha256": "19cd2cb6f642563e7b97744f8df474d8c97b233376dd6c8fe625a36965e7700d"
+    },
+    {
+      "path": "app.mjs",
+      "bytes": 7246,
+      "sha256": "ce8a2df4dab33df6f8418d107ef6850d2d18fde557070e2f2057ea77972f7fb1"
+    },
+    {
+      "path": "assets/icon.png",
+      "bytes": 1790,
+      "sha256": "ecb451a41780fa39e6d4cd5bab2d19efc38d51f04b5bca0babed95ee2300f1b7"
+    },
+    {
+      "path": "config.json",
+      "bytes": 24,
+      "sha256": "bcdcf512707c34d9835856d58a344bf67eef307dd72620915eb141d2d6479fc3"
+    },
+    {
+      "path": "controller.mjs",
+      "bytes": 3953,
+      "sha256": "b711657d7a10e80c0b2bc23f3da8772bc3540989cb98391fac79022a5ea0a723"
+    },
+    {
+      "path": "index.html",
+      "bytes": 14436,
+      "sha256": "6d0417847c60f28276392c5c0c4c68d73c9981b1123fdd7dd6780d18b8302136"
+    },
+    {
+      "path": "style.css",
+      "bytes": 31353,
+      "sha256": "7ca174414b7d0d5ed67714735cffe6f54182c74f661ce23c4e18281cfce1bc0b"
+    }
+  ],
+  "sourceCommit": "c2e5b6f312964e92d0f2297df64fa8bc0433a426",
+  "archive": "knf-entry-static.zip",
+  "archiveBytes": 20293,
+  "archiveSha256": "0ccbbffc6a31d49fcf99760d693c8d9ccf4a06703d6d34cbc69562c90b4f462f",
+  "publishDirectory": "site"
+}

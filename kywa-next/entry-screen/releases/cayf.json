@@ -1,0 +1,43 @@
+{
+  "version": "cayf-entry/v0.1.0",
+  "organization": "cayf",
+  "branch": "pilot/partner-entry",
+  "sourceCommit": "c2e5b6f312964e92d0f2297df64fa8bc0433a426",
+  "kywaTemplateCommit": "7d4027175349badbda96b9f324774dd674315e93",
+  "project": "cayf-safety",
+  "team": "axkywa",
+  "projectId": "bc010b86-7c69-471a-9e60-f89390c0bb46",
+  "deploymentId": "6afe4c3dec900c3b85c8883f",
+  "status": "Published",
+  "deploymentMethod": "manual Netlify upload",
+  "successfulProductionDeploys": 1,
+  "siteUrl": "https://cayf-safety.netlify.app/",
+  "previewUrl": "https://cayf-safety.netlify.app/?preview=1",
+  "renderUrl": "https://cayf-safety.onrender.com/#inspect",
+  "package": {
+    "path": "artifacts/cayf-entry-static.zip",
+    "bytes": 20299,
+    "sha256": "ef553194d44a3f632333056d2f3f1f90dde7fd5f94e80af54e5c02af299ef33e"
+  },
+  "verification": {
+    "dateKst": "2026-11-19",
+    "nodeTests": 19,
+    "layoutWidthsPx": [
+      390,
+      820,
+      1280
+    ],
+    "layoutScene": 2,
+    "publishedAssetMatches": 6,
+    "readiness": {
+      "status": 200,
+      "json": {
+        "status": "ok"
+      },
+      "cacheControl": "no-store",
+      "setsCookie": false
+    },
+    "browserRedirectVerified": true,
+    "browserEvidence": "entry-screen/review/partner-rollout-20261119-browser.json"
+  }
+}
