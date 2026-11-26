@@ -84,6 +84,38 @@ def test_overview_year_filter_and_cache(context, monkeypatch):
     assert 2025 in c.get('/api/overview?year=2024').json()['years']
 
 
+def test_knps_public_overview_counts_departments_for_selected_year(tmp_path):
+    cfg = Settings(_env_file=None, app_env='demo', organization_id='knps',
+                   demo_data_path=str(tmp_path / 'knps.json'))
+    org = cfg.organization
+    repo = DemoRepository(cfg.demo_data_path, org)
+    records = [
+        (2026, '본사'), (2026, ' 본사 '), (2026, '동부지역본부'),
+        (2026, ''), (2026, '등록되지 않은 부서 값'), (2025, '지리산경남사무소'),
+    ]
+    repo.apply([
+        dict(id=f'knps-{index}', created_at=f'{year}-01-01T09:00:00+09:00',
+             facility=org.facilities[0], department=department,
+             before={'category': org.categories[0]}, status='접수')
+        for index, (year, department) in enumerate(records)
+    ], [])
+
+    with TestClient(create_app(cfg, repo=repo)) as client:
+        response = client.get('/api/overview?year=2026')
+        assert response.status_code == 200
+        data = response.json()
+        assert data['total'] == 5 and data['facility_count'] == 1
+        assert [(row['name'], row['count']) for row in data['facilities']] == [('국립공원공단', 5)]
+        assert data['departments'][0] == {'name': '본사', 'count': 2}
+        assert {row['name']: row['count'] for row in data['departments']} == {
+            '본사': 2, '동부지역본부': 1, '기타 부서': 1, '담당 부서 미지정': 1,
+        }
+        assert client.get('/api/overview?year=2025').json()['departments'] == [
+            {'name': '지리산경남사무소', 'count': 1},
+        ]
+        assert client.get('/api/overview?year=2024').json()['departments'] == []
+
+
 def test_analysis_recommends_guide_keywords_from_all_items(context):
     c, _, _, _ = context
     data = c.post('/api/analyses', data={'facility':'중앙', 'department':'협력부(국립청소년시설)',
