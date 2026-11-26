@@ -1,7 +1,7 @@
 # 작업 및 인수인계 규칙
 
 - 새 작업은 PROJECT-CONTEXT.ko.md의1~5절과 HANDOFF.md 맨 위를 먼저 확인한다. SETUP.md·최근 CHANGELOG.md·컨텍스트의 관련 전문 절만 추가로 읽는다. 과거 전체 대화/이력/실자료를 매번 로드하지 않는다. 사용자 최신 지시와 실제 코드/배포 근거를 우선한다.
-- 현재 공통 운영은8개 기관v1.3.0, 실제 SHA는 artifacts/render-deployments.json과 releases/<기관>/에 있다. 문서 HEAD와 배포 SHA를 구분한다. 로컬 kywa-v1.1은 폴더명이며 최신 소스 작업tree다. 다른 worktree의 브랜치를 강제로 이동하지 않고 최신 origin/codex/kywa-next에서 작업 브랜치를 만든다.
+- 8개 기관의 실제 운영 버전과 SHA는 artifacts/render-deployments.json과 releases/<기관>/에서 확인한다. 문서 HEAD와 배포 SHA를 구분한다. 로컬 kywa-v1.1은 작업 tree의 폴더명이다. 다른 worktree의 브랜치를 강제로 이동하지 않고 최신 origin/codex/kywa-next에서 작업 브랜치를 만든다.
 - 기능·운영·검증 상태가 바뀌면 같은 작업에서 PROJECT-CONTEXT.ko.md의 현재 상태와 HANDOFF.md/CHANGELOG.md를 갱신한다. 재개 시작문은 현재 핵심 조건이 바뀔 때 갱신한다. 실행 변경은 SETUP/.env.example, 배포는 기관별 버전/태그/복구 기록, 패키지는 ZIP/매니페스트에도 반영한다.
 - 구현·로컬 검사·과거CI·실제 배포·운영 업무 검증을 구분한다. 미검증을 완료로 쓰지 않는다. 문서만 바꾸는 작업은 앱 전체 검사/배포를 반복하지 않는다. 새 PC에 이전 대화나 비공개 자료가 자동 전달된다고 가정하지 않는다.
 - 일반 공개 시트20열/AYF18열이다. AYF는 부서·성명을 수집하지 않는다. 기관별 공개 평가표·시설/부서·성명·색상을 유지하고 KYWA 규칙을 다른 기관에 강제하지 않는다. 관리 열/숨김 탭·행 메타데이터는 중복 방지·조치 이력 연결에 필요하므로 임의 삭제하지 않는다.

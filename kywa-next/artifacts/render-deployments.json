@@ -1,6 +1,6 @@
 {
   "checked_at": "2026-11-16T03:44:32.841Z",
-  "verification": "Eight Render Docker builds and bacadc9 Deploy succeeded|Live observed. Prior validation in v1.3-verification.json; no post-deploy assessment writes or native HWP re-test.",
+  "verification": "The v1.3.0 rollout was verified on 2026-11-16. The KNPS row records a later v1.3.1 deployment and public dashboard verification.",
   "services": [
     {
       "org": "kywa",
@@ -61,16 +61,17 @@
     {
       "org": "knps",
       "id": "srv-dbhh880473hc73a09jng",
-      "deployment": "dep-dbt7l461egvs73flfun0",
+      "deployment": "dep-dc3sq556e07s73dg0usg",
       "status": "Live",
-      "sha": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+      "sha": "f4a0accc04c7f24e765e8f6d2efc6d3ed8889e31",
       "url": "https://knps-safety.onrender.com",
       "plan": "Free",
-      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jng/deploys/dep-dbt7l461egvs73flfun0",
-      "version": "v1.3.0",
-      "previous_deployment": "dep-dbt512psrm7s73a8datg",
-      "previous_sha": "0a1c236236dcd7a76b8f4c36ac6f88dea40d6b58",
-      "previous_version": "v1.2.1"
+      "dashboard_url": "https://dashboard.render.com/web/srv-dbhh880473hc73a09jng/deploys/dep-dc3sq556e07s73dg0usg",
+      "version": "v1.3.1",
+      "checked_at": "2026-11-26T06:12:38Z",
+      "previous_deployment": "dep-dbt7l461egvs73flfun0",
+      "previous_sha": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+      "previous_version": "v1.3.0"
     },
     {
       "org": "knf",
