@@ -1,0 +1,85 @@
+/* KYWA-only presentation. Do not move these rules into the standard institution theme. */
+@media screen {
+  :root[data-design="premium"][data-theme="dark"] {
+    --bg: #101620; --surface: #1c2431; --surface-muted: #252f3e;
+    --ink: #f0f3f8; --muted: #b6c0d0; --line: #465367; --line-strong: #8b98ac;
+    --accent-soft: color-mix(in srgb,var(--theme-primary) 13%,var(--surface));
+  }
+  .premium-app { background: var(--bg); }
+  .premium-app .institution-header .session-clock { color: #465261; }
+  .premium-app .institution-header .session-clock.ending { color: #805800; }
+  .premium-app .institution-header .session-clock.expired { color: #b42332; }
+  .premium-app .institution-header .session-clock button { color: #465261; }
+  .premium-app .reassess-button:not(:disabled) { background: var(--brand-button); color: var(--brand-on-button); border-color: var(--accent); }
+  .premium-app .reassess-button:hover:not(:disabled) { background: var(--brand-hover); }
+  .premium-app .sidebar { background: linear-gradient(160deg,var(--bg),var(--surface)); }
+  .premium-app .sidebar nav button { border-radius: 9px; min-height: 52px; }
+  .premium-app .sidebar nav button.active {
+    background: linear-gradient(100deg,var(--accent-soft),color-mix(in srgb,var(--theme-primary) 8%,var(--surface)));
+    box-shadow: inset 3px 0 var(--accent),-5px 0 16px -12px var(--theme-primary);
+  }
+  .premium-app .sidebar nav button:hover:not(.active) { color: var(--ink); background: var(--surface-muted); }
+  .premium-app .sidebar-guide strong { color: var(--ink); font-size: 22px; font-weight: 650; line-height: 1.5; }
+  .premium-app .sidebar-guide>svg { color: var(--accent); }
+  .premium-app .sidebar-guide p { font-size: 13px; line-height: 1.9; }
+  .premium-app .sidebar-guide>span { font-size: 12px; }
+  .premium-app .breadcrumb-bar { color: var(--muted); }
+  .premium-app .page-heading { position: relative; isolation: isolate; overflow: hidden; padding: 8px 0 16px; margin-bottom: 18px; }
+  .premium-app .page-heading h1 { font-size: clamp(26px,2.1vw,34px); letter-spacing: -.045em; font-weight: 720; }
+  .premium-app .eyebrow { color: var(--muted); letter-spacing: 2.4px; }
+  .premium-app .page-heading p { max-width: 760px; }
+  .premium-app .panel,.premium-app .stat,.premium-app .steps,.premium-app .submit-bar {
+    background: linear-gradient(125deg,color-mix(in srgb,var(--surface) 93%,#64748b),var(--surface));
+    border-color: var(--line); box-shadow: 0 12px 28px -24px #000a,inset 0 1px #ffffff08;
+  }
+  .premium-app .steps { padding: 15px 22px; border-radius: 12px; }
+  .premium-app .steps>div>span { width: 34px; height: 34px; font-size: 12px; }
+  .premium-app .steps .current span { box-shadow: 0 0 16px -7px var(--theme-primary); }
+  .premium-app .steps i { background: color-mix(in srgb,var(--accent) 48%,var(--line)); }
+  .premium-app .input-panel { border-radius: 14px; padding: 25px 28px; }
+  .premium-app .panel-heading { margin-bottom: 20px; }
+  .premium-app .section-number { border: 1px solid var(--accent); background: var(--accent-soft); border-radius: 8px; }
+  .premium-app input:not([type="checkbox"]):not([type="radio"]),.premium-app select,.premium-app textarea {
+    background: var(--surface-muted); border-color: var(--line-strong); border-radius: 8px;
+    box-shadow: inset 0 1px 3px #0001; color: var(--ink);
+  }
+  .premium-app input:not(:disabled):hover,.premium-app select:not(:disabled):hover,.premium-app textarea:not(:disabled):hover { border-color: var(--accent); }
+  .premium-app input:focus,.premium-app select:focus,.premium-app textarea:focus { border-color: var(--focus); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .premium-app .upload-zone {
+    background: radial-gradient(ellipse at 0 100%,color-mix(in srgb,var(--theme-primary) 16%,transparent),transparent 65%),var(--surface-muted);
+    border-radius: 10px; min-height: 255px;
+  }
+  .premium-app .upload-zone:hover:not(:disabled) { background: var(--surface-muted); border-color: var(--accent); }
+  .premium-app .upload-icon { border: 1px solid color-mix(in srgb,var(--accent) 55%,transparent); border-radius: 14px; }
+  .premium-app .upload-pill { color: var(--accent); border-color: var(--accent); background: var(--surface); }
+  .premium-app .primary:not(.analyze-button):not(:disabled) {
+    background-image: linear-gradient(180deg,#ffffff0b,transparent);
+    box-shadow: 0 5px 20px -12px var(--theme-primary); border-color: var(--accent);
+  }
+  .premium-app .primary:active:not(.analyze-button):not(:disabled) { background-image: none; }
+  .premium-app .next-action { outline-color: var(--accent); box-shadow: 0 0 19px -10px var(--theme-primary); }
+  .premium-app .record-item.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .premium-app .progress-dialog,.premium-app .developer-dialog {
+    background: var(--surface); border: 1px solid var(--line-strong); border-radius: 16px; box-shadow: 0 24px 80px #0008;
+  }
+  .premium-app .progress-dialog::backdrop,.premium-app .developer-dialog::backdrop { background: #080e19bb; backdrop-filter: blur(4px); }
+  .premium-app .download-options button:hover:not(:disabled) { border-color: var(--secondary-accent); }
+  .premium-app .footer { border-top-color: var(--line); }
+  :root[data-design="premium"][data-theme="light"] .premium-app .sidebar { background: var(--surface); }
+}
+@media screen and (max-width:720px) {
+  .premium-app .sidebar { background: var(--bg); }
+  .premium-app .sidebar nav button { border-radius: 0; }
+  .premium-app .sidebar nav button.active { box-shadow: inset 0 -3px var(--accent); }
+  .premium-app .page-heading { padding: 2px 0 10px; }
+  .premium-app .page-heading h1 { font-size: 26px; }
+  .premium-app .page-heading p { font-size: 13px; line-height: 1.9; }
+  .premium-app .steps { padding: 13px 10px; }
+  .premium-app .steps>div>span { width: 26px; height: 26px; font-size: 11px; }
+  .premium-app .steps>div { font-size: 11px; }
+  .premium-app .input-panel { padding: 22px 18px; }
+  .premium-app .upload-zone { min-height: 220px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .premium-app *, .premium-app *::before, .premium-app *::after { scroll-behavior: auto; transition: none; }
+}

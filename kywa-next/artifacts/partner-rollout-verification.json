@@ -1,0 +1,88 @@
+{
+  "checked_at": "2026-11-02T17:06:25+09:00",
+  "candidate": "d1d195fd833bc810af8bce34562666edf9d26fe3",
+  "ci": "https://github.com/archi01-safety/kywa-safety-app/actions/runs/41403837004",
+  "institutions": [
+    {
+      "organization": "ayf",
+      "existing_records_preserved": 0,
+      "columns": 19,
+      "live_reports": 6,
+      "submitted_photo_seconds": 12.457,
+      "test_data_cleaned": true,
+      "deployment": "dep-dbk3hauc6qcc73de8qpg",
+      "status": "Live"
+    },
+    {
+      "organization": "fowi",
+      "existing_records_preserved": 131,
+      "columns": 19,
+      "live_reports": 6,
+      "submitted_photo_seconds": 12.134,
+      "test_data_cleaned": true,
+      "deployment": "dep-dbk3kv142hec73ehhsug",
+      "status": "Live"
+    },
+    {
+      "organization": "khidi",
+      "existing_records_preserved": 98,
+      "columns": 19,
+      "live_reports": 6,
+      "submitted_photo_seconds": 10.464,
+      "test_data_cleaned": true,
+      "deployment": "dep-dbk3obajnfac739gktjg",
+      "status": "Live"
+    },
+    {
+      "organization": "knps",
+      "existing_records_preserved": 96,
+      "columns": 19,
+      "live_reports": 6,
+      "submitted_photo_seconds": 15.389,
+      "test_data_cleaned": true,
+      "deployment": "dep-dbk3rivf3r2c738k7png",
+      "status": "Live"
+    },
+    {
+      "organization": "knf",
+      "existing_records_preserved": 13,
+      "columns": 19,
+      "live_reports": 6,
+      "submitted_photo_seconds": 13.896,
+      "test_data_cleaned": true,
+      "deployment": "dep-dbk3usdg1s2s73981o40",
+      "status": "Live"
+    },
+    {
+      "organization": "kohi",
+      "existing_records_preserved": 125,
+      "columns": 19,
+      "live_reports": 6,
+      "submitted_photo_seconds": 12.717,
+      "test_data_cleaned": true,
+      "deployment": "dep-dbk42ap42hec73eildm0",
+      "status": "Live"
+    },
+    {
+      "organization": "cayf",
+      "existing_records_preserved": 6,
+      "columns": 19,
+      "live_reports": 6,
+      "submitted_photo_seconds": 12.324,
+      "test_data_cleaned": true,
+      "deployment": "dep-dbk45pfb9u1s73fiomag",
+      "status": "Live"
+    }
+  ],
+  "kywa_unchanged": {
+    "deployment": "dep-dbk1ffajnfac739aj3gg",
+    "status": "Live",
+    "sha": "8b396719eb84fd8badf3f1246908a00cb8391eee"
+  },
+  "limitations": [
+    "운영 사이트 브라우저 접근은 AYF에서 저장된 권한 설정에 의해 차단됨; PC/모바일 화면 검사는 승인된 CI에서 수행",
+    "Google Sheets 호버 미리보기 미검증",
+    "한글 2014 및 실기기 햅틱 미검증",
+    "Streamlit 호환은 기존 append API 방식으로 검사; 각 Streamlit UI 자체를 조작하지 않음"
+  ]
+}

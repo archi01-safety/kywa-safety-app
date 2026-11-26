@@ -1,0 +1,19 @@
+{
+  "format": 1,
+  "organization": "ayf",
+  "version": "v1.0.0",
+  "tag": "ayf/v1.0.0",
+  "source_commit": "b180b29a5f9cdd39b30aa7d51e06c67584fb29cf",
+  "state": "baseline_registered",
+  "site": "https://ayf-safety.onrender.com",
+  "organization_config_sha256": "c8b78beb54c91fc66c3d93efc66496ef060b4c3cfdb95adafd83eb8dbee73144",
+  "policy_version": "AYF-2026-v1",
+  "prompt_version": "AYF-2026-11-02-v2",
+  "prompt_source_sha256": "d7df6e2c9d6bd4facd5a65ff56a4c6b10d88ebd933a9861780551dbe0bc11576",
+  "sheet_schema": "ayf-visible17-row-metadata-v2",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": null,
+  "verification": {
+    "runtime_baseline_evidence": "HANDOFF.md 2026-11-10"
+  }
+}

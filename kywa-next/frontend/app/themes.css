@@ -1,0 +1,24 @@
+/* Shared branding changes colors only. Standard institution geometry lives in globals.css. */
+@media screen {
+  :root {
+    --theme-primary: var(--brand-original);
+    --theme-secondary: var(--brand-secondary-original);
+    --theme-primary-hover: var(--brand-hover);
+    --theme-primary-soft: var(--accent-soft);
+    --theme-primary-foreground: var(--brand-on-button);
+    --theme-focus-ring: var(--brand-dark-text);
+    --secondary-accent: var(--brand-secondary-dark-text);
+    --focus: var(--theme-focus-ring);
+  }
+  :root[data-theme="light"] {
+    --theme-focus-ring: var(--brand-light-text);
+    --secondary-accent: var(--brand-secondary-light-text);
+  }
+  .app-shell .primary:not(:disabled) { border-color: var(--accent); }
+  .app-shell .steps .current span { border-color: var(--accent); }
+  .app-shell .overview-stat:nth-child(-n+2) svg,
+  .app-shell .export-icon { color: var(--secondary-accent); }
+  .app-shell .export-icon { background: color-mix(in srgb,var(--theme-secondary) 10%,var(--surface)); }
+  .institution-header .theme-toggle:focus-visible,
+  .institution-header a:focus-visible { outline-color: var(--brand-light-text); }
+}

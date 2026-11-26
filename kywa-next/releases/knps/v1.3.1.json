@@ -1,0 +1,33 @@
+{
+  "format": 1,
+  "organization": "knps",
+  "version": "v1.3.1",
+  "tag": "knps/v1.3.1",
+  "source_commit": "f4a0accc04c7f24e765e8f6d2efc6d3ed8889e31",
+  "state": "deployed",
+  "site": "https://knps-safety.onrender.com",
+  "organization_config_sha256": "2ceea9b4e8ea5380dd0dd136fc4ce6c5b02730596dd6a1fc297cdf17cb0637d4",
+  "policy_version": "KNPS-2026-v1",
+  "prompt_version": "KNPS-PROMPT-20261116-v3",
+  "prompt_source_sha256": "cb3cae5d28d8fc4298d0273d2c250f32097c255deab94e5caa20263018f5a175",
+  "detailed_risk_profile": "knps-facts-20261116-v3",
+  "detailed_risk_profile_sha256": "e332e43c912bf18c39c9d8f268c1655c391db61cab0e86a16b16fd0d2de2e7a1",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dc3sq556e07s73dg0usg",
+    "status": "Live",
+    "checked_at": "2026-11-26T06:12:38Z"
+  },
+  "verification": {
+    "backend_tests": 63,
+    "frontend_tests": 2,
+    "typecheck": true,
+    "frontend_build": true,
+    "render_docker_build_and_live": true,
+    "verified_overview_year": 2026,
+    "verified_department_groups": 16,
+    "verified_item_count": 194,
+    "sheet_schema_unchanged": true
+  }
+}

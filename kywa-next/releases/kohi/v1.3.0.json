@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "organization": "kohi",
+  "version": "v1.3.0",
+  "tag": "kohi/v1.3.0",
+  "source_commit": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+  "state": "deployed",
+  "site": "https://kohi-safety.onrender.com",
+  "organization_config_sha256": "9f44d2e15d63ceb07486e54b74a856e49afc370226964aafcb40204efc522a7c",
+  "policy_version": "KOHI-2026-v1",
+  "prompt_version": "KOHI-PROMPT-20261116-v3",
+  "prompt_source_sha256": "cb3cae5d28d8fc4298d0273d2c250f32097c255deab94e5caa20263018f5a175",
+  "detailed_risk_profile": "kohi-facts-20261116-v3",
+  "detailed_risk_profile_sha256": "c3f879cd5a1997150bd597e1ef66ac394d258431962f9f24e462d9173577c68b",
+  "sheet_schema": "visible20-photo2-v1",
+  "data_rollback": "preserve_newer_records; archive additional photos/plans before a schema downgrade",
+  "deployment": {
+    "id": "dep-dbt7mk61egvs73fljtm0",
+    "status": "Live",
+    "checked_at": "2026-11-16T03:43:19.334Z"
+  },
+  "verification": {
+    "reference": "artifacts/v1.3-verification.json",
+    "backend_tests": 483,
+    "frontend_tests": 20,
+    "institution_cases": 60,
+    "internal_combinations": 300,
+    "independent_model_calls": 36,
+    "public_pair_match": 1.0,
+    "critical_underestimates": 0,
+    "synthetic_angle_calls": 6,
+    "expert_accuracy_validated": false,
+    "real_photo_angle_accuracy_validated": false,
+    "detailed_risk_enabled": true,
+    "sheet_schema_unchanged": true,
+    "native_hwp_retested_this_release": false,
+    "new_actions_ci": false,
+    "render_docker_build_and_live": true
+  }
+}

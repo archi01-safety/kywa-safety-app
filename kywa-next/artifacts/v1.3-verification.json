@@ -1,0 +1,282 @@
+{
+  "format": 1,
+  "date": "2026-11-16",
+  "state": "deployed",
+  "baseline_runtime": "0a1c236236dcd7a76b8f4c36ac6f88dea40d6b58",
+  "organizations": [
+    "kywa",
+    "ayf",
+    "fowi",
+    "khidi",
+    "knps",
+    "knf",
+    "kohi",
+    "cayf"
+  ],
+  "synthetic_anchors": 480,
+  "internal_mapping_pairs": 2400,
+  "independent_model_calls": 288,
+  "repeat_public_pair_match": 1.0,
+  "expected_pair_matches": 288,
+  "critical_underestimates": 0,
+  "synthetic_camera_view_calls": 48,
+  "real_photo_angle_accuracy_validated": false,
+  "expert_accuracy_validated": false,
+  "model_results": [
+    {
+      "organization": "kywa",
+      "model": "gemini-3.6-flash",
+      "profile": "kywa-facts-20261116-v3",
+      "cases": 12,
+      "repeats": 3,
+      "identical_pair_rate": 1.0,
+      "expected_matches": 36,
+      "critical_underestimates": 0,
+      "passed": true,
+      "expert_accuracy_validated": false,
+      "cache_used": false
+    },
+    {
+      "organization": "khidi",
+      "model": "gemini-3.6-flash",
+      "profile": "khidi-facts-20261116-v3",
+      "cases": 12,
+      "repeats": 3,
+      "identical_pair_rate": 1.0,
+      "expected_matches": 36,
+      "critical_underestimates": 0,
+      "passed": true,
+      "expert_accuracy_validated": false,
+      "cache_used": false
+    },
+    {
+      "organization": "fowi",
+      "model": "gemini-3.6-flash",
+      "profile": "fowi-facts-20261116-v3",
+      "cases": 12,
+      "repeats": 3,
+      "identical_pair_rate": 1.0,
+      "expected_matches": 36,
+      "critical_underestimates": 0,
+      "passed": true,
+      "expert_accuracy_validated": false,
+      "cache_used": false
+    },
+    {
+      "organization": "ayf",
+      "model": "gemini-3.6-flash",
+      "profile": "ayf-facts-20261116-v3",
+      "cases": 12,
+      "repeats": 3,
+      "identical_pair_rate": 1.0,
+      "expected_matches": 36,
+      "critical_underestimates": 0,
+      "passed": true,
+      "expert_accuracy_validated": false,
+      "cache_used": false
+    },
+    {
+      "organization": "knps",
+      "model": "gemini-3.6-flash",
+      "profile": "knps-facts-20261116-v3",
+      "cases": 12,
+      "repeats": 3,
+      "identical_pair_rate": 1.0,
+      "expected_matches": 36,
+      "critical_underestimates": 0,
+      "passed": true,
+      "expert_accuracy_validated": false,
+      "cache_used": false
+    },
+    {
+      "organization": "knf",
+      "model": "gemini-3.6-flash",
+      "profile": "knf-facts-20261116-v3",
+      "cases": 12,
+      "repeats": 3,
+      "identical_pair_rate": 1.0,
+      "expected_matches": 36,
+      "critical_underestimates": 0,
+      "passed": true,
+      "expert_accuracy_validated": false,
+      "cache_used": false
+    },
+    {
+      "organization": "kohi",
+      "model": "gemini-3.6-flash",
+      "profile": "kohi-facts-20261116-v3",
+      "cases": 12,
+      "repeats": 3,
+      "identical_pair_rate": 1.0,
+      "expected_matches": 36,
+      "critical_underestimates": 0,
+      "passed": true,
+      "expert_accuracy_validated": false,
+      "cache_used": false
+    },
+    {
+      "organization": "cayf",
+      "model": "gemini-3.6-flash",
+      "profile": "cayf-facts-20261116-v3",
+      "cases": 12,
+      "repeats": 3,
+      "identical_pair_rate": 1.0,
+      "expected_matches": 36,
+      "critical_underestimates": 0,
+      "passed": true,
+      "expert_accuracy_validated": false,
+      "cache_used": false
+    }
+  ],
+  "angle_results": [
+    {
+      "organization": "kywa",
+      "passed": true,
+      "synthetic_camera_views": true,
+      "real_photo_angle_validation": false
+    },
+    {
+      "organization": "fowi",
+      "passed": true,
+      "synthetic_camera_views": true,
+      "real_photo_angle_validation": false
+    },
+    {
+      "organization": "khidi",
+      "passed": true,
+      "synthetic_camera_views": true,
+      "real_photo_angle_validation": false
+    },
+    {
+      "organization": "ayf",
+      "passed": true,
+      "synthetic_camera_views": true,
+      "real_photo_angle_validation": false
+    },
+    {
+      "organization": "knf",
+      "passed": true,
+      "synthetic_camera_views": true,
+      "real_photo_angle_validation": false
+    },
+    {
+      "organization": "knps",
+      "passed": true,
+      "synthetic_camera_views": true,
+      "real_photo_angle_validation": false
+    },
+    {
+      "organization": "cayf",
+      "passed": true,
+      "synthetic_camera_views": true,
+      "real_photo_angle_validation": false
+    },
+    {
+      "organization": "kohi",
+      "passed": true,
+      "synthetic_camera_views": true,
+      "real_photo_angle_validation": false
+    }
+  ],
+  "exports": [
+    {
+      "organization": "kywa",
+      "passed": true,
+      "pdf_pages": 2,
+      "photos": 3,
+      "same_rotation": true,
+      "official_article": 38,
+      "internal_data_excluded": true
+    },
+    {
+      "organization": "ayf",
+      "passed": true,
+      "pdf_pages": 2,
+      "photos": 3,
+      "same_rotation": true,
+      "official_article": 38,
+      "internal_data_excluded": true
+    },
+    {
+      "organization": "fowi",
+      "passed": true,
+      "pdf_pages": 2,
+      "photos": 3,
+      "same_rotation": true,
+      "official_article": 38,
+      "internal_data_excluded": true
+    },
+    {
+      "organization": "khidi",
+      "passed": true,
+      "pdf_pages": 2,
+      "photos": 3,
+      "same_rotation": true,
+      "official_article": 38,
+      "internal_data_excluded": true
+    },
+    {
+      "organization": "knps",
+      "passed": true,
+      "pdf_pages": 2,
+      "photos": 3,
+      "same_rotation": true,
+      "official_article": 38,
+      "internal_data_excluded": true
+    },
+    {
+      "organization": "knf",
+      "passed": true,
+      "pdf_pages": 2,
+      "photos": 3,
+      "same_rotation": true,
+      "official_article": 38,
+      "internal_data_excluded": true
+    },
+    {
+      "organization": "kohi",
+      "passed": true,
+      "pdf_pages": 2,
+      "photos": 3,
+      "same_rotation": true,
+      "official_article": 38,
+      "internal_data_excluded": true
+    },
+    {
+      "organization": "cayf",
+      "passed": true,
+      "pdf_pages": 2,
+      "photos": 3,
+      "same_rotation": true,
+      "official_article": 38,
+      "internal_data_excluded": true
+    }
+  ],
+  "google_backups": "Private full file copies and GridData/row metadata/history snapshots: local-data/v13/preflight",
+  "google_visible_schema_changed": false,
+  "existing_records_recomputed": false,
+  "credentials_or_pins_changed": false,
+  "actual_law_origins_verified": 8,
+  "risk_default_enabled": true,
+  "render_flag_overrides_found": false,
+  "browser": "KYWA synthetic desktop/mobile initial two photos and after one, rotation, optional questions, edit preservation and reset",
+  "native_hwp_retested_this_release": false,
+  "new_actions_ci": false,
+  "private_evidence_root": "local-data/v13",
+  "tests": {
+    "backend": 483,
+    "frontend_unit": 20,
+    "root_build": true,
+    "ax_build": true,
+    "backend_modules": 28
+  },
+  "review_workbooks": 8,
+  "limitations": [
+    "Synthetic policy alignment is not expert accuracy certification.",
+    "Real multi-angle site photographs are a separate future validation.",
+    "iPhone Safari and physical haptics were not directly controlled."
+  ],
+  "source_commit": "bacadc94e3f6bf4b87428552c1fac080e2680935",
+  "render_docker_builds_and_live": 8,
+  "deployment_reference": "artifacts/render-deployments.json"
+}

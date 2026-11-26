@@ -1,0 +1,43 @@
+"""Public counts only; never return evaluation text, identities or photo links."""
+from collections import Counter
+
+from .domain import FACILITIES, CATEGORIES
+from .chart_colors import CATEGORY_COLOR_MAP, FALLBACK_COLOR, facility_color
+
+
+def summarize(records, year, org=None):
+    facilities_list = org.facilities if org else FACILITIES
+    categories_list = org.categories if org else CATEGORIES
+    years = sorted({int(r['created_at'][:4]) for r in records
+                    if str(r.get('created_at', ''))[:4].isdigit()} | {year}, reverse=True)
+    selected = [r for r in records if str(r.get('created_at', '')).startswith(f'{year}-')]
+    facilities = Counter(r['facility'] if r['facility'] in facilities_list else '기타' for r in selected)
+    categories = Counter(r['before']['category'] if r['before']['category'] in categories_list else '기타'
+                         for r in selected)
+    summary = dict(year=year, years=years, total=len(selected),
+                completed=sum(r['status'] == '완료' for r in selected),
+                facility_count=len(facilities),
+                facilities=[dict(name=f, count=facilities[f],**({'color':facility_color(org,f)} if org and org.enhanced else {})) for f in facilities_list + (['기타'] if facilities['기타'] else [])],
+                categories=[dict(name=k, count=v,**({'color':CATEGORY_COLOR_MAP.get(k,FALLBACK_COLOR)} if org and org.enhanced else {})) for k, v in categories.most_common()])
+    if org and org.id == 'knps':
+        # The public chart uses department labels already offered by this service.
+        department_names = set(org.departments)
+        departments = Counter()
+        for record in selected:
+            department = str(record.get('department') or '').strip()
+            if department not in department_names:
+                department = '기타 부서' if department else '담당 부서 미지정'
+            departments[department] += 1
+        summary['departments'] = [
+            dict(name=name, count=count)
+            for name, count in sorted(departments.items(), key=lambda item: (-item[1], item[0]))
+        ]
+    return summary
+
+
+def guide_keywords(items):
+    # Preserve the original rule order, considering all analysis items rather than just the first.
+    words = ['용접', '비계', '사다리', '지게차', '크레인', '개구부', '난간', '추락', '감전', '화재',
+             '전기', '미끄러짐', '넘어짐', '중량물', '화학물질', '소음', '밀폐공간', '보호구']
+    text = ' '.join(str(item.get(key, '')) for item in items for key in ('scenario', 'law', 'solution'))
+    return [word for word in words if word in text][:3]
