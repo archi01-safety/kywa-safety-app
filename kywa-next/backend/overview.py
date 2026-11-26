@@ -2,7 +2,7 @@
 from collections import Counter
 
 from .domain import FACILITIES, CATEGORIES
-from .chart_colors import CATEGORY_COLOR_MAP, FACILITY_COLOR_MAP, FALLBACK_COLOR, facility_color
+from .chart_colors import CATEGORY_COLOR_MAP, FALLBACK_COLOR, facility_color
 
 
 def summarize(records, year, org=None):
@@ -14,11 +14,25 @@ def summarize(records, year, org=None):
     facilities = Counter(r['facility'] if r['facility'] in facilities_list else '기타' for r in selected)
     categories = Counter(r['before']['category'] if r['before']['category'] in categories_list else '기타'
                          for r in selected)
-    return dict(year=year, years=years, total=len(selected),
+    summary = dict(year=year, years=years, total=len(selected),
                 completed=sum(r['status'] == '완료' for r in selected),
                 facility_count=len(facilities),
                 facilities=[dict(name=f, count=facilities[f],**({'color':facility_color(org,f)} if org and org.enhanced else {})) for f in facilities_list + (['기타'] if facilities['기타'] else [])],
                 categories=[dict(name=k, count=v,**({'color':CATEGORY_COLOR_MAP.get(k,FALLBACK_COLOR)} if org and org.enhanced else {})) for k, v in categories.most_common()])
+    if org and org.id == 'knps':
+        # The public chart uses department labels already offered by this service.
+        department_names = set(org.departments)
+        departments = Counter()
+        for record in selected:
+            department = str(record.get('department') or '').strip()
+            if department not in department_names:
+                department = '기타 부서' if department else '담당 부서 미지정'
+            departments[department] += 1
+        summary['departments'] = [
+            dict(name=name, count=count)
+            for name, count in sorted(departments.items(), key=lambda item: (-item[1], item[0]))
+        ]
+    return summary
 
 
 def guide_keywords(items):
